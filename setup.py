@@ -1,26 +1,11 @@
-# Copyright 2017, United States Government, as represented by the Administrator 
-# of the National Aeronautics and Space Administration. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import os.path
 from setuptools import find_packages, setup
 
 
 # Package data
 # ------------
-_author = 'Abdelhak Marouane'
-_author_email = 'am0089@uah.edu'
+_author = 'Jet Propulsion Laboratory'
+_author_email = 'bsatoriu@jpl.nasa.gov'
 _classifiers = [
     'Environment :: Console',
     'Framework :: Pytest',
@@ -29,24 +14,23 @@ _classifiers = [
     'Intended Audience :: Science/Research',
     'Topic :: Scientific/Engineering',
     'Development Status :: 3 - Alpha',
-    'License :: OSI Approved :: Apache Software License',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3.5',
     'Topic :: Internet :: WWW/HTTP',
     'Topic :: Software Development :: Libraries :: Python Modules',
 ]
-_description = 'pyCMR Python API'
-_download_url = 'http://pypi.python.org/pypi/pyCMR/'
+_description = 'maapPy Python API'
+_download_url = ''
 _requirements = ["requests"]
-_keywords = ['dataset', 'granule', 'nasa', 'CMR']
+_keywords = ['dataset', 'granule', 'nasa', 'MAAP', 'CMR']
 _license = 'Apache License, Version 2.0'
-_long_description = 'Python client API for interacting with the NASA CMR API'
-_name = 'pyCMR'
+_long_description = 'Python client API for interacting with the NASA MAAP API'
+_name = 'maapPy'
 _namespaces = []
-_test_suite = 'pyCMR.tests'
-_url = 'https://github.com/ghrcdaac/cmr'
-_version = '0.1.2'
+_test_suite = ''
+_url = 'https://github.com/MAAP-Project/maap-py'
+_version = '0.1'
 _zip_safe = False
 
 # Setup Metadata
