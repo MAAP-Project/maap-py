@@ -1,6 +1,9 @@
 import requests
 import shutil
+import os
 import urllib
+import boto3
+from urllib.parse import urlparse
 
 
 class Result(dict):
@@ -9,6 +12,7 @@ class Result(dict):
     """
     _location = None
 
+    #TODO: add destpath as config setting
     def download(self, destpath="."):
         """
         Download the dataset into file system
@@ -21,6 +25,12 @@ class Result(dict):
             return None
         if url.startswith('ftp'):
             urllib.urlretrieve(url,destpath + "/" + self._downloadname.replace('/', '') )
+        elif url.startswith('s3'):
+            o = urlparse(url)
+            filename = url[url.rfind("/") + 1:]
+            s3 = boto3.client('s3', aws_access_key_id=self._awsKey, aws_secret_access_key=self._awsSecret)
+            s3.download_file(o.netloc, o.path.lstrip('/'), filename)
+            print(os.getcwd() + '/' + filename)
         else:
             r = requests.get(url, stream=True)
             r.raw.decode_content = True
@@ -43,7 +53,10 @@ class Collection(Result):
         self._downloadname = metaResult['Collection']['ShortName']
 
 class Granule(Result):
-    def __init__(self, metaResult):
+    def __init__(self, metaResult, awsAccessKey, awsAccessSecret):
+
+        self._awsKey = awsAccessKey
+        self._awsSecret = awsAccessSecret
 
         for k in metaResult:
             self[k] = metaResult[k]

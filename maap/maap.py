@@ -34,6 +34,8 @@ class MAAP(object):
         self._CONTENT_TYPE = self.config.get("request", "content_type")
         self._SEARCH_HEADER = {'Accept': self._CONTENT_TYPE}
         self._MAAP_HOST = self.config.get("request", "maap_host")
+        self._AWS_ACCESS_KEY = self.config.get("request", "aws_access_key_id")
+        self._AWS_ACCESS_SECRET = self.config.get("request", "aws_secret_access_key")
 
     def _get_search_params(self, **kwargs):
         p = dict(kwargs)
@@ -82,7 +84,7 @@ class MAAP(object):
                 page_num += 1
         return results
 
-    def searchGranule(self, limit=100, **kwargs):
+    def searchGranule(self, limit=20, **kwargs):
         """
             Search the CMR granules
 
@@ -91,7 +93,7 @@ class MAAP(object):
             :return: list of results (<Instance of Result>)
             """
         results = self._get_search_results(url=self._SEARCH_GRANULE_URL, limit=limit, **kwargs)
-        return [Granule(result) for result in results][:limit]
+        return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET) for result in results][:limit]
 
     def searchCollection(self, limit=100, **kwargs):
         """
@@ -108,5 +110,8 @@ if __name__ == "__main__":
     m = MAAP("../maap.cfg")
     print("initialized")
     results = m.searchGranule(sitename='lope', instrument='uavsar')
+    for res in results:
+        print(res.getDownloadUrl())
+        res.download()
     # Make sure that the XML response was actually parsed
     valid = isinstance(results[0], Collection)
