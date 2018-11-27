@@ -35,6 +35,16 @@ class MAAP(object):
         self._SEARCH_HEADER = {'Accept': self._CONTENT_TYPE}
         self._MAAP_HOST = self.config.get("request", "maap_host")
 
+    def _get_search_params(self, **kwargs):
+        p = dict(kwargs)
+
+        if 'sitename' in p:
+            p['attribute[]'] = 'string,Site Name,' + p['sitename']
+            del p['sitename']
+
+        return p
+
+
     def _get_search_results(self, url, limit, **kwargs):
         """
         Search the CMR granules
@@ -47,9 +57,11 @@ class MAAP(object):
         page_num = 1
         results = []
         while len(results) < limit:
+            parms = self._get_search_params(**kwargs)
+
             response = requests.get(
                 url=url,
-                params=dict(kwargs, page_num=page_num, page_size=self._PAGE_SIZE),
+                params=dict(parms, page_num=page_num, page_size=self._PAGE_SIZE),
                 headers=self._SEARCH_HEADER
             )
             unparsed_page = response.text[1:-2].replace("\\", "")
@@ -95,6 +107,6 @@ class MAAP(object):
 if __name__ == "__main__":
     m = MAAP("../maap.cfg")
     print("initialized")
-    results = m.searchCollection(keyword='precipitation')
+    results = m.searchGranule(sitename='lope', instrument='uavsar')
     # Make sure that the XML response was actually parsed
     valid = isinstance(results[0], Collection)

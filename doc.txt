@@ -1,10 +1,10 @@
-*****
+******
 maapPy
-*****
+******
 
 # Python MAAP Client Library
 
-Python client library that abstracts MAAP API calls including CMR querying, algorithm change management, and HySDS job execution.
+Python client library that abstracts [MAAP API](https://github.com/MAAP-Project/maap-api) calls including CMR querying, algorithm change management, and HySDS job execution. CMR components in this library are largely derived from the [pyCMR](https://github.com/nasa/pyCMR) library.
 
 
 
@@ -20,7 +20,7 @@ Or
 
 ### Usage
 
-Populate your MAAP base url into a `maap.cfg` file, using maap.cfg as a template.
+Populate your MAAP base url into a `maap.cfg` file, using [maap.cfg](maap.cfg) as a template.
 
 Then, run:
 
@@ -28,6 +28,12 @@ Then, run:
 $ python
 >>> from maap.maap import MAAP
 >>> maap = MAAP('/path/to/my/maap.cfg')
+
+>>> granules = maap.searchGranule(sitename='lope', instrument='uavsar')
+>>> for res in granules:
+    print(res.getDownloadUrl())
+    res.download()
+#results omitted for brevity
 ```
 
 ## Test
