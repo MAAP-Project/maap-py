@@ -1,6 +1,7 @@
 import logging
 import os
 import requests
+import json
 
 import xml.etree.ElementTree as ET
 from .Result import Collection, Granule
@@ -28,21 +29,29 @@ class MAAP(object):
             raise IOError("The config file can't be opened for reading")
 
         self._PAGE_SIZE = self.config.getint("request", "page_size")
-        self._SEARCH_GRANULE_URL = self.config.get("request", "search_granule_url")
-        self._SEARCH_COLLECTION_URL = self.config.get("request", "search_collection_url")
-
         self._CONTENT_TYPE = self.config.get("request", "content_type")
         self._SEARCH_HEADER = {'Accept': self._CONTENT_TYPE}
-        self._MAAP_HOST = self.config.get("request", "maap_host")
-        self._AWS_ACCESS_KEY = self.config.get("request", "aws_access_key_id")
-        self._AWS_ACCESS_SECRET = self.config.get("request", "aws_secret_access_key")
+
+        self._SEARCH_GRANULE_URL = self.config.get("service", "search_granule_url")
+        self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
+        self._MAAP_HOST = self.config.get("service", "maap_host")
+
+        self._AWS_ACCESS_KEY = self.config.get("aws", "aws_access_key_id")
+        self._AWS_ACCESS_SECRET = self.config.get("aws", "aws_secret_access_key")
+        self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
     def _get_search_params(self, **kwargs):
         p = dict(kwargs)
 
-        if 'sitename' in p:
-            p['attribute[]'] = 'string,Site Name,' + p['sitename']
-            del p['sitename']
+        for i in self._INDEXED_ATTRIBUTES:
+            search_param = i.split(',')[0]
+            search_key = i.split(',')[1]
+
+            #Conform attribute searches to the 'additional attribute' method:
+            #https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute
+            if search_param in p:
+                p['attribute[]'] = 'string,' + search_key + ',' + p[search_param]
+                del p[search_param]
 
         return p
 
@@ -111,7 +120,7 @@ if __name__ == "__main__":
     print("initialized")
     results = m.searchGranule(sitename='lope', instrument='uavsar')
     for res in results:
-        print(res.getDownloadUrl())
-        res.download()
+        print(res.getDescription())
+
     # Make sure that the XML response was actually parsed
     valid = isinstance(results[0], Collection)

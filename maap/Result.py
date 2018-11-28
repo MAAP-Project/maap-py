@@ -44,6 +44,13 @@ class Result(dict):
         """
         return self._location
 
+    def getDescription(self):
+        """
+
+        :return:
+        """
+        return self['Granule']['GranuleUR'].ljust(70) + 'Updated ' + self['Granule']['LastUpdate'] + ' (' + self['collection-concept-id'] + ')'
+
 class Collection(Result):
     def __init__(self, metaResult, maap_host):
         for k in metaResult:
