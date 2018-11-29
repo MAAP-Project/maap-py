@@ -13,7 +13,7 @@ class Result(dict):
     _location = None
 
     #TODO: add destpath as config setting
-    def download(self, destpath="."):
+    def getLocalPath(self, destpath="."):
         """
         Download the dataset into file system
         :param destPath: use the current directory as default
@@ -24,19 +24,23 @@ class Result(dict):
         if not url:
             return None
         if url.startswith('ftp'):
-            urllib.urlretrieve(url,destpath + "/" + self._downloadname.replace('/', '') )
+            urllib.urlretrieve(url, destpath + "/" + self._downloadname.replace('/', ''))
+            return self._downloadname.replace('/', '')
         elif url.startswith('s3'):
             o = urlparse(url)
             filename = url[url.rfind("/") + 1:]
             s3 = boto3.client('s3', aws_access_key_id=self._awsKey, aws_secret_access_key=self._awsSecret)
             s3.download_file(o.netloc, o.path.lstrip('/'), filename)
-            print(os.getcwd() + '/' + filename)
+            return os.getcwd() + '/' + filename
         else:
             r = requests.get(url, stream=True)
             r.raw.decode_content = True
 
             with open(destpath + "/" + self._downloadname.replace('/', ''), 'wb') as f:
                 shutil.copyfileobj(r.raw, f)
+
+            return self._downloadname.replace('/', '')
+
 
     def getDownloadUrl(self):
         """

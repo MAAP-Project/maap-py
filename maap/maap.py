@@ -118,9 +118,10 @@ class MAAP(object):
 if __name__ == "__main__":
     m = MAAP("../maap.cfg")
     print("initialized")
-    results = m.searchGranule(sitename='lope', instrument='uavsar')
+    results = m.searchGranule(sitename='lope', instrument='LVIS')
     for res in results:
         print(res.getDescription())
+        #print(res.getLocalPath())
 
     # Make sure that the XML response was actually parsed
     valid = isinstance(results[0], Collection)
