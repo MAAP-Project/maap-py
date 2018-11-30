@@ -2,10 +2,12 @@ import logging
 import os
 import requests
 import json
+from collections import namedtuple
 
 import xml.etree.ElementTree as ET
-from .Result import Collection, Granule
-from .xmlParser import XmlDictConfig
+from Result import Collection, Granule
+from Dictlist import Dictlist
+from xmlParser import XmlDictConfig
 
 try:
     from configparser import ConfigParser
@@ -34,6 +36,9 @@ class MAAP(object):
 
         self._SEARCH_GRANULE_URL = self.config.get("service", "search_granule_url")
         self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
+        self._ALGORITHM_REGISTER = self.config.get("service", "algorithm_register")
+        self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
+        self._JOB_STATUS = self.config.get("service", "job_status")
         self._MAAP_HOST = self.config.get("service", "maap_host")
 
         self._AWS_ACCESS_KEY = self.config.get("aws", "aws_access_key_id")
@@ -41,16 +46,18 @@ class MAAP(object):
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
     def _get_search_params(self, **kwargs):
-        p = dict(kwargs)
+        p = Dictlist(kwargs)
 
         for i in self._INDEXED_ATTRIBUTES:
             search_param = i.split(',')[0]
             search_key = i.split(',')[1]
+            data_type = i.split(',')[2]
 
             #Conform attribute searches to the 'additional attribute' method:
             #https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute
             if search_param in p:
-                p['attribute[]'] = 'string,' + search_key + ',' + p[search_param]
+                p['attribute[]'] = data_type + ',' + search_key + ',' + p[search_param]
+
                 del p[search_param]
 
         return p
@@ -114,14 +121,16 @@ class MAAP(object):
         results = self._get_search_results(url=self._SEARCH_COLLECTION_URL, limit=limit, **kwargs)
         return [Collection(result, self._MAAP_HOST) for result in results][:limit]
 
+    def registerAlgorithm(self, arg):
+        response = requests.post(
+            url=self._ALGORITHM_REGISTER,
+            json=arg,
+            headers=self._SEARCH_HEADER
+        )
+        return response
 
 if __name__ == "__main__":
     m = MAAP("../maap.cfg")
     print("initialized")
-    results = m.searchGranule(sitename='lope', instrument='LVIS')
-    for res in results:
-        print(res.getDescription())
-        #print(res.getLocalPath())
 
-    # Make sure that the XML response was actually parsed
-    valid = isinstance(results[0], Collection)
+    valid = True
