@@ -5,9 +5,9 @@ import json
 from collections import namedtuple
 
 import xml.etree.ElementTree as ET
-from Result import Collection, Granule
-from Dictlist import Dictlist
-from xmlParser import XmlDictConfig
+from .Result import Collection, Granule
+from .Dictlist import Dictlist
+from .xmlParser import XmlDictConfig
 
 try:
     from configparser import ConfigParser
@@ -140,13 +140,3 @@ class MAAP(object):
 if __name__ == "__main__":
     m = MAAP("../maap.cfg")
     print("initialized")
-
-    #results=m.searchGranule(instrument='UAVSAR',track_number='001')
-    #results=m.searchGranule(granule_ur='uavsar_AfriSAR_v1_SLC-topo')
-    results = m.searchGranule(instrument='lvis', attribute='string,Site Name,lope')
-    for res in results:
-        print(res)
-        #print(res.getDownloadUrl())
-    # print(res.getLocalPath())
-
-    valid = True
