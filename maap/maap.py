@@ -16,7 +16,7 @@ except ImportError:
 
 
 class MAAP(object):
-    def __init__(self, configFilePath=''):
+    def __init__(self, configFilePath='', token=''):
         """
         :param configFilePath: The config file containing the credentials to make CRUD requests to CMR (extention .cfg)
         These con
@@ -32,7 +32,10 @@ class MAAP(object):
 
         self._PAGE_SIZE = self.config.getint("request", "page_size")
         self._CONTENT_TYPE = self.config.get("request", "content_type")
-        self._SEARCH_HEADER = {'Accept': self._CONTENT_TYPE}
+        self._SEARCH_HEADER = {
+            'Accept': self._CONTENT_TYPE,
+            'Token': token
+        }
 
         self._SEARCH_GRANULE_URL = self.config.get("service", "search_granule_url")
         self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
