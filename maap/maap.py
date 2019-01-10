@@ -2,7 +2,6 @@ import logging
 import os
 import requests
 import json
-from collections import namedtuple
 
 import xml.etree.ElementTree as ET
 from .Result import Collection, Granule
@@ -33,7 +32,7 @@ class MAAP(object):
         self._MAAP_TOKEN = self.config.get("service", "maap_token")
         self._PAGE_SIZE = self.config.getint("request", "page_size")
         self._CONTENT_TYPE = self.config.get("request", "content_type")
-        self._SEARCH_HEADER = {'Accept': self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
+        self._API_HEADER = {'Accept': self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
 
         self._SEARCH_GRANULE_URL = self.config.get("service", "search_granule_url")
         self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
@@ -81,7 +80,7 @@ class MAAP(object):
             response = requests.get(
                 url=url,
                 params=dict(parms, page_num=page_num, page_size=self._PAGE_SIZE),
-                headers=self._SEARCH_HEADER
+                headers=self._API_HEADER
             )
             unparsed_page = response.text[1:-2].replace("\\", "")
             #unparsed_page = response.content
@@ -126,7 +125,7 @@ class MAAP(object):
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
             json=arg,
-            headers=self._SEARCH_HEADER
+            headers=self._API_HEADER
         )
         return response
 
@@ -134,7 +133,7 @@ class MAAP(object):
         response = requests.get(
             url=self._JOB_STATUS,
             params=dict(job_id=jobid),
-            headers=self._SEARCH_HEADER
+            headers=self._API_HEADER
         )
         return response
 
