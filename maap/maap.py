@@ -30,9 +30,10 @@ class MAAP(object):
         else:
             raise IOError("The config file can't be opened for reading")
 
+        self._MAAP_TOKEN = self.config.get("service", "maap_token")
         self._PAGE_SIZE = self.config.getint("request", "page_size")
         self._CONTENT_TYPE = self.config.get("request", "content_type")
-        self._SEARCH_HEADER = {'Accept': self._CONTENT_TYPE}
+        self._SEARCH_HEADER = {'Accept': self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
 
         self._SEARCH_GRANULE_URL = self.config.get("service", "search_granule_url")
         self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
@@ -140,3 +141,13 @@ class MAAP(object):
 if __name__ == "__main__":
     m = MAAP("../maap.cfg")
     print("initialized")
+
+    results=m.searchGranule(instrument='UAVSAR',track_number='001')
+    #results=m.searchGranule(granule_ur='uavsar_AfriSAR_v1_SLC-topo')
+    #results = m.searchGranule(instrument='lvis', attribute='string,Site Name,lope')
+    for res in results:
+        print(res)
+        #print(res.getDownloadUrl())
+    # print(res.getLocalPath())
+
+    valid = True
