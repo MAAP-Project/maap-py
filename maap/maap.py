@@ -53,15 +53,14 @@ class MAAP(object):
             search_key = i.split(',')[1]
             data_type = i.split(',')[2]
 
-            #Conform attribute searches to the 'additional attribute' method:
-            #https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute
+            # Conform attribute searches to the 'additional attribute' method:
+            # https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute
             if search_param in p:
                 p['attribute[]'] = data_type + ',' + search_key + ',' + p[search_param]
 
                 del p[search_param]
 
         return p
-
 
     def _get_search_results(self, url, limit, **kwargs):
         """
@@ -83,7 +82,6 @@ class MAAP(object):
                 headers=self._API_HEADER
             )
             unparsed_page = response.text[1:-2].replace("\\", "")
-            #unparsed_page = response.content
             page = ET.XML(unparsed_page)
 
             empty_page = True
@@ -137,16 +135,6 @@ class MAAP(object):
         )
         return response
 
+
 if __name__ == "__main__":
-    m = MAAP("../maap.cfg")
     print("initialized")
-
-    results=m.searchGranule(instrument='UAVSAR',track_number='001')
-    #results=m.searchGranule(granule_ur='uavsar_AfriSAR_v1_SLC-topo')
-    #results = m.searchGranule(instrument='lvis', attribute='string,Site Name,lope')
-    for res in results:
-        print(res)
-        #print(res.getDownloadUrl())
-    # print(res.getLocalPath())
-
-    valid = True
