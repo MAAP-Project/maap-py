@@ -32,11 +32,23 @@ $ python
 #results omitted for brevity
 ```
 
-### Custom CMR 'Additional Attribute' Parameters
+### Custom 'Named Attribute'  Parameters
 
-Custom parameters may be used to substitute CMR's [additional attributes](ttps://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute) to improve usability.
+Named parameters are recommended as an alternative to CMR's [additional attributes](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute) as a way to improve usability.
 This list of attributes is editable in the [maap.cfg](maap.cfg) `indexed_attributes` setting. E.g.:
 - "site_name,Site Name,string" where `site_name` is the parameter, `Site Name` is the CMR attribute name, and `string` is the parameter type.
+
+With named attribute parameters, this query:
+
+ ```python
+lidarGranule = maap.searchGranule(instrument='lvis', attribute='string,Site Name,lope')
+```
+
+Simplifies to:
+ 
+```python
+lidarGranule = maap.searchGranule(instrument='lvis', site_name='lope')
+```
 
 ## Test
 
