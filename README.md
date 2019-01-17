@@ -14,7 +14,7 @@ Or
 
     $ pip install -e .
 
-### Usage
+## Usage
 
 Populate your MAAP base url into a `maap.cfg` file, using [maap.cfg](maap.cfg) as a template.
 
@@ -31,6 +31,12 @@ $ python
     res.download()
 #results omitted for brevity
 ```
+
+### Custom CMR 'Additional Attribute' Parameters
+
+Custom parameters may be used to substitute CMR's [additional attributes](ttps://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute) to improve usability.
+This list of attributes is editable in the [maap.cfg](maap.cfg) `indexed_attributes` setting. E.g.:
+- "site_name,Site Name,string" where `site_name` is the parameter, `Site Name` is the CMR attribute name, and `string` is the parameter type.
 
 ## Test
 
