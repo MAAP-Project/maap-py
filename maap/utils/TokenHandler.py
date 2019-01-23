@@ -26,14 +26,14 @@ class TokenHandler:
                 appId:      The URS assigned App ID
         """
 
-        ACCESS_URI = ('https://uat.urs.earthdata.nasa.gov/oauth/'
+        access_uri = ('https://uat.urs.earthdata.nasa.gov/oauth/'
                       + 'authorize?client_id=' + self._id + '&redirect_uri='
                       + REDIRECT_URL + "&response_type=code")
 
-        open_new(ACCESS_URI)
-        httpServer = HTTPServer(
+        open_new(access_uri)
+        http_server = HTTPServer(
                 ('localhost', PORT),
                 lambda request, address, server: HTTPServerHandler(
                     request, address, server, self._id))
-        httpServer.handle_request()
-        return httpServer.access_token
+        http_server.handle_request()
+        return http_server.access_token
