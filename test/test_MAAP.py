@@ -1,5 +1,6 @@
 from unittest import TestCase
 from maap.maap import MAAP
+from maap.utils.TokenHandler import TokenHandler
 
 
 class TestMAAP(TestCase):
@@ -43,3 +44,8 @@ class TestMAAP(TestCase):
     # Awaiting persistent HySDS cluster availability
     def test_getJobStatus(self):
         self.fail()
+
+    def test_TokenHandler(self):
+        th = TokenHandler("a-K9YbTr8h112zW5pLV8Fw")
+        token = th.get_access_token()
+        self.assertTrue(token != 'unauthorized' and len(token) > 0)
