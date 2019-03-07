@@ -109,6 +109,32 @@ class MAAP(object):
         results = self._get_search_results(url=self._SEARCH_GRANULE_URL, limit=limit, **kwargs)
         return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET) for result in results][:limit]
 
+    def getCallFromEarthdataQuery(self, query):
+        """
+            Generate a literal string to use for calling the MAAP API
+
+            :param query: a Json-formatted string from an Earthdata search-style query. See: https://github.com/MAAP-Project/earthdata-search/blob/master/app/controllers/collections_controller.rb
+            :return: string in the form of as MAAP API call
+            """
+        y = json.loads(query)
+
+        params = []
+
+        for key, value in y.items():
+            if key == "platform_h":
+                params.append("platform=\"" + "|".join(value) + "\"")
+            elif key == "instrument_h":
+                params.append("instrument=\"" + "|".join(value) + "\"")
+            elif key == "data_center_h":
+                params.append("data_center=\"" + "|".join(value) + "\"")
+            elif key == "bounding_box":
+                params.append("bounding_box=\"" + value + "\"")
+
+        result = "maap.searchGranule(" + ", ".join(params) + ")"
+
+        return result
+
+
     def searchCollection(self, limit=100, **kwargs):
         """
         Search the CMR collections
