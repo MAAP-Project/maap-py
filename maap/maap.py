@@ -46,16 +46,36 @@ class MAAP(object):
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
     def _get_search_params(self, **kwargs):
+        mapped = self._map_indexed_attributes(**kwargs)
+        parsed = self._parse_terms(mapped, '|')
+
+        return parsed
+
+    # Parse delimited terms into value arrays
+    def _parse_terms(self, parms, delimiter):
+        res = Dictlist()
+
+        for i in parms:
+            if delimiter in parms[i]:
+                for j in parms[i].split(delimiter):
+                    res[i + '[]'] = j
+            else:
+                res[i] = parms[i]
+
+        return res
+
+    # Conform attribute searches to the 'additional attribute' method:
+    # https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute
+    def _map_indexed_attributes(self, **kwargs):
         p = Dictlist(kwargs)
 
         for i in self._INDEXED_ATTRIBUTES:
             search_param = i.split(',')[0]
-            search_key = i.split(',')[1]
-            data_type = i.split(',')[2]
 
-            # Conform attribute searches to the 'additional attribute' method:
-            # https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute
             if search_param in p:
+                search_key = i.split(',')[1]
+                data_type = i.split(',')[2]
+
                 p['attribute[]'] = data_type + ',' + search_key + ',' + p[search_param]
 
                 del p[search_param]
@@ -109,12 +129,13 @@ class MAAP(object):
         results = self._get_search_results(url=self._SEARCH_GRANULE_URL, limit=limit, **kwargs)
         return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET) for result in results][:limit]
 
-    def getCallFromEarthdataQuery(self, query):
+    def getCallFromEarthdataQuery(self, query, variable_name='maap'):
         """
             Generate a literal string to use for calling the MAAP API
 
             :param query: a Json-formatted string from an Earthdata search-style query. See: https://github.com/MAAP-Project/earthdata-search/blob/master/app/controllers/collections_controller.rb
-            :return: string in the form of as MAAP API call
+            :param variable_name: the name of the MAAP variable to qualify the search call
+            :return: string in the form of a MAAP API call
             """
         y = json.loads(query)
 
@@ -130,7 +151,7 @@ class MAAP(object):
             elif key == "bounding_box":
                 params.append("bounding_box=\"" + value + "\"")
 
-        result = "maap.searchGranule(" + ", ".join(params) + ")"
+        result = variable_name + ".searchGranule(" + ", ".join(params) + ")"
 
         return result
 
