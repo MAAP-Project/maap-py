@@ -83,8 +83,10 @@ class Granule(Result):
         try:
             urls = self['Granule']['OnlineResources']['OnlineResource']
             self._OPeNDAPUrl = filter(lambda x: x["Type"] == "OPeNDAP", urls)['URL']
+            self._BrowseUrl = filter(lambda x: x["Type"] == "BROWSE", urls)['URL']
         except :
             self._OPeNDAPUrl = None
+            self._BrowseUrl = None
 
     def getOPeNDAPUrl(self):
         return self._OPeNDAPUrl
