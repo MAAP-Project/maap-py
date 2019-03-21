@@ -1,4 +1,5 @@
 import logging
+import mapboxgl
 import os
 import requests
 import json
@@ -42,6 +43,7 @@ class MAAP(object):
         self._ALGORITHM_REGISTER = self.config.get("service", "algorithm_register")
         self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
         self._JOB_STATUS = self.config.get("service", "job_status")
+        self._GET_TILES = self.config.get("service", "get_tiles")
         self._MAAP_HOST = self.config.get("service", "maap_host")
 
         self._AWS_ACCESS_KEY = self.config.get("aws", "aws_access_key_id")
@@ -139,6 +141,18 @@ class MAAP(object):
             headers=self._SEARCH_HEADER
         )
         return response
+
+    def _get_tiles(self, granule_ur):
+        response = requests.get(
+            url=self._TILE_API,
+            params=dict(granule_ur=granule_ur)
+        )
+        return response
+
+    def visualize(self, granule):
+        granule_ur = granule['Granule']['GranuleUr'];
+        tiles = _get_tiles(granule_ur)
+        mapboxgl.display(tiles)
 
 if __name__ == "__main__":
     m = MAAP("../maap.cfg")
