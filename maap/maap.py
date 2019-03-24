@@ -2,7 +2,6 @@ import logging
 import os
 import requests
 import json
-from collections import namedtuple
 
 import xml.etree.ElementTree as ET
 from .Result import Collection, Granule
@@ -30,12 +29,10 @@ class MAAP(object):
         else:
             raise IOError("The config file can't be opened for reading")
 
+        self._MAAP_TOKEN = self.config.get("service", "maap_token")
         self._PAGE_SIZE = self.config.getint("request", "page_size")
         self._CONTENT_TYPE = self.config.get("request", "content_type")
-        self._SEARCH_HEADER = {
-            'Accept': self._CONTENT_TYPE,
-            'Token': token
-        }
+        self._API_HEADER = {'Accept': self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
 
         self._SEARCH_GRANULE_URL = self.config.get("service", "search_granule_url")
         self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
@@ -49,22 +46,41 @@ class MAAP(object):
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
     def _get_search_params(self, **kwargs):
+        mapped = self._map_indexed_attributes(**kwargs)
+        parsed = self._parse_terms(mapped, '|')
+
+        return parsed
+
+    # Parse delimited terms into value arrays
+    def _parse_terms(self, parms, delimiter):
+        res = Dictlist()
+
+        for i in parms:
+            if delimiter in parms[i]:
+                for j in parms[i].split(delimiter):
+                    res[i + '[]'] = j
+            else:
+                res[i] = parms[i]
+
+        return res
+
+    # Conform attribute searches to the 'additional attribute' method:
+    # https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute
+    def _map_indexed_attributes(self, **kwargs):
         p = Dictlist(kwargs)
 
         for i in self._INDEXED_ATTRIBUTES:
             search_param = i.split(',')[0]
-            search_key = i.split(',')[1]
-            data_type = i.split(',')[2]
 
-            #Conform attribute searches to the 'additional attribute' method:
-            #https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute
             if search_param in p:
+                search_key = i.split(',')[1]
+                data_type = i.split(',')[2]
+
                 p['attribute[]'] = data_type + ',' + search_key + ',' + p[search_param]
 
                 del p[search_param]
 
         return p
-
 
     def _get_search_results(self, url, limit, **kwargs):
         """
@@ -83,10 +99,9 @@ class MAAP(object):
             response = requests.get(
                 url=url,
                 params=dict(parms, page_num=page_num, page_size=self._PAGE_SIZE),
-                headers=self._SEARCH_HEADER
+                headers=self._API_HEADER
             )
             unparsed_page = response.text[1:-2].replace("\\", "")
-            #unparsed_page = response.content
             page = ET.XML(unparsed_page)
 
             empty_page = True
@@ -114,6 +129,29 @@ class MAAP(object):
         results = self._get_search_results(url=self._SEARCH_GRANULE_URL, limit=limit, **kwargs)
         return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET) for result in results][:limit]
 
+    def getCallFromEarthdataQuery(self, query, variable_name='maap'):
+        """
+            Generate a literal string to use for calling the MAAP API
+
+            :param query: a Json-formatted string from an Earthdata search-style query. See: https://github.com/MAAP-Project/earthdata-search/blob/master/app/controllers/collections_controller.rb
+            :param variable_name: the name of the MAAP variable to qualify the search call
+            :return: string in the form of a MAAP API call
+            """
+        y = json.loads(query)
+
+        params = []
+
+        for key, value in y.items():
+            if key.endswith("_h"):
+                params.append(key[:-2] + "=\"" + "|".join(value) + "\"")
+            elif key == "bounding_box":
+                params.append(key + "=\"" + value + "\"")
+
+        result = variable_name + ".searchGranule(" + ", ".join(params) + ")"
+
+        return result
+
+
     def searchCollection(self, limit=100, **kwargs):
         """
         Search the CMR collections
@@ -128,7 +166,7 @@ class MAAP(object):
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
             json=arg,
-            headers=self._SEARCH_HEADER
+            headers=self._API_HEADER
         )
         return response
 
@@ -136,10 +174,10 @@ class MAAP(object):
         response = requests.get(
             url=self._JOB_STATUS,
             params=dict(job_id=jobid),
-            headers=self._SEARCH_HEADER
+            headers=self._API_HEADER
         )
         return response
 
+
 if __name__ == "__main__":
-    m = MAAP("../maap.cfg")
     print("initialized")
