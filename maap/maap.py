@@ -1,8 +1,10 @@
 import logging
-import mapboxgl
 import os
 import requests
 import json
+import urllib.parse
+from mapboxgl.utils import *
+from mapboxgl.viz import *
 
 import xml.etree.ElementTree as ET
 from .Result import Collection, Granule
@@ -40,7 +42,8 @@ class MAAP(object):
         self._ALGORITHM_REGISTER = self.config.get("service", "algorithm_register")
         self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
         self._JOB_STATUS = self.config.get("service", "job_status")
-        self._GET_TILES = self.config.get("service", "get_tiles")
+        self._WMTS = self.config.get("service", "wmts")
+        self._BROWSE_ENDPOINT = self.config.get("service", "browse_endpoint")
         self._MAAP_HOST = self.config.get("service", "maap_host")
 
         self._AWS_ACCESS_KEY = self.config.get("aws", "aws_access_key_id")
@@ -180,17 +183,43 @@ class MAAP(object):
         )
         return response
 
-    def _get_tiles(self, granule_ur):
+    def _get_browse(self, granule_ur):
         response = requests.get(
-            url=self._TILE_API,
+            url=self._WMTS,
             params=dict(granule_ur=granule_ur)
         )
         return response
 
     def visualize(self, granule):
-        granule_ur = granule['Granule']['GranuleUr'];
-        tiles = _get_tiles(granule_ur)
-        mapboxgl.display(tiles)
+        granule_ur = granule['Granule']['GranuleUr']
+        browse_file = _get_browse(granule_ur)
+        r = requests.get(f"{self._BROWSE_ENDPOINT}/metadata?url={browse_file}")
+        bbox = meta["bounds"]["value"]
+        lat = (bbox[3] - bbox[1]) / 2 + bbox[1]
+        lng = (bbox[2] - bbox[0]) / 2 + bbox[0]
+
+        query_params = dict(
+            url=browse_file,
+            rescale="0,70",
+            color_map="schwarzwald"
+        )
+
+        qs = urllib.parse.urlencode(query_params)
+
+        tiles_url = f"{self._BROWSE_ENDPOINT}/tiles/{{z}}/{{x}}/{{y}}.png?{qs}"
+        token = os.environ["MAPBOX_ACCESS_TOKEN"]
+        viz = RasterTilesViz(
+            tiles_url,
+            height='800px',
+            zoom=10,
+            access_token=token,
+            tiles_size=256,
+            tiles_bounds=bbox,
+            center=(lng, lat),
+            tiles_minzoom=8,
+            tiles_maxzoom=15,
+        )
+        viz.show()
 
 if __name__ == "__main__":
     print("initialized")
