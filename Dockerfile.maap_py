@@ -1,0 +1,20 @@
+FROM continuumio/miniconda3:latest
+
+ARG AWS_ACCESS_KEY_ID
+ARG AWS_SECRET_ACCESS_KEY
+ENV AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
+# Install maap-py
+COPY ./maap-py /app/maap-py
+WORKDIR /app/maap-py
+RUN python setup.py install
+RUN sed -i -e "s/aws_access_key_id = none/aws_access_key_id = ${AWS_ACCESS_KEY_ID}/g" maap.cfg
+RUN sed -i -e "s/aws_secret_access_key = none/aws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}/g" maap.cfg
+ENV PYTHONPATH=${PYTHONPATH}:/app
+
+# Install jupyter
+RUN /opt/conda/bin/conda install jupyter -y --quiet && mkdir /opt/notebooks
+
+ARG MAPBOX_ACCESS_TOKEN
+ENV MAPBOX_ACCESS_TOKEN $MAPBOX_ACCESS_TOKEN
