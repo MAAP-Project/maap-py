@@ -82,8 +82,9 @@ class Granule(Result):
         # Retrieve OPeNDAPUrl
         try:
             urls = self['Granule']['OnlineResources']['OnlineResource']
+            # This throws an error "filter object is not subscriptable"
             self._OPeNDAPUrl = filter(lambda x: x["Type"] == "OPeNDAP", urls)['URL']
-            self._BrowseUrl = filter(lambda x: x["Type"] == "BROWSE", urls)['URL']
+            self._BrowseUrl = list(filter(lambda x: x["Type"] == "BROWSE", urls))[0]['URL']
         except :
             self._OPeNDAPUrl = None
             self._BrowseUrl = None
