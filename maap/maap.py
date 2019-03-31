@@ -193,10 +193,12 @@ class MAAP(object):
     def visualize(self, granule):
         granule_ur = granule['Granule']['GranuleUr']
         browse_file = _get_browse(granule_ur)
-        r = requests.get(f"{self._BROWSE_ENDPOINT}/metadata?url={browse_file}")
-        bbox = meta["bounds"]["value"]
-        lat = (bbox[3] - bbox[1]) / 2 + bbox[1]
-        lng = (bbox[2] - bbox[0]) / 2 + bbox[0]
+        # add get_capabilities request
+        # and get_tilejson request
+        #r = requests.get(f"{self._BROWSE_ENDPOINT}/metadata?url={browse_file}")
+        #bbox = meta["bounds"]["value"]
+        #lat = (bbox[3] - bbox[1]) / 2 + bbox[1]
+        #lng = (bbox[2] - bbox[0]) / 2 + bbox[0]
 
         query_params = dict(
             url=browse_file,
