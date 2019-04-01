@@ -185,7 +185,7 @@ class MAAP(object):
 
     def _get_browse(self, granule_ur):
         response = requests.get(
-            url=self._WMTS,
+            url='{}/GetTile'.format(self._WMTS),
             params=dict(granule_ur=granule_ur)
         )
         return response
@@ -193,9 +193,12 @@ class MAAP(object):
     def visualize(self, granule):
         granule_ur = granule['Granule']['GranuleUr']
         browse_file = _get_browse(granule_ur)
-        # add get_capabilities request
-        # and get_tilejson request
-        #r = requests.get(f"{self._BROWSE_ENDPOINT}/metadata?url={browse_file}")
+        response = requests.get(
+            url='{}/GetCapabilities'.format(self._WMTS),
+            params=dict(granule_ur=granule_ur)
+        )
+        capabilities = json.loads(response['body'])
+        print(json.dumps(capabilities, indent=2))
         #bbox = meta["bounds"]["value"]
         #lat = (bbox[3] - bbox[1]) / 2 + bbox[1]
         #lng = (bbox[2] - bbox[0]) / 2 + bbox[0]
