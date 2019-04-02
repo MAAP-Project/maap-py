@@ -44,7 +44,7 @@ class MAAP(object):
         self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
         self._JOB_STATUS = self.config.get("service", "job_status")
         self._WMTS = self.config.get("service", "wmts")
-        self._BROWSE_ENDPOINT = self.config.get("service", "browse_endpoint")
+        self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
         self._MAAP_HOST = self.config.get("service", "maap_host")
 
         self._AWS_ACCESS_KEY = self.config.get("aws", "aws_access_key_id")
@@ -208,7 +208,7 @@ class MAAP(object):
         presenter = Presenter(capabilities, display_config)
         query_params = dict(url=browse_file, **presenter.display_config)
         qs = urllib.parse.urlencode(query_params)
-        tiles_url = f"{self._BROWSE_ENDPOINT}/tiles/{{z}}/{{x}}/{{y}}.png?{qs}"
+        tiles_url = f"{self._TILER_ENDPOINT}/tiles/{{z}}/{{x}}/{{y}}.png?{qs}"
         viz = RasterTilesViz(
             tiles_url,
             height='800px',
