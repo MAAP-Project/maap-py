@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 from .Result import Collection, Granule
 from .Dictlist import Dictlist
 from .xmlParser import XmlDictConfig
+from maap.utils.Presenter import Presenter
 
 try:
     from configparser import ConfigParser
@@ -48,6 +49,7 @@ class MAAP(object):
 
         self._AWS_ACCESS_KEY = self.config.get("aws", "aws_access_key_id")
         self._AWS_ACCESS_SECRET = self.config.get("aws", "aws_secret_access_key")
+        self._MAPBOX_TOKEN = os.environ['MAPBOX_ACCESS_TOKEN']
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
     def _get_search_params(self, **kwargs):
@@ -191,40 +193,32 @@ class MAAP(object):
         )
         return response
 
-    def visualize(self, granule):
-        granule_ur = granule['Granule']['GranuleUR']
-        browse_file = self._get_browse(granule_ur)
+    def _get_capabilities(self, granule_ur):
         response = requests.get(
             url='{}/GetCapabilities'.format(self._WMTS),
             params=dict(granule_ur=granule_ur),
             headers=dict(Accept='application/json')
         )
-        response_body = json.loads(response.text)['body']
-        print(json.dumps(response_body, indent=2))
-        #bbox = meta["bounds"]["value"]
-        #lat = (bbox[3] - bbox[1]) / 2 + bbox[1]
-        #lng = (bbox[2] - bbox[0]) / 2 + bbox[0]
+        return response
 
-        query_params = dict(
-            url=browse_file,
-            rescale="0,70",
-            color_map="schwarzwald"
-        )
-
+    def show(self, granule, display_config={}):
+        granule_ur = granule['Granule']['GranuleUR']
+        browse_file = json.loads(self._get_browse(granule_ur).text)['browse']
+        capabilities = json.loads(self._get_capabilities(granule_ur).text)['body']
+        presenter = Presenter(capabilities, display_config)
+        query_params = dict(url=browse_file, **presenter.display_config)
         qs = urllib.parse.urlencode(query_params)
-
         tiles_url = f"{self._BROWSE_ENDPOINT}/tiles/{{z}}/{{x}}/{{y}}.png?{qs}"
-        token = os.environ["MAPBOX_ACCESS_TOKEN"]
         viz = RasterTilesViz(
             tiles_url,
             height='800px',
             zoom=10,
-            access_token=token,
+            access_token=self._MAPBOX_TOKEN,
             tiles_size=256,
-            tiles_bounds=bbox,
-            center=(lng, lat),
-            tiles_minzoom=8,
-            tiles_maxzoom=15,
+            tiles_bounds=presenter.bbox,
+            center=(presenter.lng, presenter.lat),
+            tiles_minzoom=presenter.minzoom,
+            tiles_maxzoom=presenter.maxzoom,
         )
         viz.show()
 
