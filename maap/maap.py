@@ -51,7 +51,7 @@ class MAAP(object):
 
         self._AWS_ACCESS_KEY = self.config.get("aws", "aws_access_key_id")
         self._AWS_ACCESS_SECRET = self.config.get("aws", "aws_secret_access_key")
-        self._MAPBOX_TOKEN = os.environ['MAPBOX_ACCESS_TOKEN']
+        self._MAPBOX_TOKEN = os.environ.get("MAPBOX_ACCESS_TOKEN") or ''
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
     def _get_config_path(self, directory):
