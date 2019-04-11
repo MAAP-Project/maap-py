@@ -141,12 +141,13 @@ class MAAP(object):
         results = self._get_search_results(url=self._SEARCH_GRANULE_URL, limit=limit, **kwargs)
         return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET) for result in results][:limit]
 
-    def getCallFromEarthdataQuery(self, query, variable_name='maap'):
+    def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
         """
             Generate a literal string to use for calling the MAAP API
 
             :param query: a Json-formatted string from an Earthdata search-style query. See: https://github.com/MAAP-Project/earthdata-search/blob/master/app/controllers/collections_controller.rb
             :param variable_name: the name of the MAAP variable to qualify the search call
+            :param limit: the max records to return
             :return: string in the form of a MAAP API call
             """
         y = json.loads(query)
@@ -160,6 +161,8 @@ class MAAP(object):
                 params.append(key + "=\"" + value + "\"")
             elif key == "p":
                 params.append("collection_concept_id=\"" + value.replace("!", "|") + "\"")
+
+        params.append("limit=" + limit)
 
         result = variable_name + ".searchGranule(" + ", ".join(params) + ")"
 
