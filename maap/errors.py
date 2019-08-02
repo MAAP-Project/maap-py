@@ -1,0 +1,2 @@
+class QueryTimeout(Exception):
+  pass
