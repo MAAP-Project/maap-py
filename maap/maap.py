@@ -13,7 +13,7 @@ from .Result import Collection, Granule
 from .Dictlist import Dictlist
 from .xmlParser import XmlDictConfig
 from maap.utils.Presenter import Presenter
-from .errors import QueryTimeout
+from .errors import QueryTimeout, QueryFailed
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +245,10 @@ class MAAP(object):
 
             if r.status_code == 200:
                 # Return the response of query results
+                if r.headers.get('x-amz-meta-failed'):
+                    raise QueryFailed(
+                        f'The backing query service failed to process query:\n{r.text}'
+                    )
                 return r
 
             if r.status_code == 404:
