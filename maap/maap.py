@@ -211,7 +211,8 @@ class MAAP(object):
             must contain a 'Collection' entry, complying with aforementioned
             'Collection' object requirements.
         query -- dict-like object describing parameters for query (default {}).
-            Currently support paramaters:
+            Currently supported parameters:
+                - where -- a dict-like object used for filtering query
                 - bbox -- optional GeoJSON-compliant bounding box (minX, minY,
                     maxX, maxY) by which to filter data (default [], meaning no
                     filter)
