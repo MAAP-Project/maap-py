@@ -13,7 +13,7 @@ from .Result import Collection, Granule
 from .Dictlist import Dictlist
 from .xmlParser import XmlDictConfig
 from maap.utils.Presenter import Presenter
-from .errors import QueryTimeout, QueryFailed
+from .errors import QueryTimeout, QueryFailure
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +174,6 @@ class MAAP(object):
 
         return result
 
-
     def searchCollection(self, limit=100, **kwargs):
         """
         Search the CMR collections
@@ -207,10 +206,10 @@ class MAAP(object):
         or timeout is reached.
 
         src -- a dict-like object stipulating which dataset is to be queried.
-            Object must contain either a 'Granule' or 'Collection' key.
-            Collection-related value must contain 'ShortName' and 'VersionId'
-            entries. Granule-related value must contain a 'Collection' entry,
-            complying with aforementioned 'Collection' object requirements.
+            Object must contain 'Collection' key. 'Collection' value must
+            contain 'ShortName' and 'VersionId' entries. Granule-related value
+            must contain a 'Collection' entry, complying with aforementioned
+            'Collection' object requirements.
         query -- dict-like object describing parameters for query (default {}).
             Currently support paramaters:
                 - bbox -- optional GeoJSON-compliant bounding box (minX, minY,
@@ -246,7 +245,7 @@ class MAAP(object):
             if r.status_code == 200:
                 # Return the response of query results
                 if r.headers.get('x-amz-meta-failed'):
-                    raise QueryFailed(
+                    raise QueryFailure(
                         f'The backing query service failed to process query:\n{r.text}'
                     )
                 return r
