@@ -116,3 +116,257 @@ class TestMAAP(TestCase):
         th = TokenHandler("a-K9YbTr8h112zW5pLV8Fw")
         token = th.get_access_token()
         self.assertTrue(token != 'unauthorized' and len(token) > 0)
+
+    def test_executeQuery(self):
+        response = self.maap.executeQuery(
+            src={
+                "Collection": {
+                    "ShortName": "GEDI Cal/Val Field Data_1",
+                    "VersionId": "001"
+                }
+            },
+            query={
+                "bbox": [
+                -122.6,
+                38.4,
+                -122.5,
+                38.5
+                ],
+                "fields": ['project', 'plot', 'p.geom']
+            }
+        )
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    "project":"usa_sonoma",
+                    "plot":"11",
+                    "p.geom":"POINT(538336.000000 4257761.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"23",
+                    "p.geom":"POINT(538276.000000 4257822.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"49",
+                    "p.geom":"POINT(538274.000000 4257876.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"4",
+                    "p.geom":"POINT(537433.000000 4257430.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"18",
+                    "p.geom":"POINT(537765.000000 4257253.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"48",
+                    "p.geom":"POINT(538727.000000 4257633.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"12a",
+                    "p.geom":"POINT(538128.000000 4257546.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"4",
+                    "p.geom":"POINT(537433.000000 4257430.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"18",
+                    "p.geom":"POINT(537765.000000 4257253.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"12a",
+                    "p.geom":"POINT(538128.000000 4257546.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"11",
+                    "p.geom":"POINT(538336.000000 4257761.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"23",
+                    "p.geom":"POINT(538276.000000 4257822.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"49",
+                    "p.geom":"POINT(538274.000000 4257876.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"11",
+                    "p.geom":"POINT(538336.000000 4257761.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"18",
+                    "p.geom":"POINT(537765.000000 4257253.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"49",
+                    "p.geom":"POINT(538274.000000 4257876.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"8a",
+                    "p.geom":"POINT(537587.000000 4257361.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"11",
+                    "p.geom":"POINT(538336.000000 4257761.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"36",
+                    "p.geom":"POINT(539266.000000 4257157.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"49",
+                    "p.geom":"POINT(538274.000000 4257876.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"4",
+                    "p.geom":"POINT(537433.000000 4257430.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"18",
+                    "p.geom":"POINT(537765.000000 4257253.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"48",
+                    "p.geom":"POINT(538727.000000 4257633.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"8a",
+                    "p.geom":"POINT(537587.000000 4257361.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"4",
+                    "p.geom":"POINT(537433.000000 4257430.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"18",
+                    "p.geom":"POINT(537765.000000 4257253.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"48",
+                    "p.geom":"POINT(538727.000000 4257633.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"12a",
+                    "p.geom":"POINT(538128.000000 4257546.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"4",
+                    "p.geom":"POINT(537433.000000 4257430.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"18",
+                    "p.geom":"POINT(537765.000000 4257253.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"36",
+                    "p.geom":"POINT(539266.000000 4257157.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"48",
+                    "p.geom":"POINT(538727.000000 4257633.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"12a",
+                    "p.geom":"POINT(538128.000000 4257546.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"11",
+                    "p.geom":"POINT(538336.000000 4257761.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"23",
+                    "p.geom":"POINT(538276.000000 4257822.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"45",
+                    "p.geom":"POINT(539261.000000 4257132.000000)"
+                },
+                {
+                    "project":"usa_sonoma",
+                    "plot":"49",
+                    "p.geom": "POINT(538274.000000 4257876.000000)"
+                }
+            ]
+        )
