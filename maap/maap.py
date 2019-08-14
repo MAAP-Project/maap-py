@@ -243,7 +243,7 @@ class MAAP(object):
             # Instead, we'll make the POST again to the new URL.
             redirect_url = response.headers.get('Location', url)
             if (redirect_url is not url and response.is_redirect and redirect_count < max_redirects):
-                print(f'Received redirect at {url}. Retrying query at {redirect_url}')
+                logger.debug(f'Received redirect at {url}. Retrying query at {redirect_url}')
                 url = redirect_url
                 redirect_count += 1
             else:
