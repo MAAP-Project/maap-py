@@ -200,7 +200,7 @@ class MAAP(object):
         )
         return response
 
-    def executeQuery(self, src, query={}, results=True, timeout=180, wait_interval=.5):
+    def executeQuery(self, src, query={}, poll_results=True, timeout=180, wait_interval=.5, max_redirects=5):
         """
         Helper to execute query and poll results URL until results are returned
         or timeout is reached.
@@ -212,29 +212,54 @@ class MAAP(object):
             'Collection' object requirements.
         query -- dict-like object describing parameters for query (default {}).
             Currently supported parameters:
-                - where -- a dict-like object used for filtering query
+                - where -- a dict-like object mapping fields to required values,
+                    used for filtering query
                 - bbox -- optional GeoJSON-compliant bounding box (minX, minY,
                     maxX, maxY) by which to filter data (default [], meaning no
                     filter)
                 - fields -- optional list of fields to return in query response
                     (default [], returning all fields)
-        results -- system will poll for results and return results response if
-            True, otherwise will return response from Query Service  (default True)
+        poll_results -- system will poll for results and return results response
+            if True, otherwise will return response from Query Service (default
+            True)
         timeout -- max number of seconds to wait for response, only used if
             results=True (default 180)
         wait_interval -- number of seconds to wait between each poll for
             results, only used if results=True (default .5)
+        max_redirectss -- max number of redirects to follow when scheduling
+            execution (default 5)
         """
-        response = requests.post(
-            url=self._QUERY_ENDPOINT,
-            headers=dict(Accept='application/json'),
-            json=dict(src=src, query=query)
-        )
-        if not results:
+        url = self._QUERY_ENDPOINT
+        redirect_count = 0
+        while True:
+            response = requests.post(
+                url=url,
+                headers=dict(Accept='application/json'),
+                json=dict(src=src, query=query),
+                allow_redirects=False
+            )
+
+            # By default, requests follows POST redirects with GET request.
+            # Instead, we'll make the POST again to the new URL.
+            redirect_url = response.headers.get('Location', url)
+            if (redirect_url is not url and response.is_redirect and redirect_count < max_redirects):
+                print(f'Received redirect at {url}. Retrying query at {redirect_url}')
+                url = redirect_url
+                redirect_count += 1
+            else:
+                break
+
+        if not poll_results:
             # Return the response of query execution
             return response
 
         response.raise_for_status()
+        if (response.is_redirect):
+            raise requests.HTTPError(
+                'Received redirect as query execution response '
+                'Is your the "query_endpoint" configuration correct?'
+                f'\n{response.status_code}: {response.text}'
+            )
         execution = response.json()
         results = execution['results']
 
