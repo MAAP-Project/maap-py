@@ -212,22 +212,20 @@ class MAAP(object):
             'Collection' object requirements.
         query -- dict-like object describing parameters for query (default {}).
             Currently supported parameters:
-                - where -- a dict-like object mapping fields to required values,
-                    used for filtering query
-                - bbox -- optional GeoJSON-compliant bounding box (minX, minY,
-                    maxX, maxY) by which to filter data (default [], meaning no
-                    filter)
+                - where -- optional dict-like object mapping fields to required
+                    values, used for filtering query by properties
+                - bbox -- optional GeoJSON-compliant bounding box ([minX, minY,
+                    maxX, maxY]) by which to spatially filter data
                 - fields -- optional list of fields to return in query response
-                    (default [], returning all fields)
         poll_results -- system will poll for results and return results response
             if True, otherwise will return response from Query Service (default
             True)
-        timeout -- max number of seconds to wait for response, only used if
-            results=True (default 180)
+        timeout -- maximum number of seconds to wait for response, only used if
+            poll_results=True (default 180)
         wait_interval -- number of seconds to wait between each poll for
-            results, only used if results=True (default .5)
-        max_redirectss -- max number of redirects to follow when scheduling
-            execution (default 5)
+            results, only used if poll_results=True (default 0.5)
+        max_redirects -- maximum number of redirects to follow when scheduling
+            an execution (default 5)
         """
         url = self._QUERY_ENDPOINT
         redirect_count = 0
@@ -239,15 +237,21 @@ class MAAP(object):
                 allow_redirects=False
             )
 
+            if not response.is_redirect:
+                break
+
             # By default, requests follows POST redirects with GET request.
             # Instead, we'll make the POST again to the new URL.
             redirect_url = response.headers.get('Location', url)
-            if (redirect_url is not url and response.is_redirect and redirect_count < max_redirects):
-                logger.debug(f'Received redirect at {url}. Retrying query at {redirect_url}')
-                url = redirect_url
-                redirect_count += 1
-            else:
+            if redirect_url is url:
                 break
+
+            redirect_count += 1
+            if redirect_count >= max_redirects:
+                break
+
+            logger.debug(f'Received redirect at {url}. Retrying query at {redirect_url}')
+            url = redirect_url
 
         if not poll_results:
             # Return the response of query execution
