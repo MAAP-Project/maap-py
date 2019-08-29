@@ -2,6 +2,8 @@ import logging
 import os
 import requests
 import json
+import boto3
+import uuid
 import urllib.parse
 import time
 from mapboxgl.utils import *
@@ -16,6 +18,8 @@ from maap.utils.Presenter import Presenter
 from .errors import QueryTimeout, QueryFailure
 
 logger = logging.getLogger(__name__)
+
+s3_client = boto3.client('s3')
 
 try:
     from configparser import ConfigParser
@@ -57,6 +61,8 @@ class MAAP(object):
 
         self._AWS_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID") or self.config.get("aws", "aws_access_key_id")
         self._AWS_ACCESS_SECRET = os.environ.get("AWS_SECRET_ACCESS_KEY") or self.config.get("aws", "aws_secret_access_key")
+        self._S3_USER_UPLOAD_BUCKET = os.environ.get("S3_USER_UPLOAD_BUCKET") or self.config.get("aws", "user_upload_bucket")
+        self._S3_USER_UPLOAD_DIR = os.environ.get("S3_USER_UPLOAD_DIR") or self.config.get("aws", "user_upload_directory")
         self._MAPBOX_TOKEN = os.environ.get("MAPBOX_ACCESS_TOKEN") or ''
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
@@ -136,6 +142,16 @@ class MAAP(object):
                 page_num += 1
         return results
 
+    def _upload_s3(self, filename, bucket, objectKey):
+        """
+        Upload file to S3, utility function useful for mocking in tests.
+        :param filename (string) - local filename (and path)
+        :param bucket (string) - S3 bucket to upload to
+        :param objectKey (string) - S3 directory and filename to upload the local file to
+        :return: S3 upload_file response
+        """
+        s3_client.upload_file(filename, bucket, objectKey)
+
     def searchGranule(self, limit=20, **kwargs):
         """
             Search the CMR granules
@@ -199,6 +215,22 @@ class MAAP(object):
             headers=self._API_HEADER
         )
         return response
+
+    def uploadFiles(self, filenames):
+        """
+        Uploads files to a user-added staging directory.
+        Enables users of maap-py to potentially share files generated on the MAAP.
+        :param filenames: List of one or more filenames to upload
+        :return: String message including UUID of subdirectory of files
+        """
+        bucket = self._S3_USER_UPLOAD_BUCKET
+        prefix = self._S3_USER_UPLOAD_DIR
+        uuid_dir = uuid.uuid4()
+        # TODO(aimee): This should upload to a user-namespaced directory
+        for filename in filenames:
+            basename = os.path.basename(filename)
+            response = self._upload_s3(filename, bucket, f"{prefix}/{uuid_dir}/{basename}")
+        return f"Upload file subdirectory: {uuid_dir} (keep a record of this if you want to share these files with other users)"
 
     def executeQuery(self, src, query={}, poll_results=True, timeout=180, wait_interval=.5, max_redirects=5):
         """

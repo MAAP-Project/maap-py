@@ -1,11 +1,13 @@
 from unittest import TestCase
 from maap.maap import MAAP
 from maap.utils.TokenHandler import TokenHandler
-
+from unittest.mock import MagicMock
+import re
 
 class TestMAAP(TestCase):
     @classmethod
     def setUpClass(cls):
+        config_file_path = "./maap.cfg"
 
         cls.maap = MAAP()
 
@@ -116,6 +118,12 @@ class TestMAAP(TestCase):
         th = TokenHandler("a-K9YbTr8h112zW5pLV8Fw")
         token = th.get_access_token()
         self.assertTrue(token != 'unauthorized' and len(token) > 0)
+
+    def test_uploadFiles(self):
+        self.maap._upload_s3 = MagicMock(return_value=None)
+        result = self.maap.uploadFiles(['test/s3-upload-testfile1.txt', 'test/s3-upload-testfile2.txt'])
+        upload_msg_regex = re.compile('Upload file subdirectory: .+ \\(keep a record of this if you want to share these files with other users\\)')
+        self.assertTrue(re.match(upload_msg_regex, result))
 
     def test_executeQuery(self):
         response = self.maap.executeQuery(
