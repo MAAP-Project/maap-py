@@ -226,6 +226,7 @@ class MAAP(object):
         bucket = self._S3_USER_UPLOAD_BUCKET
         prefix = self._S3_USER_UPLOAD_DIR
         uuid_dir = uuid.uuid4()
+        # TODO(aimee): This should upload to a user-namespaced directory
         for filename in filenames:
             basename = os.path.basename(filename)
             response = self._upload_s3(filename, bucket, f"{prefix}/{uuid_dir}/{basename}")
