@@ -2,11 +2,14 @@ import logging
 import os
 import requests
 import json
-
+import boto3
+import uuid
 import xml.etree.ElementTree as ET
 from .Result import Collection, Granule
 from .Dictlist import Dictlist
 from .xmlParser import XmlDictConfig
+
+s3_client = boto3.client('s3')
 
 try:
     from configparser import ConfigParser
@@ -177,6 +180,18 @@ class MAAP(object):
             headers=self._API_HEADER
         )
         return response
+
+    def _upload_s3(self, filename, bucket, objectKey):
+        s3_client.upload_file(filename, bucket, objectKey)
+
+    def uploadFiles(self, filenames):
+        bucket = os.environ['S3_UPLOAD_BUCKET'] if 'S3_UPLOAD_BUCKET' in os.environ else 'maap-landing-zone'
+        prefix = os.environ['S3_UPLOAD_DIRECTORY'] if 'S3_UPLOAD_DIRECTORY' in os.environ else'user-added/uploaded_objects'
+        uuid_dir = uuid.uuid4()
+        for filename in filenames:
+            basename = os.path.basename(filename)
+            response = self._upload_s3(filename, bucket, f"{prefix}/{uuid_dir}/{basename}")
+        return f"Upload file subdirectory: {uuid_dir} (keep a record of this if you want to share these files with other users)"
 
 
 if __name__ == "__main__":
