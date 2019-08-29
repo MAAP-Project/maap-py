@@ -121,6 +121,16 @@ class MAAP(object):
                 page_num += 1
         return results
 
+    def _upload_s3(self, filename, bucket, objectKey):
+        """
+        Upload file to S3, utility function useful for mocking in tests.
+        :param filename (string) - local filename (and path)
+        :param bucket (string) - S3 bucket to upload to
+        :param objectKey (string) - S3 directory and filename to upload the local file to
+        :return: S3 upload_file response
+        """
+        s3_client.upload_file(filename, bucket, objectKey)
+
     def searchGranule(self, limit=20, **kwargs):
         """
             Search the CMR granules
@@ -181,10 +191,13 @@ class MAAP(object):
         )
         return response
 
-    def _upload_s3(self, filename, bucket, objectKey):
-        s3_client.upload_file(filename, bucket, objectKey)
-
     def uploadFiles(self, filenames):
+        """
+        Uploads files to a user-added staging directory.
+        Enables users of maap-py to potentially share files generated on the MAAP.
+        :param filenames: List of one or more filenames to upload
+        :return: String message including UUID of subdirectory of files
+        """
         bucket = os.environ['S3_UPLOAD_BUCKET'] if 'S3_UPLOAD_BUCKET' in os.environ else 'maap-landing-zone'
         prefix = os.environ['S3_UPLOAD_DIRECTORY'] if 'S3_UPLOAD_DIRECTORY' in os.environ else'user-added/uploaded_objects'
         uuid_dir = uuid.uuid4()
