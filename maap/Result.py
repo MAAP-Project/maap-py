@@ -12,34 +12,42 @@ class Result(dict):
     """
     _location = None
 
-    #TODO: add destpath as config setting
-    def getLocalPath(self, destpath="."):
+    # TODO: add destpath as config setting
+    def getLocalPath(self, destpath=".", overwrite=False):
         """
         Download the dataset into file system
-        :param destPath: use the current directory as default
+        :param destpath: use the current directory as default
+        :param overwrite: don't download by default if the target file exists
         :return:
         """
         url = self._location
+        destfile = self._downloadname.replace('/', '')
+
         # Downloadable url does not exist
         if not url:
             return None
         if url.startswith('ftp'):
-            urllib.urlretrieve(url, destpath + "/" + self._downloadname.replace('/', ''))
-            return self._downloadname.replace('/', '')
+            if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+                urllib.urlretrieve(url, destpath + "/" + destfile)
+
+            return destpath + '/' + destfile
         elif url.startswith('s3'):
             o = urlparse(url)
             filename = url[url.rfind("/") + 1:]
-            s3 = boto3.client('s3', aws_access_key_id=self._awsKey, aws_secret_access_key=self._awsSecret)
-            s3.download_file(o.netloc, o.path.lstrip('/'), filename)
-            return os.getcwd() + '/' + filename
+            if not overwrite and not os.path.isfile(destpath + "/" + filename):
+                s3 = boto3.client('s3', aws_access_key_id=self._awsKey, aws_secret_access_key=self._awsSecret)
+                s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
+
+            return destpath + '/' + filename
         else:
-            r = requests.get(url, stream=True)
-            r.raw.decode_content = True
+            if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+                r = requests.get(url, stream=True)
+                r.raw.decode_content = True
 
-            with open(destpath + "/" + self._downloadname.replace('/', ''), 'wb') as f:
-                shutil.copyfileobj(r.raw, f)
+                with open(destpath + "/" + destfile, 'wb') as f:
+                    shutil.copyfileobj(r.raw, f)
 
-            return self._downloadname.replace('/', '')
+            return destpath + '/' + destfile
 
 
     def getDownloadUrl(self):
@@ -55,6 +63,7 @@ class Result(dict):
         """
         return self['Granule']['GranuleUR'].ljust(70) + 'Updated ' + self['Granule']['LastUpdate'] + ' (' + self['collection-concept-id'] + ')'
 
+
 class Collection(Result):
     def __init__(self, metaResult, maap_host):
         for k in metaResult:
@@ -62,6 +71,7 @@ class Collection(Result):
 
         self._location = 'https://{}/search/concepts/{}.umm-json'.format(maap_host, metaResult['concept-id'])
         self._downloadname = metaResult['Collection']['ShortName']
+
 
 class Granule(Result):
     def __init__(self, metaResult, awsAccessKey, awsAccessSecret):
@@ -82,9 +92,12 @@ class Granule(Result):
         # Retrieve OPeNDAPUrl
         try:
             urls = self['Granule']['OnlineResources']['OnlineResource']
+            # This throws an error "filter object is not subscriptable"
             self._OPeNDAPUrl = filter(lambda x: x["Type"] == "OPeNDAP", urls)['URL']
+            self._BrowseUrl = list(filter(lambda x: x["Type"] == "BROWSE", urls))[0]['URL']
         except :
             self._OPeNDAPUrl = None
+            self._BrowseUrl = None
 
     def getOPeNDAPUrl(self):
         return self._OPeNDAPUrl
