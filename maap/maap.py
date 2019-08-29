@@ -61,6 +61,8 @@ class MAAP(object):
 
         self._AWS_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID") or self.config.get("aws", "aws_access_key_id")
         self._AWS_ACCESS_SECRET = os.environ.get("AWS_SECRET_ACCESS_KEY") or self.config.get("aws", "aws_secret_access_key")
+        self._S3_USER_UPLOAD_BUCKET = os.environ.get("S3_USER_UPLOAD_BUCKET") or self.config.get("aws", "user_upload_bucket")
+        self._S3_USER_UPLOAD_DIR = os.environ.get("S3_USER_UPLOAD_DIR") or self.config.get("aws", "user_upload_directory")
         self._MAPBOX_TOKEN = os.environ.get("MAPBOX_ACCESS_TOKEN") or ''
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
@@ -214,7 +216,6 @@ class MAAP(object):
         )
         return response
 
-<<<<<<< HEAD
     def uploadFiles(self, filenames):
         """
         Uploads files to a user-added staging directory.
@@ -222,15 +223,14 @@ class MAAP(object):
         :param filenames: List of one or more filenames to upload
         :return: String message including UUID of subdirectory of files
         """
-        bucket = os.environ['S3_UPLOAD_BUCKET'] if 'S3_UPLOAD_BUCKET' in os.environ else 'maap-landing-zone'
-        prefix = os.environ['S3_UPLOAD_DIRECTORY'] if 'S3_UPLOAD_DIRECTORY' in os.environ else'user-added/uploaded_objects'
+        bucket = self._S3_USER_UPLOAD_BUCKET
+        prefix = self._S3_USER_UPLOAD_DIR
         uuid_dir = uuid.uuid4()
         for filename in filenames:
             basename = os.path.basename(filename)
             response = self._upload_s3(filename, bucket, f"{prefix}/{uuid_dir}/{basename}")
         return f"Upload file subdirectory: {uuid_dir} (keep a record of this if you want to share these files with other users)"
 
-=======
     def executeQuery(self, src, query={}, poll_results=True, timeout=180, wait_interval=.5, max_redirects=5):
         """
         Helper to execute query and poll results URL until results are returned
@@ -355,7 +355,6 @@ class MAAP(object):
             tiles_maxzoom=presenter.maxzoom,
         )
         viz.show()
->>>>>>> master
 
 if __name__ == "__main__":
     print("initialized")
