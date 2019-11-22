@@ -83,7 +83,7 @@ class MAAP(object):
             if delimiter in parms[i]:
                 for j in parms[i].split(delimiter):
                     res[i + '[]'] = j
-            elif '*' in parms[i]:
+            elif '*' in parms[i] or '?' in parms[i]:
                 res['options[' + i + '][pattern]'] = 'true'
                 res[i] = parms[i]
             else:
