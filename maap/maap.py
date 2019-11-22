@@ -83,6 +83,9 @@ class MAAP(object):
             if delimiter in parms[i]:
                 for j in parms[i].split(delimiter):
                     res[i + '[]'] = j
+            elif '*' in parms[i]:
+                res['options[' + i + '][pattern]'] = 'true'
+                res[i] = parms[i]
             else:
                 res[i] = parms[i]
 
@@ -183,6 +186,9 @@ class MAAP(object):
                 params.append(key + "=\"" + value + "\"")
             elif key == "p":
                 params.append("collection_concept_id=\"" + value.replace("!", "|") + "\"")
+            elif key == "pg":
+                params.append("readable_granule_name=\"" + '|'.join(value[0]['readable_granule_name'])
+                              .replace('"', '\\"') + "\"")
 
         params.append("limit=" + str(limit))
 
