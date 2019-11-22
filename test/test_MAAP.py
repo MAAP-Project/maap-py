@@ -59,6 +59,11 @@ class TestMAAP(TestCase):
             instrument=self._test_instrument_name_uavsar)
         self.assertTrue('concept-id' in results[0].keys())
 
+    def test_searchGranuleWithWildcards(self):
+        results = self.maap.searchGranule(collection_concept_id="C1200110748-NASA_MAAP",
+                                              readable_granule_name='*185*')
+        self.assertTrue('concept-id' in results[0].keys())
+
     def test_genFromEarthdata(self):
         input = """
             {
