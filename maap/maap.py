@@ -144,8 +144,7 @@ class MAAP(object):
 
     def getJobStatus(self, jobid):
         response = requests.get(
-            url=self._JOB_STATUS,
-            params=dict(job_id=jobid),
+            url=self._JOB_STATUS + "/" + jobid,
             headers=self._get_api_header()
         )
         return response
