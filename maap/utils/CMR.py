@@ -18,8 +18,9 @@ class CMR:
     def get_search_results(self, url, limit, **kwargs):
         """
         Search the CMR granules
+        :param url: request url
         :param limit: limit of the number of results
-        :param kwargss: search parameters
+        :param kwargs: search parameters
         :return: list of results (<Instance of Result>)
         """
         self._logger.info("======== Waiting for response ========")

@@ -1,0 +1,16 @@
+<wps:Execute
+	xmlns:wps="http://www.opengis.net/wps/2.0"
+	xmlns:ows="http://www.opengis.net/ows/2.0"
+	xmlns:xlink="http://www.w3.org/1999/xlink"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xsi:schemaLocation="http://www.opengis.net/wps/2.0 ../wps.xsd" service="WPS"
+	   version="2.0.0" response="document" mode="sync">
+	<ows:Identifier>job-{algo_id}:{version}</ows:Identifier>
+{other_inputs}
+	<wps:Input id="timestamp">
+		<wps:Data>
+			<wps:LiteralValue>{timestamp}</wps:LiteralValue>
+		</wps:Data>
+	</wps:Input>
+	<wps:Output id="result" transmission="value"/>
+</wps:Execute>

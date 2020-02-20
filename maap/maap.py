@@ -9,6 +9,7 @@ from datetime import datetime
 from .Result import Collection, Granule
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
+from maap.dps.DpsHelper import DpsHelper
 from .errors import QueryTimeout, QueryFailure
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class MAAP(object):
         self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
         self._ALGORITHM_REGISTER = self.config.get("service", "algorithm_register")
         self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
-        self._JOB_STATUS = self.config.get("service", "job_status")
+        self._DPS_JOB = self.config.get("service", "dps_job")
         self._WMTS = self.config.get("service", "wmts")
         self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
         self._MAAP_HOST = self.config.get("service", "maap_host")
@@ -61,6 +62,7 @@ class MAAP(object):
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
         self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
+        self._DPS = DpsHelper(self._get_api_header())
 
     def _get_api_header(self):
         api_header = {'Accept': self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
@@ -144,9 +146,13 @@ class MAAP(object):
 
     def getJobStatus(self, jobid):
         response = requests.get(
-            url=self._JOB_STATUS + "/" + jobid,
+            url=self._DPS_JOB + "/" + jobid,
             headers=self._get_api_header()
         )
+        return response
+
+    def submitJob(self, **kwargs):
+        response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
         return response
 
     def uploadFiles(self, filenames):

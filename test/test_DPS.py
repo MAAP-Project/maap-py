@@ -19,6 +19,11 @@ class TestDPS(TestCase):
         results = self.maap.getJobStatus(self._test_job_id)
         self.assertTrue('concept-id' in results[0].keys())
 
+    def test_getJobSubmit(self):
+        results = self.maap.submitJob(identifier="brian", algo_id="hello-world-output_ubuntu", version="master",
+                                      username="bsatoriu")
+        self.assertTrue(results.status_code == 200)
+
     def test_getJobStatus(self):
         results = self.maap.getJobStatus(self._test_job_id)
         self.assertTrue(results.status_code == 200)
