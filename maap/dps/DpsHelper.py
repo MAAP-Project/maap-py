@@ -12,7 +12,7 @@ class DpsHelper:
     """
     def __init__(self, api_header):
         self._api_header = api_header
-        self._location = os.path.dirname(os.path.abspath(sys.modules[DpsHelper.__module__].__file__))
+        self._location = os.path.dirname(os.path.abspath(__file__))
         self._logger = logging.getLogger(__name__)
 
     def _skit(self, lines, kwargs):
