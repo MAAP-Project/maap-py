@@ -9,6 +9,7 @@ from datetime import datetime
 from .Result import Collection, Granule
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
+from maap.Profile import Profile
 from maap.dps.DpsHelper import DpsHelper
 from .errors import QueryTimeout, QueryFailure
 
@@ -50,6 +51,7 @@ class MAAP(object):
         self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
         self._DPS_JOB = self.config.get("service", "dps_job")
         self._WMTS = self.config.get("service", "wmts")
+        self._MEMBER = self.config.get("service", "member")
         self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
         self._MAAP_HOST = self.config.get("service", "maap_host")
         self._QUERY_ENDPOINT = self.config.get("service", "query_endpoint")
@@ -63,14 +65,13 @@ class MAAP(object):
 
         self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
         self._DPS = DpsHelper(self._get_api_header())
+        self.profile = Profile(self._MEMBER, self._get_api_header())
 
     def _get_api_header(self):
         api_header = {'Accept': self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
 
         if os.environ.get("MAAP_PGT"):
-            api_header['MAAP_PGT'] = os.environ.get("MAAP_PGT")
-
-        return api_header
+            api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
 
     def _get_config_path(self, directory):
         return os.path.join(directory, "maap.cfg")

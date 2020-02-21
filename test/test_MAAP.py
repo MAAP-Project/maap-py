@@ -12,6 +12,11 @@ class TestMAAP(TestCase):
 
         cls.maap = MAAP()
 
+    def test_getProfile(self):
+        results = self.maap.profile.account_info()
+
+        self.assertTrue(results['id'] > 0)
+
     def test_genFromEarthdata(self):
         input = """
             {
