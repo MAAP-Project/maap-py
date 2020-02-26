@@ -73,6 +73,8 @@ class MAAP(object):
         if os.environ.get("MAAP_PGT"):
             api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
 
+        return api_header
+
     def _get_config_path(self, directory):
         return os.path.join(directory, "maap.cfg")
 
