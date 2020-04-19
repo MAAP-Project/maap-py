@@ -11,6 +11,7 @@ from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
 from maap.Profile import Profile
 from maap.dps.DpsHelper import DpsHelper
+from maap.utils import endpoints
 from .errors import QueryTimeout, QueryFailure
 
 logger = logging.getLogger(__name__)
@@ -149,7 +150,7 @@ class MAAP(object):
 
     def getJobStatus(self, jobid):
         response = requests.get(
-            url=self._DPS_JOB + "/" + jobid,
+            url=f"{self._DPS_JOB}/{jobid}/{endpoints.DPS_JOB_STATUS}",
             headers=self._get_api_header()
         )
         return response
