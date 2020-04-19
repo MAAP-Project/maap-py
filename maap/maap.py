@@ -156,6 +156,14 @@ class MAAP(object):
         )
         return response
 
+    def getJobResult(self, jobid):
+        url = os.path.join(self._DPS_JOB, jobid)
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response
+
     def submitJob(self, **kwargs):
         response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
         return response
