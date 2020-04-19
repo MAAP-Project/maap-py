@@ -149,8 +149,9 @@ class MAAP(object):
         return response
 
     def getJobStatus(self, jobid):
+        url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_STATUS)
         response = requests.get(
-            url=f"{self._DPS_JOB}/{jobid}/{endpoints.DPS_JOB_STATUS}",
+            url=url,
             headers=self._get_api_header()
         )
         return response
