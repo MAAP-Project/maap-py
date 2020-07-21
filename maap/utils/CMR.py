@@ -35,7 +35,7 @@ class CMR:
                 params=dict(parms, page_num=page_num, page_size=self._page_size),
                 headers=self._api_header
             )
-            unparsed_page = response.text[1:-2].replace("\\", "")
+            unparsed_page = self._prepare_cmr_response(response)
             page = ET.XML(unparsed_page)
 
             empty_page = True
@@ -51,6 +51,15 @@ class CMR:
             else:
                 page_num += 1
         return results
+
+    def _prepare_cmr_response(self, response):
+
+        cmr_output = response.text[1:-2].replace("\\", "")
+
+        if cmr_output.startswith('CMR Error <'):
+            cmr_output = cmr_output.replace('CMR Error <', '<')
+
+        return cmr_output
 
     def _get_search_params(self, **kwargs):
         mapped = self._map_indexed_attributes(**kwargs)
