@@ -67,8 +67,9 @@ class MAAP(object):
         self._DPS = DpsHelper(self._get_api_header())
         self.profile = Profile(self._MEMBER, self._get_api_header())
 
-    def _get_api_header(self):
-        api_header = {'Accept': self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
+    def _get_api_header(self, content_type=None):
+
+        api_header = {'Accept': content_type if content_type else self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
 
         if os.environ.get("MAAP_PGT"):
             api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
