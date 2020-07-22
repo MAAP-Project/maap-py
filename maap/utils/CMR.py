@@ -3,6 +3,8 @@ import requests
 import xml.etree.ElementTree as ET
 from maap.xmlParser import XmlDictConfig
 import logging
+from urllib import parse
+import json
 
 
 class CMR:
@@ -100,3 +102,55 @@ class CMR:
                 res[i] = parms[i]
 
         return res
+
+    def generateGranuleCallFromEarthDataRequest(self, query, variable_name='maap', limit=1000):
+        """
+            Generate a literal string to use for calling the MAAP API
+
+            :param query: a Json-formatted string from an Earthdata search-style query. See: https://github.com/MAAP-Project/earthdata-search/blob/master/app/controllers/collections_controller.rb
+            :param variable_name: the name of the MAAP variable to qualify the search call
+            :param limit: the max records to return
+            :return: string in the form of a MAAP API call
+            """
+        y = json.loads(query)
+
+        params = []
+
+        for key, value in y.items():
+            if key.endswith("_h"):
+                params.append(key[:-2] + "=\"" + "|".join(value) + "\"")
+            elif key == "bounding_box":
+                params.append(key + "=\"" + value + "\"")
+            elif key == "p":
+                params.append("collection_concept_id=\"" + value.replace("!", "|") + "\"")
+            elif key == "pg":
+                params.append("readable_granule_name=\"" + '|'.join(value[0]['readable_granule_name'])
+                              .replace('"', '\\"') + "\"")
+
+        params.append("limit=" + str(limit))
+
+        result = variable_name + ".searchGranule(" + ", ".join(params) + ")"
+
+        return result
+
+    def generateGranuleCallFromEarthDataQueryString(self, search_url, variable_name='maap', limit=1000):
+        """
+            Generate a literal string to use for calling the MAAP API
+
+            :param search_url: a CMR REST API query. See: https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html
+            :param variable_name: the name of the MAAP variable to qualify the search call
+            :param limit: the max records to return
+            :return: string in the form of a MAAP API call
+            """
+
+        params = []
+        q = dict(parse.parse_qsl(parse.urlsplit(search_url).query))
+
+        for key, value in q.items():
+            params.append(key + "=\"" + value + "\"")
+
+        params.append("limit=" + str(limit))
+
+        result = variable_name + ".searchGranule(" + ", ".join(params) + ")"
+
+        return result
