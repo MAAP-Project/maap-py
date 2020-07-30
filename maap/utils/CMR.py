@@ -152,7 +152,11 @@ class CMR:
             p_val = param[1]
             p_key_assignment = p_key + "=\""
 
-            # convert any duplicate params [] with pipe-delimited values
+            # convert any duplicate params [] into pipe-delimited values
+            # e.g.,
+            #   granules?collection_concept_id[]=C1&collection_concept_id[]=C2
+            # will be converted to
+            #   maap.searchGranule(collection_concept_id="C1|C2")
             if any(x for x in params if x.startswith(p_key_assignment)):
                 params[i - 1] = params[i - 1].replace(p_key_assignment, p_key_assignment + p_val + "|")
             else:
