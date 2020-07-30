@@ -144,10 +144,20 @@ class CMR:
             """
 
         params = []
-        q = dict(parse.parse_qsl(parse.urlsplit(search_url).query))
+        query = parse.parse_qsl(parse.urlsplit(search_url).query)
 
-        for key, value in q.items():
-            params.append(key + "=\"" + value + "\"")
+        i = 0
+        for param in query:
+            p_key = param[0].replace('[]', '')
+            p_val = param[1]
+            p_key_assignment = p_key + "=\""
+
+            # convert any duplicate params [] with pipe-delimited values
+            if any(x for x in params if x.startswith(p_key_assignment)):
+                params[i - 1] = params[i - 1].replace(p_key_assignment, p_key_assignment + p_val + "|")
+            else:
+                params.append(p_key_assignment + p_val + "\"")
+                i += 1
 
         params.append("limit=" + str(limit))
 
