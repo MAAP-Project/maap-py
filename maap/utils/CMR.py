@@ -133,13 +133,14 @@ class CMR:
 
         return result
 
-    def generateGranuleCallFromEarthDataQueryString(self, search_url, variable_name='maap', limit=1000):
+    def generateCallFromEarthDataQueryString(self, search_url, variable_name='maap', limit=1000, search='granule'):
         """
             Generate a literal string to use for calling the MAAP API
 
             :param search_url: a CMR REST API query. See: https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html
             :param variable_name: the name of the MAAP variable to qualify the search call
             :param limit: the max records to return
+            :param search: defaults to 'granule' search, otherwise can be a 'collection' search
             :return: string in the form of a MAAP API call
             """
 
@@ -165,6 +166,9 @@ class CMR:
 
         params.append("limit=" + str(limit))
 
-        result = variable_name + ".searchGranule(" + ", ".join(params) + ")"
+        if search == 'granule':
+            result = variable_name + ".searchGranule(" + ", ".join(params) + ")"
+        else:
+            result = variable_name + ".searchCollection(" + ", ".join(params) + ")"
 
         return result

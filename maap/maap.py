@@ -112,16 +112,17 @@ class MAAP(object):
             """
         return self._CMR.generateGranuleCallFromEarthDataRequest(query, variable_name, limit)
 
-    def getCallFromCmrUri(self, search_url, variable_name='maap', limit=1000):
+    def getCallFromCmrUri(self, search_url, variable_name='maap', limit=1000, search='granule'):
         """
             Generate a literal string to use for calling the MAAP API
 
             :param search_url: a Json-formatted string from an Earthdata search-style query. See: https://github.com/MAAP-Project/earthdata-search/blob/master/app/controllers/collections_controller.rb
             :param variable_name: the name of the MAAP variable to qualify the search call
             :param limit: the max records to return
+            :param search: defaults to 'granule' search, otherwise can be a 'collection' search
             :return: string in the form of a MAAP API call
             """
-        return self._CMR.generateGranuleCallFromEarthDataQueryString(search_url, variable_name, limit)
+        return self._CMR.generateCallFromEarthDataQueryString(search_url, variable_name, limit, search)
 
     def searchCollection(self, limit=100, **kwargs):
         """
