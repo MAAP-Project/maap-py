@@ -50,6 +50,7 @@ class MAAP(object):
         self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
         self._ALGORITHM_REGISTER = self.config.get("service", "algorithm_register")
         self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
+        self._MAS_ALGO = self.config.get("service", "mas_algo")
         self._DPS_JOB = self.config.get("service", "dps_job")
         self._WMTS = self.config.get("service", "wmts")
         self._MEMBER = self.config.get("service", "member")
@@ -142,6 +143,30 @@ class MAAP(object):
         )
         return response
 
+    def listAlgorithms(self):
+        url = self._MAS_ALGO
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response
+    
+    def describeAlgorithms(self, algoid):
+        url = os.path.join(self._MAS_ALGO,algoid)
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response 
+
+    def deleteAlgorithm(self, algoid):
+        url = os.path.join(self._MAS_ALGO,algoid)
+        response = requests.delete(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response  
+
     def getJobStatus(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_STATUS)
         response = requests.get(
@@ -155,6 +180,38 @@ class MAAP(object):
         response = requests.get(
             url=url,
             headers=self._get_api_header()
+        )
+        return response
+
+    def getJobMetrics(self, jobid):
+        url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_METRICS)
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header
+        )
+        return response
+
+    def dismissJob(self, jobid):
+        url = os.path.join(self._DPS_JOB, endpoints.DPS_JOB_DISMISS, jobid)
+        response = requests.delete(
+            url=url,
+            headers=self._get_api_header
+        )
+        return response
+
+    def deleteJob(self, jobid):
+        url = os.path.join(self._DPS_JOB, jobid)
+        response = requests.delete(
+            url=url,
+            headers=self._get_api_header
+        )
+        return response
+
+    def listJobs(self, username):
+        url = os.path.join(self._DPS_JOB, username, endpoints.DPS_JOB_LIST)
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header
         )
         return response
 
