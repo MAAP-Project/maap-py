@@ -152,7 +152,7 @@ class MAAP(object):
         return response
     
     def describeAlgorithms(self, algoid):
-        url = os.path.join(self._MAS_ALGO,algoid)
+        url = os.path.join(self._MAS_ALGO, algoid)
         response = requests.get(
             url=url,
             headers=self._get_api_header()
@@ -160,7 +160,7 @@ class MAAP(object):
         return response 
 
     def deleteAlgorithm(self, algoid):
-        url = os.path.join(self._MAS_ALGO,algoid)
+        url = os.path.join(self._MAS_ALGO, algoid)
         response = requests.delete(
             url=url,
             headers=self._get_api_header()
@@ -187,7 +187,7 @@ class MAAP(object):
         url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_METRICS)
         response = requests.get(
             url=url,
-            headers=self._get_api_header
+            headers=self._get_api_header()
         )
         return response
 
@@ -195,7 +195,7 @@ class MAAP(object):
         url = os.path.join(self._DPS_JOB, endpoints.DPS_JOB_DISMISS, jobid)
         response = requests.delete(
             url=url,
-            headers=self._get_api_header
+            headers=self._get_api_header()
         )
         return response
 
@@ -203,7 +203,7 @@ class MAAP(object):
         url = os.path.join(self._DPS_JOB, jobid)
         response = requests.delete(
             url=url,
-            headers=self._get_api_header
+            headers=self._get_api_header()
         )
         return response
 
@@ -211,7 +211,7 @@ class MAAP(object):
         url = os.path.join(self._DPS_JOB, username, endpoints.DPS_JOB_LIST)
         response = requests.get(
             url=url,
-            headers=self._get_api_header
+            headers=self._get_api_header()
         )
         return response
 
