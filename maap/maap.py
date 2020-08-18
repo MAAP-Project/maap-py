@@ -207,7 +207,9 @@ class MAAP(object):
         )
         return response
 
-    def listJobs(self, username):
+    def listJobs(self, username=None):
+        if username==None and self.profile != None and 'username' in self.profile.keys():
+            username = self.profile['username']
         url = os.path.join(self._DPS_JOB, username, endpoints.DPS_JOB_LIST)
         response = requests.get(
             url=url,
