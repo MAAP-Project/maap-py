@@ -151,7 +151,7 @@ class MAAP(object):
         )
         return response
     
-    def describeAlgorithms(self, algoid):
+    def describeAlgorithm(self, algoid):
         url = os.path.join(self._MAS_ALGO, algoid)
         response = requests.get(
             url=url,
