@@ -30,7 +30,7 @@ class DpsHelper:
         # ==================================
         # Part 1: Parse Required Arguments
         # ==================================
-        fields = ["identifier", "algo_id", "version", "inputs"]
+        fields = ["algo_id", "version", "inputs"]
 
         input_names = self._skit(fields, kwargs)
 
@@ -87,8 +87,13 @@ class DpsHelper:
 
         req_xml = req_xml.format(**params)
 
+        # log request body
         logging.debug('request is')
         logging.debug(req_xml)
+
+        # log request headers
+        logging.debug('headers:')
+        logging.debug(self._api_header)
 
         # -------------------------------
         # Send Request
@@ -118,7 +123,7 @@ class DpsHelper:
                         for f in fields:
                             result += '\t{}: {}\n'.format(f, params[f])
                         result += '\n'
-                        self.finish({"status_code": 400, "result": result})
+                        return {"status_code": 400, "result": result}
 
                     else:
                         job_id = rt[0].text
