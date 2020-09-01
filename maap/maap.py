@@ -50,6 +50,7 @@ class MAAP(object):
         self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
         self._ALGORITHM_REGISTER = self.config.get("service", "algorithm_register")
         self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
+        self._MAS_ALGO = self.config.get("service", "mas_algo")
         self._DPS_JOB = self.config.get("service", "dps_job")
         self._WMTS = self.config.get("service", "wmts")
         self._MEMBER = self.config.get("service", "member")
@@ -112,16 +113,17 @@ class MAAP(object):
             """
         return self._CMR.generateGranuleCallFromEarthDataRequest(query, variable_name, limit)
 
-    def getCallFromCmrUri(self, search_url, variable_name='maap', limit=1000):
+    def getCallFromCmrUri(self, search_url, variable_name='maap', limit=1000, search='granule'):
         """
             Generate a literal string to use for calling the MAAP API
 
             :param search_url: a Json-formatted string from an Earthdata search-style query. See: https://github.com/MAAP-Project/earthdata-search/blob/master/app/controllers/collections_controller.rb
             :param variable_name: the name of the MAAP variable to qualify the search call
             :param limit: the max records to return
+            :param search: defaults to 'granule' search, otherwise can be a 'collection' search
             :return: string in the form of a MAAP API call
             """
-        return self._CMR.generateGranuleCallFromEarthDataQueryString(search_url, variable_name, limit)
+        return self._CMR.generateCallFromEarthDataQueryString(search_url, variable_name, limit, search)
 
     def searchCollection(self, limit=100, **kwargs):
         """
@@ -141,6 +143,30 @@ class MAAP(object):
         )
         return response
 
+    def listAlgorithms(self):
+        url = self._MAS_ALGO
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response
+    
+    def describeAlgorithm(self, algoid):
+        url = os.path.join(self._MAS_ALGO, algoid)
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response 
+
+    def deleteAlgorithm(self, algoid):
+        url = os.path.join(self._MAS_ALGO, algoid)
+        response = requests.delete(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response  
+
     def getJobStatus(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_STATUS)
         response = requests.get(
@@ -151,6 +177,40 @@ class MAAP(object):
 
     def getJobResult(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid)
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response
+
+    def getJobMetrics(self, jobid):
+        url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_METRICS)
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response
+
+    def dismissJob(self, jobid):
+        url = os.path.join(self._DPS_JOB, endpoints.DPS_JOB_DISMISS, jobid)
+        response = requests.delete(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response
+
+    def deleteJob(self, jobid):
+        url = os.path.join(self._DPS_JOB, jobid)
+        response = requests.delete(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response
+
+    def listJobs(self, username=None):
+        if username==None and self.profile != None and 'username' in self.profile.keys():
+            username = self.profile['username']
+        url = os.path.join(self._DPS_JOB, username, endpoints.DPS_JOB_LIST)
         response = requests.get(
             url=url,
             headers=self._get_api_header()
