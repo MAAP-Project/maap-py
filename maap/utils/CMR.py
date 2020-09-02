@@ -34,6 +34,7 @@ class CMR:
 
             response = requests.get(
                 url=url,
+                verify=False,
                 params=dict(parms, page_num=page_num, page_size=self._page_size),
                 headers=self._api_header
             )
