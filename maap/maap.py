@@ -137,6 +137,12 @@ class MAAP(object):
         return [Collection(result, self._MAAP_HOST) for result in results][:limit]
 
     def registerAlgorithm(self, arg):
+        headers = self._get_api_header()
+        logger.debug('POST request sent to {}'.format(self._ALGORITHM_REGISTER))
+        logger.debug('headers:')
+        logger.debug(headers)
+        logger.debug('request is')
+        logger.debug(arg)
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
             json=arg,
