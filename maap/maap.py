@@ -136,8 +136,21 @@ class MAAP(object):
         results = self._CMR.get_search_results(url=self._SEARCH_COLLECTION_URL, limit=limit, **kwargs)
         return [Collection(result, self._MAAP_HOST) for result in results][:limit]
 
+    def getQueues(self):
+        url = os.path.join(self._ALGORITHM_REGISTER, 'resource')
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(self._ALGORITHM_REGISTER))
+        logger.debug('headers:')
+        logger.debug(headers)
+        response = requests.get(
+            url=url,
+            headers=self._get_api_header()
+        )
+        return response
+
     def registerAlgorithm(self, arg):
         headers = self._get_api_header()
+        headers['Content-Type'] = 'application/json'
         logger.debug('POST request sent to {}'.format(self._ALGORITHM_REGISTER))
         logger.debug('headers:')
         logger.debug(headers)
@@ -145,8 +158,8 @@ class MAAP(object):
         logger.debug(arg)
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
-            json=arg,
-            headers=self._get_api_header()
+            data=arg,
+            headers=headers
         )
         return response
 
