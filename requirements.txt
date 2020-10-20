@@ -1,6 +1,6 @@
 pytest==3.1.1
 requests==2.17.3
-boto3
+boto3==1.15.18
 botocore
 mapboxgl
 ipython
