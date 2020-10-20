@@ -22,7 +22,7 @@ _classifiers = [
 ]
 _description = 'maapPy Python API'
 _download_url = ''
-_requirements = ['requests==2.17.3', 'boto3==1.15.18', 'botocore==1.15.18', 'mapboxgl', 'ipython']
+_requirements = ['requests==2.17.3', 'boto3==1.15.18', 'botocore==1.18.18', 'mapboxgl', 'ipython']
 _keywords = ['dataset', 'granule', 'nasa', 'MAAP', 'CMR']
 _license = 'Apache License, Version 2.0'
 _long_description = 'Python client API for interacting with the NASA MAAP API'
