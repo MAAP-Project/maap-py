@@ -338,6 +338,7 @@ class MAAP(object):
                 - bbox -- optional GeoJSON-compliant bounding box ([minX, minY,
                     maxX, maxY]) by which to spatially filter data
                 - fields -- optional list of fields to return in query response
+                - table -- optional table name to get the data from
         poll_results -- system will poll for results and return results response
             if True, otherwise will return response from Query Service (default
             True)
