@@ -26,14 +26,13 @@ class DpsHelper:
     def submit_job(self, request_url, **kwargs):
         xml_file = os.path.join(self._location, 'execute.xml')
         input_xml = os.path.join(self._location, 'execute_inputs.xml')
-
+        
         # ==================================
         # Part 1: Parse Required Arguments
         # ==================================
+        # make sure consistent with submit_jobs/src/fields.json
         fields = ["algo_id", "version", "inputs"]
-
         input_names = self._skit(fields, kwargs)
-
         if not 'username' in kwargs:
             input_names['username'] = 'username'
 
@@ -67,6 +66,8 @@ class DpsHelper:
         # ==================================
         # Part 2: Build & Send Request
         # ==================================
+        req_xml = ''
+        ins_xml = ''
 
         other = ''
         with open(input_xml) as xml:
@@ -104,8 +105,8 @@ class DpsHelper:
                 data=req_xml,
                 headers=self._api_header
             )
-            logging.debug('status code ' + str(r.status_code))
-            logging.debug('response text\n' + r.text)
+            logging.debug('status code {}'.format(r.status_code))
+            logging.debug('response text\n{}'.format(r.text))
 
             # ==================================
             # Part 3: Check & Parse Response
@@ -136,4 +137,3 @@ class DpsHelper:
                 return {"status": "failed", "http_status_code": r.status_code, "job_id": ""}
         except:
             return {"status": "failed", "http_status_code": r.status_code, "job_id": ""}
-
