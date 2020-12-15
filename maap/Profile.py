@@ -18,6 +18,7 @@ class Profile:
 
         response = requests.get(
             url=self._profile_endpoint,
+            verify=False,
             headers=self._api_header
         )
 

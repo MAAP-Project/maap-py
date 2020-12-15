@@ -144,6 +144,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
+            verify=False,
             headers=self._get_api_header()
         )
         return response
@@ -171,6 +172,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
+            verify=False,
             headers=headers
         )
         return response
@@ -183,6 +185,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
+            verify=False,
             headers=headers
         )
         return response
@@ -223,6 +226,7 @@ class MAAP(object):
         logging.debug(headers)
         response = requests.get(
             url=url,
+            verify=False,
             headers=headers
         )
         return response
@@ -235,6 +239,7 @@ class MAAP(object):
         logging.debug(headers)
         response = requests.get(
             url=url,
+            verify=False,
             headers=headers
         )
         return response
@@ -247,6 +252,7 @@ class MAAP(object):
         logging.debug(headers)
         response = requests.get(
             url=url,
+            verify=False,
             headers=headers
         )
         return response
@@ -259,6 +265,7 @@ class MAAP(object):
         logging.debug(headers)
         response = requests.get(
             url=url,
+            verify=False,
             headers=headers
         )
         return response
@@ -297,6 +304,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
+            verify=False,
             headers=headers
         )
         return response
@@ -391,7 +399,7 @@ class MAAP(object):
         # Poll results
         start = datetime.now()
         while (datetime.now() - start).seconds < timeout:
-            r = requests.get(url=results)
+            r = requests.get(verify=False, url=results)
 
             if r.status_code == 200:
                 # Return the response of query results
@@ -413,6 +421,7 @@ class MAAP(object):
         response = requests.get(
             url='{}/GetTile'.format(self._WMTS),
             params=dict(granule_ur=granule_ur),
+            verify=False,
             headers=dict(Accept='application/json')
         )
         return response
@@ -421,6 +430,7 @@ class MAAP(object):
         response = requests.get(
             url='{}/GetCapabilities'.format(self._WMTS),
             params=dict(granule_ur=granule_ur),
+            verify=False,
             headers=dict(Accept='application/json')
         )
         return response
