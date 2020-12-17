@@ -160,6 +160,7 @@ class MAAP(object):
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
             data=arg,
+            verify=False,
             headers=headers
         )
         return response
@@ -202,6 +203,7 @@ class MAAP(object):
         response = requests.post(
             url=url,
             headers=headers,
+            verify=False,
             data=body
         )
         return response
