@@ -3,6 +3,7 @@ import boto3
 import uuid
 import urllib.parse
 import time
+import os
 from mapboxgl.utils import *
 from mapboxgl.viz import *
 from datetime import datetime
@@ -71,7 +72,7 @@ class MAAP(object):
 
     def _get_api_header(self, content_type=None):
 
-        api_header = {'Accept': content_type if content_type else self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
+        api_header = {'Authorization': 'Basic aW1nc3BlYzo4NipJbWdOLTQ=', 'Accept': content_type if content_type else self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
 
         if os.environ.get("MAAP_PGT"):
             api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
@@ -89,7 +90,7 @@ class MAAP(object):
         :param objectKey (string) - S3 directory and filename to upload the local file to
         :return: S3 upload_file response
         """
-        s3_client.upload_file(filename, bucket, objectKey)
+        return s3_client.upload_file(filename, bucket, objectKey)
 
     def searchGranule(self, limit=20, **kwargs):
         """
@@ -135,85 +136,178 @@ class MAAP(object):
         results = self._CMR.get_search_results(url=self._SEARCH_COLLECTION_URL, limit=limit, **kwargs)
         return [Collection(result, self._MAAP_HOST) for result in results][:limit]
 
+    def getQueues(self):
+        url = os.path.join(self._ALGORITHM_REGISTER, 'resource')
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(self._ALGORITHM_REGISTER))
+        logger.debug('headers:')
+        logger.debug(headers)
+        response = requests.get(
+            url=url,
+            verify=False,
+            headers=self._get_api_header()
+        )
+        return response
+
     def registerAlgorithm(self, arg):
+        headers = self._get_api_header()
+        headers['Content-Type'] = 'application/json'
+        logger.debug('POST request sent to {}'.format(self._ALGORITHM_REGISTER))
+        logger.debug('headers:')
+        logger.debug(headers)
+        logger.debug('request is')
+        logger.debug(arg)
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
-            json=arg,
-            headers=self._get_api_header()
+            data=arg,
+            verify=False,
+            headers=headers
         )
         return response
 
     def listAlgorithms(self):
         url = self._MAS_ALGO
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
         response = requests.get(
             url=url,
-            headers=self._get_api_header()
+            verify=False,
+            headers=headers
         )
         return response
-    
+
     def describeAlgorithm(self, algoid):
         url = os.path.join(self._MAS_ALGO, algoid)
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
         response = requests.get(
             url=url,
-            headers=self._get_api_header()
+            verify=False,
+            headers=headers
         )
-        return response 
+        return response
+
+    def publishAlgorithm(self, algoid):
+        url = self._MAS_ALGO.replace('algorithm','publish')
+        headers = self._get_api_header()
+        body = { "algo_id": algoid}
+        logger.debug('POST request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
+        logger.debug('body:')
+        logger.debug(body)
+        response = requests.post(
+            url=url,
+            headers=headers,
+            verify=False,
+            data=body
+        )
+        return response
 
     def deleteAlgorithm(self, algoid):
         url = os.path.join(self._MAS_ALGO, algoid)
+        headers = self._get_api_header()
+        logging.debug('DELETE request sent to {}'.format(url))
+        logging.debug('headers:')
+        logging.debug(headers)
         response = requests.delete(
             url=url,
-            headers=self._get_api_header()
+            headers=headers
         )
-        return response  
+        return response
+
+    def getCapabilities(self):
+        url = self._DPS_JOB
+        headers = self._get_api_header()
+        logging.debug('GET request sent to {}'.format(url))
+        logging.debug('headers:')
+        logging.debug(headers)
+        response = requests.get(
+            url=url,
+            verify=False,
+            headers=headers
+        )
+        return response
 
     def getJobStatus(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_STATUS)
+        headers = self._get_api_header()
+        logging.debug('GET request sent to {}'.format(url))
+        logging.debug('headers:')
+        logging.debug(headers)
         response = requests.get(
             url=url,
-            headers=self._get_api_header()
+            verify=False,
+            headers=headers
         )
         return response
 
     def getJobResult(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid)
+        headers = self._get_api_header()
+        logging.debug('GET request sent to {}'.format(url))
+        logging.debug('headers:')
+        logging.debug(headers)
         response = requests.get(
             url=url,
-            headers=self._get_api_header()
+            verify=False,
+            headers=headers
         )
         return response
 
     def getJobMetrics(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_METRICS)
+        headers = self._get_api_header()
+        logging.debug('GET request sent to {}'.format(url))
+        logging.debug('headers:')
+        logging.debug(headers)
         response = requests.get(
             url=url,
-            headers=self._get_api_header()
+            verify=False,
+            headers=headers
         )
         return response
 
     def dismissJob(self, jobid):
         url = os.path.join(self._DPS_JOB, endpoints.DPS_JOB_DISMISS, jobid)
+        headers = self._get_api_header()
+        logging.debug('DELETE request sent to {}'.format(url))
+        logging.debug('headers:')
+        logging.debug(headers)
         response = requests.delete(
             url=url,
-            headers=self._get_api_header()
+            headers=headers
         )
         return response
 
     def deleteJob(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid)
+        headers = self._get_api_header()
+        logging.debug('DELETE request sent to {}'.format(url))
+        logging.debug('headers:')
+        logging.debug(headers)
         response = requests.delete(
             url=url,
-            headers=self._get_api_header()
+            headers=headers
         )
         return response
 
     def listJobs(self, username=None):
-        if username==None and self.profile != None and 'username' in self.profile.keys():
-            username = self.profile['username']
+        if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
+            username = self.profile.account_info()['username']
         url = os.path.join(self._DPS_JOB, username, endpoints.DPS_JOB_LIST)
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
         response = requests.get(
             url=url,
-            headers=self._get_api_header()
+            verify=False,
+            headers=headers
         )
         return response
 
@@ -307,7 +401,7 @@ class MAAP(object):
         # Poll results
         start = datetime.now()
         while (datetime.now() - start).seconds < timeout:
-            r = requests.get(url=results)
+            r = requests.get(verify=False, url=results)
 
             if r.status_code == 200:
                 # Return the response of query results
@@ -329,6 +423,7 @@ class MAAP(object):
         response = requests.get(
             url='{}/GetTile'.format(self._WMTS),
             params=dict(granule_ur=granule_ur),
+            verify=False,
             headers=dict(Accept='application/json')
         )
         return response
@@ -337,6 +432,7 @@ class MAAP(object):
         response = requests.get(
             url='{}/GetCapabilities'.format(self._WMTS),
             params=dict(granule_ur=granule_ur),
+            verify=False,
             headers=dict(Accept='application/json')
         )
         return response

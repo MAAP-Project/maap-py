@@ -41,7 +41,7 @@ class Result(dict):
             return destpath + '/' + filename
         else:
             if not overwrite and not os.path.isfile(destpath + "/" + destfile):
-                r = requests.get(url, stream=True)
+                r = requests.get(url, stream=True, verify=False,)
                 r.raw.decode_content = True
 
                 with open(destpath + "/" + destfile, 'wb') as f:
