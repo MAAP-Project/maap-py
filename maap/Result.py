@@ -49,35 +49,44 @@ class Result(dict):
 
             return destpath + '/' + destfile
 
-    def getData(self, destpath=".", overwrite=False):
+    def getRelatedData(self, destpath=".", overwrite=False):
         """
         Download the dataset into file system
         :param destpath: use the current directory as default
         :param overwrite: don't download by default if the target file exists
-        :param proxy_ticket: CAS-issued ticket identifying caller
         :return:
         """
-        url = self._location
-        destfile = self._downloadname.replace('/', '')
+
+        downloads = self._relatedUrls
+        output = []
 
         # Downloadable url does not exist
-        if not url:
+        if not downloads:
             return None
 
-        if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+        for download in downloads:
+            url = download['URL']
+            destfile = url.split("/")[-1].replace('/', '')
 
-            r = requests.get(
-                url=url,
-                headers={'Authorization': 'Bearer ' + self._ursToken + ',Basic ' + os.environ.get("MAAP_APP_CREDS")},
-                stream=True
-            )
+            if not overwrite and not os.path.isfile(destpath + "/" + destfile):
 
-            r.raw.decode_content = True
+                # Get granule oauth2 URL
+                s = requests.Session()
+                response = s.get(url)
+                #print(response.status_code, response.url)
+                # Get granule
+                s.headers.update({'Authorization': f'Bearer {self._ursToken},Basic {os.environ.get("MAAP_APP_CREDS")}',
+                                  'Connection':'close'})
 
-            with open(destpath + "/" + destfile, 'wb') as f:
-                shutil.copyfileobj(r.raw, f)
+                r = s.get(url=response.url, stream=True)
+                r.raw.decode_content = True
 
-        return destpath + '/' + destfile
+                with open(destpath + "/" + destfile, 'wb') as f:
+                    shutil.copyfileobj(r.raw, f)
+
+                output.append(destpath + "/" + destfile)
+
+        return output
 
 
     def getDownloadUrl(self):
@@ -117,8 +126,14 @@ class Granule(Result):
         try:
             self._location = self['Granule']['OnlineAccessURLs']['OnlineAccessURL']['URL']
             self._downloadname = self._location.split("/")[-1]
-        except KeyError:
+        except :
             self._location = None
+
+        # TODO: make self._location an array and consolidate with _relatedUrls
+        try:
+            self._relatedUrls = self['Granule']['OnlineAccessURLs']['OnlineAccessURL']
+        except :
+            self._relatedUrls = None
 
         # Retrieve OPeNDAPUrl
         try:
