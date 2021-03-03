@@ -49,6 +49,36 @@ class Result(dict):
 
             return destpath + '/' + destfile
 
+    def getData(self, destpath=".", overwrite=False):
+        """
+        Download the dataset into file system
+        :param destpath: use the current directory as default
+        :param overwrite: don't download by default if the target file exists
+        :param proxy_ticket: CAS-issued ticket identifying caller
+        :return:
+        """
+        url = self._location
+        destfile = self._downloadname.replace('/', '')
+
+        # Downloadable url does not exist
+        if not url:
+            return None
+
+        if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+
+            r = requests.get(
+                url=url,
+                headers={'Authorization': 'Bearer ' + self._ursToken + ',Basic ' + os.environ.get("MAAP_APP_CREDS")},
+                stream=True
+            )
+
+            r.raw.decode_content = True
+
+            with open(destpath + "/" + destfile, 'wb') as f:
+                shutil.copyfileobj(r.raw, f)
+
+        return destpath + '/' + destfile
+
 
     def getDownloadUrl(self):
         """
@@ -74,10 +104,11 @@ class Collection(Result):
 
 
 class Granule(Result):
-    def __init__(self, metaResult, awsAccessKey, awsAccessSecret):
+    def __init__(self, metaResult, awsAccessKey, awsAccessSecret, ursToken):
 
         self._awsKey = awsAccessKey
         self._awsSecret = awsAccessSecret
+        self._ursToken = ursToken
 
         for k in metaResult:
             self[k] = metaResult[k]
