@@ -26,7 +26,8 @@ except ImportError:
 
 
 class MAAP(object):
-    def __init__(self):
+    def __init__(self, self_signed=False):
+        self.__self_signed = self_signed
         self.config = ConfigParser()
 
         config_paths = list(map(self._get_config_path, [os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
@@ -144,7 +145,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=False,
+            verify=self.__self_signed,
             headers=self._get_api_header()
         )
         return response
@@ -160,7 +161,7 @@ class MAAP(object):
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
             data=arg,
-            verify=False,
+            verify=self.__self_signed,
             headers=headers
         )
         return response
@@ -173,7 +174,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=False,
+            verify=self.__self_signed,
             headers=headers
         )
         return response
@@ -186,7 +187,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=False,
+            verify=self.__self_signed,
             headers=headers
         )
         return response
@@ -203,7 +204,7 @@ class MAAP(object):
         response = requests.post(
             url=url,
             headers=headers,
-            verify=False,
+            verify=self.__self_signed,
             data=body
         )
         return response
@@ -228,7 +229,7 @@ class MAAP(object):
         logging.debug(headers)
         response = requests.get(
             url=url,
-            verify=False,
+            verify=self.__self_signed,
             headers=headers
         )
         return response
@@ -241,7 +242,7 @@ class MAAP(object):
         logging.debug(headers)
         response = requests.get(
             url=url,
-            verify=False,
+            verify=self.__self_signed,
             headers=headers
         )
         return response
@@ -254,7 +255,7 @@ class MAAP(object):
         logging.debug(headers)
         response = requests.get(
             url=url,
-            verify=False,
+            verify=self.__self_signed,
             headers=headers
         )
         return response
@@ -267,7 +268,7 @@ class MAAP(object):
         logging.debug(headers)
         response = requests.get(
             url=url,
-            verify=False,
+            verify=self.__self_signed,
             headers=headers
         )
         return response
@@ -306,7 +307,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=False,
+            verify=self.__self_signed,
             headers=headers
         )
         return response
@@ -401,7 +402,7 @@ class MAAP(object):
         # Poll results
         start = datetime.now()
         while (datetime.now() - start).seconds < timeout:
-            r = requests.get(verify=False, url=results)
+            r = requests.get(verify=self.__self_signed, url=results)
 
             if r.status_code == 200:
                 # Return the response of query results
@@ -423,7 +424,7 @@ class MAAP(object):
         response = requests.get(
             url='{}/GetTile'.format(self._WMTS),
             params=dict(granule_ur=granule_ur),
-            verify=False,
+            verify=self.__self_signed,
             headers=dict(Accept='application/json')
         )
         return response
@@ -432,7 +433,7 @@ class MAAP(object):
         response = requests.get(
             url='{}/GetCapabilities'.format(self._WMTS),
             params=dict(granule_ur=granule_ur),
-            verify=False,
+            verify=self.__self_signed,
             headers=dict(Accept='application/json')
         )
         return response
