@@ -100,7 +100,7 @@ class MAAP(object):
         :param objectKey (string) - S3 directory and filename to upload the local file to
         :return: S3 upload_file response
         """
-        return s3_client.upload_file(filename, bucket, objectKey)
+        return s3_client.upload_file(filename, bucket, objectKey, ExtraArgs={'ACL': 'bucket-owner-full-control'})
 
     def searchGranule(self, limit=20, **kwargs):
         """
