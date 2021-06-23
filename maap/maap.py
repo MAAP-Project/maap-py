@@ -7,6 +7,8 @@ import os
 from mapboxgl.utils import *
 from mapboxgl.viz import *
 from datetime import datetime
+
+from maap.dps_job import DPSJobProps
 from .Result import Collection, Granule
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
@@ -70,6 +72,7 @@ class MAAP(object):
         self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
         self._DPS = DpsHelper(self._get_api_header())
         self.profile = Profile(self._MEMBER, self._get_api_header())
+        self.__job_props = DPSJobProps()
 
     def _get_api_header(self, content_type=None):
 
@@ -240,6 +243,13 @@ class MAAP(object):
         )
         return response
 
+    @staticmethod
+    def __check_response(dps_response):
+        if dps_response.status_code not in [200, 201]:
+            raise RuntimeError('response is not 200 or 201. code: {}. details: {}'.format(dps_response.status_code,
+                                                                                          dps_response.content))
+        return dps_response.content.decode('UTF-8')
+
     def getJobStatus(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_STATUS)
         headers = self._get_api_header()
@@ -251,7 +261,8 @@ class MAAP(object):
             verify=self.__self_signed,
             headers=headers
         )
-        return response
+        self.__job_props.set_job_status_result(self.__check_response(response))
+        return self.__job_props
 
     def getJobResult(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid)
@@ -264,7 +275,8 @@ class MAAP(object):
             verify=self.__self_signed,
             headers=headers
         )
-        return response
+        self.__job_props.set_job_results_result(self.__check_response(response))
+        return self.__job_props
 
     def getJobMetrics(self, jobid):
         url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_METRICS)
@@ -277,7 +289,8 @@ class MAAP(object):
             verify=self.__self_signed,
             headers=headers
         )
-        return response
+        self.__job_props.set_job_metrics_result(self.__check_response(response))
+        return self.__job_props
 
     def dismissJob(self, jobid):
         url = os.path.join(self._DPS_JOB, endpoints.DPS_JOB_DISMISS, jobid)
@@ -320,7 +333,8 @@ class MAAP(object):
 
     def submitJob(self, **kwargs):
         response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
-        return response
+        self.__job_props.set_submitted_job_result(self.__check_response(response))
+        return self.__job_props
 
     def uploadFiles(self, filenames):
         """
