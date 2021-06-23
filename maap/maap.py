@@ -8,6 +8,7 @@ from mapboxgl.utils import *
 from mapboxgl.viz import *
 from datetime import datetime
 
+from maap.config_reader import ConfigReader
 from maap.dps_job import DPSJobProps
 from .Result import Collection, Granule
 from maap.utils.Presenter import Presenter
@@ -21,63 +22,35 @@ logger = logging.getLogger(__name__)
 
 s3_client = boto3.client('s3')
 
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser
-
 
 class MAAP(object):
     def __init__(self, self_signed=False):
         self.__self_signed = self_signed
-        self.config = ConfigParser()
+        self.__config = ConfigReader()
 
-        config_paths = list(map(self._get_config_path, [os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
-
-        for loc in config_paths:
-            try:
-                with open(loc) as source:
-                    self.config.read_file(source)
-                    break
-            except IOError:
-                pass
-
-        if not self.config.has_option('service', 'maap_host'):
-            raise IOError("No maap.cfg file found. Locations checked: " + '; '.join(config_paths))
-
-        self._MAAP_TOKEN = self.config.get("service", "maap_token")
+        self._MAAP_TOKEN = self.__config.maap_token
         self._PROXY_GRANTING_TICKET = os.environ.get("MAAP_PGT") or ''
-        self._PAGE_SIZE = self.config.getint("request", "page_size")
-        self._CONTENT_TYPE = self.config.get("request", "content_type")
 
-        self._SEARCH_GRANULE_URL = self.config.get("service", "search_granule_url")
-        self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
-        self._ALGORITHM_REGISTER = self.config.get("service", "algorithm_register")
-        self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
-        self._MAS_ALGO = self.config.get("service", "mas_algo")
-        self._DPS_JOB = self.config.get("service", "dps_job")
-        self._WMTS = self.config.get("service", "wmts")
-        self._MEMBER = self.config.get("service", "member")
-        self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
-        self._MAAP_HOST = self.config.get("service", "maap_host")
-        self._QUERY_ENDPOINT = self.config.get("service", "query_endpoint")
+        self._ALGORITHM_REGISTER = self.__config.algorithm_register
+        self._MAS_ALGO = self.__config.mas_algo
+        self._DPS_JOB = self.__config.dps_job
+        self._WMTS = self.__config.wmts
 
-        self._AWS_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID") or self.config.get("aws", "aws_access_key_id")
-        self._AWS_ACCESS_SECRET = os.environ.get("AWS_SECRET_ACCESS_KEY") or self.config.get("aws", "aws_secret_access_key")
-        self._S3_USER_UPLOAD_BUCKET = os.environ.get("S3_USER_UPLOAD_BUCKET") or self.config.get("aws", "user_upload_bucket")
-        self._S3_USER_UPLOAD_DIR = os.environ.get("S3_USER_UPLOAD_DIR") or self.config.get("aws", "user_upload_directory")
+        self._AWS_ACCESS_KEY = self.__config.aws_access_key
+        self._AWS_ACCESS_SECRET = self.__config.aws_access_secret
+        self._S3_USER_UPLOAD_BUCKET = self.__config.s3_user_upload_bucket
+        self._S3_USER_UPLOAD_DIR = self.__config.s3_user_upload_dir
         self._MAPBOX_TOKEN = os.environ.get("MAPBOX_ACCESS_TOKEN") or ''
-        self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
-        self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
+        self._CMR = CMR(self.__config.indexed_attributes, self.__config.page_size, self._get_api_header())
         self._DPS = DpsHelper(self._get_api_header())
-        self.profile = Profile(self._MEMBER, self._get_api_header())
+        self.profile = Profile(self.__config.member, self._get_api_header())
         self.__job_props = DPSJobProps()
 
     def _get_api_header(self, content_type=None):
 
         api_header = {
-            'Accept': content_type if content_type else self._CONTENT_TYPE,
+            'Accept': content_type if content_type else self.__config.content_type,
         }
         if self._MAAP_TOKEN.lower().startswith('basic') or self._MAAP_TOKEN.lower().startswith('bearer'):
             api_header['Authorization'] = self._MAAP_TOKEN
@@ -88,9 +61,6 @@ class MAAP(object):
             api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
 
         return api_header
-
-    def _get_config_path(self, directory):
-        return os.path.join(directory, "maap.cfg")
 
     def _upload_s3(self, filename, bucket, objectKey):
         """
@@ -110,7 +80,7 @@ class MAAP(object):
             :param kwargs: search parameters
             :return: list of results (<Instance of Result>)
             """
-        results = self._CMR.get_search_results(url=self._SEARCH_GRANULE_URL, limit=limit, **kwargs)
+        results = self._CMR.get_search_results(url=self.__config.search_granule_url, limit=limit, **kwargs)
         return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET) for result in results][:limit]
 
     def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
@@ -143,8 +113,8 @@ class MAAP(object):
         :param kwargs: search parameters
         :return: list of results (<Instance of Result>)
         """
-        results = self._CMR.get_search_results(url=self._SEARCH_COLLECTION_URL, limit=limit, **kwargs)
-        return [Collection(result, self._MAAP_HOST) for result in results][:limit]
+        results = self._CMR.get_search_results(url=self.__config.search_collection_url, limit=limit, **kwargs)
+        return [Collection(result, self.__config.maap_host) for result in results][:limit]
 
     def getQueues(self):
         url = os.path.join(self._ALGORITHM_REGISTER, 'resource')
@@ -379,7 +349,7 @@ class MAAP(object):
         max_redirects -- maximum number of redirects to follow when scheduling
             an execution (default 5)
         """
-        url = self._QUERY_ENDPOINT
+        url = self.__config.query_endpoint
         redirect_count = 0
         while True:
             response = requests.post(
@@ -465,7 +435,7 @@ class MAAP(object):
         presenter = Presenter(capabilities, display_config)
         query_params = dict(url=browse_file, **presenter.display_config)
         qs = urllib.parse.urlencode(query_params)
-        tiles_url = f"{self._TILER_ENDPOINT}/tiles/{{z}}/{{x}}/{{y}}.png?{qs}"
+        tiles_url = f"{self.__config.tiler_endpoint}/tiles/{{z}}/{{x}}/{{y}}.png?{qs}"
         viz = RasterTilesViz(
             tiles_url,
             height='800px',

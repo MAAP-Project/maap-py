@@ -12,7 +12,7 @@ class Result(dict):
     """
     _location = None
 
-    # TODO: add destpath as config setting
+    # TODO: add destpath as __config setting
     def getLocalPath(self, destpath=".", overwrite=False):
         """
         Download the dataset into file system
