@@ -3,13 +3,12 @@ import boto3
 import uuid
 import urllib.parse
 import time
-import os
 from mapboxgl.utils import *
 from mapboxgl.viz import *
 from datetime import datetime
 
 from maap.config_reader import ConfigReader
-from maap.dps_job import DPSJob
+from maap.dps.dps_job import DPSJob
 from maap.utils.requests_utils import RequestsUtils
 from .Result import Collection, Granule
 from maap.utils.Presenter import Presenter
