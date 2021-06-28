@@ -24,8 +24,8 @@ s3_client = boto3.client('s3')
 
 
 class MAAP(object):
-    def __init__(self, self_signed=False):
-        self.__self_signed = self_signed
+    def __init__(self, not_self_signed=True):
+        self.__not_self_signed = not_self_signed
         self.__config = ConfigReader()
 
         self._PROXY_GRANTING_TICKET = os.environ.get("MAAP_PGT") or ''
@@ -44,7 +44,7 @@ class MAAP(object):
         self._CMR = CMR(self.__config.indexed_attributes, self.__config.page_size, RequestsUtils.generate_dps_headers())
         self._DPS = DpsHelper(RequestsUtils.generate_dps_headers())
         self.profile = Profile(self.__config.member, RequestsUtils.generate_dps_headers())
-        self.__job_props = DPSJob(self_signed=self.__self_signed)
+        self.__job_props = DPSJob(not_self_signed=self.__not_self_signed)
 
     def _upload_s3(self, filename, bucket, objectKey):
         """
@@ -108,7 +108,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=headers,
         )
         return response
@@ -124,7 +124,7 @@ class MAAP(object):
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
             data=arg,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=headers
         )
         return response
@@ -137,7 +137,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=headers
         )
         return response
@@ -150,7 +150,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=headers
         )
         return response
@@ -167,7 +167,7 @@ class MAAP(object):
         response = requests.post(
             url=url,
             headers=headers,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             data=body
         )
         return response
@@ -192,33 +192,33 @@ class MAAP(object):
         logging.debug(headers)
         response = requests.get(
             url=url,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=headers
         )
         return response
 
     def getJobStatus(self, jobid):
-        job = DPSJob(self_signed=self.__self_signed)
+        job = DPSJob(not_self_signed=self.__not_self_signed)
         job.id = jobid
         return job.retrieve_status()
 
     def getJobResult(self, jobid):
-        job = DPSJob(self_signed=self.__self_signed)
+        job = DPSJob(not_self_signed=self.__not_self_signed)
         job.id = jobid
         return job.retrieve_result()
 
     def getJobMetrics(self, jobid):
-        job = DPSJob(self_signed=self.__self_signed)
+        job = DPSJob(not_self_signed=self.__not_self_signed)
         job.id = jobid
         return job.retrieve_metrics()
 
     def dismissJob(self, jobid):
-        job = DPSJob(self_signed=self.__self_signed)
+        job = DPSJob(not_self_signed=self.__not_self_signed)
         job.id = jobid
         return job.dismiss_job()
 
     def deleteJob(self, jobid):
-        job = DPSJob(self_signed=self.__self_signed)
+        job = DPSJob(not_self_signed=self.__not_self_signed)
         job.id = jobid
         return job.delete_job()
 
@@ -232,7 +232,7 @@ class MAAP(object):
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=headers
         )
         return response
@@ -328,7 +328,7 @@ class MAAP(object):
         # Poll results
         start = datetime.now()
         while (datetime.now() - start).seconds < timeout:
-            r = requests.get(verify=self.__self_signed, url=results)
+            r = requests.get(verify=self.__not_self_signed, url=results)
 
             if r.status_code == 200:
                 # Return the response of query results
@@ -350,7 +350,7 @@ class MAAP(object):
         response = requests.get(
             url='{}/GetTile'.format(self._WMTS),
             params=dict(granule_ur=granule_ur),
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=dict(Accept='application/json')
         )
         return response
@@ -359,7 +359,7 @@ class MAAP(object):
         response = requests.get(
             url='{}/GetCapabilities'.format(self._WMTS),
             params=dict(granule_ur=granule_ur),
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=dict(Accept='application/json')
         )
         return response

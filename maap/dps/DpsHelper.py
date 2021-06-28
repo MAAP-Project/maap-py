@@ -95,7 +95,7 @@ class DpsHelper:
         # log request headers
         logging.debug('headers:')
         logging.debug(self._api_header)
-
+        print(req_xml)
         # -------------------------------
         # Send Request
         # -------------------------------

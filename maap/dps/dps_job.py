@@ -14,8 +14,22 @@ logger = logging.getLogger(__name__)
 
 
 class DPSJob:
-    def __init__(self, self_signed=False):
-        self.__self_signed = self_signed
+    """
+    Sample Usage:
+
+    job_id = 'f3780917-92c0-4440-8a84-9b28c2e64fa8'
+    job = DPSJob(True)
+    job.id = job_id
+    print(job.retrieve_status())
+    print(job.retrieve_metrics())
+    print(job.retrieve_result())
+    job.dismiss_job()
+    job.delete_job()
+    """
+    def __init__(self, not_self_signed=True):
+        self.__not_self_signed = not_self_signed
+        self.__response_code = None
+        self.__error_details = None
         self.__id = None
         self.__status = None
         self.__machine_type = None
@@ -46,7 +60,7 @@ class DPSJob:
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=headers
         )
         self.set_job_status_result(RequestsUtils.check_response(response))
@@ -60,7 +74,7 @@ class DPSJob:
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=headers
         )
         self.set_job_results_result(RequestsUtils.check_response(response))
@@ -74,7 +88,7 @@ class DPSJob:
         logger.debug(headers)
         response = requests.get(
             url=url,
-            verify=self.__self_signed,
+            verify=self.__not_self_signed,
             headers=headers
         )
         self.set_job_metrics_result(RequestsUtils.check_response(response))
@@ -111,6 +125,9 @@ class DPSJob:
         """
         self.status = input_json['status']
         self.id = input_json['job_id']
+        self.response_code = input_json['http_status_code']
+        if 'details' in input_json:
+            self.error_details = input_json['details']
         return self
 
     def set_job_status_result(self, input_xml_str: str):
@@ -231,6 +248,8 @@ class DPSJob:
             'sync_io_stats': self.sync_io_stats,
             'async_io_stats': self.async_io_stats,
             'total_io_stats': self.total_io_stats,
+            'error_details': self.error_details,
+            'response_code': self.response_code,
             'outputs': self.outputs
         })
 
@@ -509,3 +528,30 @@ class DPSJob:
         """
         self.__outputs = val
         return
+
+    @property
+    def response_code(self):
+        return self.__response_code
+
+    @response_code.setter
+    def response_code(self, val):
+        """
+        :param val:
+        :return: None
+        """
+        self.__response_code = val
+        return
+
+    @property
+    def error_details(self):
+        return self.__error_details
+
+    @error_details.setter
+    def error_details(self, val):
+        """
+        :param val:
+        :return: None
+        """
+        self.__error_details = val
+        return
+
