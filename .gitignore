@@ -2,3 +2,7 @@
 .idea
 venv
 *.pyc
+.eggs
+build
+dist
+maapPy.egg-info
