@@ -45,7 +45,7 @@ class MAAP(object):
         self._CMR = CMR(self.__config.indexed_attributes, self.__config.page_size, RequestsUtils.generate_dps_headers())
         self._DPS = DpsHelper(RequestsUtils.generate_dps_headers())
         self.profile = Profile(self.__config.member, RequestsUtils.generate_dps_headers())
-        self.__job_props = DPSJob()
+        self.__job_props = DPSJob(self_signed=self.__self_signed)
 
     def _upload_s3(self, filename, bucket, objectKey):
         """
@@ -240,7 +240,7 @@ class MAAP(object):
 
     def submitJob(self, **kwargs):
         response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
-        self.__job_props.set_submitted_job_result(RequestsUtils.check_response(response))
+        self.__job_props.set_submitted_job_result(response)
         return self.__job_props
 
     def uploadFiles(self, filenames):

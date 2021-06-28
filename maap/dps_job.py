@@ -104,12 +104,11 @@ class DPSJob:
         )
         return RequestsUtils.check_response(response)
     
-    def set_submitted_job_result(self, input_json_str: str):
+    def set_submitted_job_result(self, input_json: dict):
         """
         Sample:
         {'status': 'success', 'http_status_code': 200, 'job_id': '50314f32-6099-47fa-8270-c378ac5ff83b'}
         """
-        input_json = json.loads(input_json_str)
         self.status = input_json['status']
         self.id = input_json['job_id']
         return self
