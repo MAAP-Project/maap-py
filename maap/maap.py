@@ -9,7 +9,8 @@ from mapboxgl.viz import *
 from datetime import datetime
 
 from maap.config_reader import ConfigReader
-from maap.dps_job import DPSJobProps
+from maap.dps_job import DPSJob
+from maap.utils.requests_utils import RequestsUtils
 from .Result import Collection, Granule
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
@@ -28,7 +29,6 @@ class MAAP(object):
         self.__self_signed = self_signed
         self.__config = ConfigReader()
 
-        self._MAAP_TOKEN = self.__config.maap_token
         self._PROXY_GRANTING_TICKET = os.environ.get("MAAP_PGT") or ''
 
         self._ALGORITHM_REGISTER = self.__config.algorithm_register
@@ -42,25 +42,10 @@ class MAAP(object):
         self._S3_USER_UPLOAD_DIR = self.__config.s3_user_upload_dir
         self._MAPBOX_TOKEN = os.environ.get("MAPBOX_ACCESS_TOKEN") or ''
 
-        self._CMR = CMR(self.__config.indexed_attributes, self.__config.page_size, self._get_api_header())
-        self._DPS = DpsHelper(self._get_api_header())
-        self.profile = Profile(self.__config.member, self._get_api_header())
-        self.__job_props = DPSJobProps()
-
-    def _get_api_header(self, content_type=None):
-
-        api_header = {
-            'Accept': content_type if content_type else self.__config.content_type,
-        }
-        if self._MAAP_TOKEN.lower().startswith('basic') or self._MAAP_TOKEN.lower().startswith('bearer'):
-            api_header['Authorization'] = self._MAAP_TOKEN
-        else:
-            api_header['token'] = self._MAAP_TOKEN
-
-        if os.environ.get("MAAP_PGT"):
-            api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
-
-        return api_header
+        self._CMR = CMR(self.__config.indexed_attributes, self.__config.page_size, RequestsUtils.generate_dps_headers())
+        self._DPS = DpsHelper(RequestsUtils.generate_dps_headers())
+        self.profile = Profile(self.__config.member, RequestsUtils.generate_dps_headers())
+        self.__job_props = DPSJob()
 
     def _upload_s3(self, filename, bucket, objectKey):
         """
@@ -118,19 +103,19 @@ class MAAP(object):
 
     def getQueues(self):
         url = os.path.join(self._ALGORITHM_REGISTER, 'resource')
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         logger.debug('GET request sent to {}'.format(self._ALGORITHM_REGISTER))
         logger.debug('headers:')
         logger.debug(headers)
         response = requests.get(
             url=url,
             verify=self.__self_signed,
-            headers=self._get_api_header()
+            headers=headers,
         )
         return response
 
     def registerAlgorithm(self, arg):
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         headers['Content-Type'] = 'application/json'
         logger.debug('POST request sent to {}'.format(self._ALGORITHM_REGISTER))
         logger.debug('headers:')
@@ -147,7 +132,7 @@ class MAAP(object):
 
     def listAlgorithms(self):
         url = self._MAS_ALGO
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
@@ -160,7 +145,7 @@ class MAAP(object):
 
     def describeAlgorithm(self, algoid):
         url = os.path.join(self._MAS_ALGO, algoid)
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
@@ -173,7 +158,7 @@ class MAAP(object):
 
     def publishAlgorithm(self, algoid):
         url = self._MAS_ALGO.replace('algorithm','publish')
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         body = { "algo_id": algoid}
         logger.debug('POST request sent to {}'.format(url))
         logger.debug('headers:')
@@ -190,7 +175,7 @@ class MAAP(object):
 
     def deleteAlgorithm(self, algoid):
         url = os.path.join(self._MAS_ALGO, algoid)
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         logging.debug('DELETE request sent to {}'.format(url))
         logging.debug('headers:')
         logging.debug(headers)
@@ -202,7 +187,7 @@ class MAAP(object):
 
     def getCapabilities(self):
         url = self._DPS_JOB
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         logging.debug('GET request sent to {}'.format(url))
         logging.debug('headers:')
         logging.debug(headers)
@@ -212,85 +197,37 @@ class MAAP(object):
             headers=headers
         )
         return response
-
-    @staticmethod
-    def __check_response(dps_response):
-        if dps_response.status_code not in [200, 201]:
-            raise RuntimeError('response is not 200 or 201. code: {}. details: {}'.format(dps_response.status_code,
-                                                                                          dps_response.content))
-        return dps_response.content.decode('UTF-8')
 
     def getJobStatus(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_STATUS)
-        headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.get(
-            url=url,
-            verify=self.__self_signed,
-            headers=headers
-        )
-        self.__job_props.set_job_status_result(self.__check_response(response))
-        return self.__job_props
+        job = DPSJob(self_signed=self.__self_signed)
+        job.id = jobid
+        return job.retrieve_status()
 
     def getJobResult(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid)
-        headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.get(
-            url=url,
-            verify=self.__self_signed,
-            headers=headers
-        )
-        self.__job_props.set_job_results_result(self.__check_response(response))
-        return self.__job_props
+        job = DPSJob(self_signed=self.__self_signed)
+        job.id = jobid
+        return job.retrieve_result()
 
     def getJobMetrics(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_METRICS)
-        headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.get(
-            url=url,
-            verify=self.__self_signed,
-            headers=headers
-        )
-        self.__job_props.set_job_metrics_result(self.__check_response(response))
-        return self.__job_props
+        job = DPSJob(self_signed=self.__self_signed)
+        job.id = jobid
+        return job.retrieve_metrics()
 
     def dismissJob(self, jobid):
-        url = os.path.join(self._DPS_JOB, endpoints.DPS_JOB_DISMISS, jobid)
-        headers = self._get_api_header()
-        logging.debug('DELETE request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.delete(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob(self_signed=self.__self_signed)
+        job.id = jobid
+        return job.dismiss_job()
 
     def deleteJob(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid)
-        headers = self._get_api_header()
-        logging.debug('DELETE request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.delete(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob(self_signed=self.__self_signed)
+        job.id = jobid
+        return job.delete_job()
 
     def listJobs(self, username=None):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
         url = os.path.join(self._DPS_JOB, username, endpoints.DPS_JOB_LIST)
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
@@ -303,7 +240,7 @@ class MAAP(object):
 
     def submitJob(self, **kwargs):
         response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
-        self.__job_props.set_submitted_job_result(self.__check_response(response))
+        self.__job_props.set_submitted_job_result(RequestsUtils.check_response(response))
         return self.__job_props
 
     def uploadFiles(self, filenames):

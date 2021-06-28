@@ -1,12 +1,21 @@
 import json
 import logging
+import os
 import xml.etree.ElementTree as ET
+
+import requests
+
+from maap.config_reader import ConfigReader
+from maap.utils import endpoints
+
+from maap.utils.requests_utils import RequestsUtils
 
 logger = logging.getLogger(__name__)
 
 
-class DPSJobProps:
-    def __init__(self):
+class DPSJob:
+    def __init__(self, self_signed=False):
+        self.__self_signed = self_signed
         self.__id = None
         self.__status = None
         self.__machine_type = None
@@ -28,7 +37,73 @@ class DPSJobProps:
         self.__async_io_stats = None
         self.__total_io_stats = None
         self.__outputs = []
+        
+    def retrieve_status(self):
+        url = os.path.join(ConfigReader().dps_job, self.id, endpoints.DPS_JOB_STATUS)
+        headers = RequestsUtils.generate_dps_headers()
+        logger.debug('GET request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
+        response = requests.get(
+            url=url,
+            verify=self.__self_signed,
+            headers=headers
+        )
+        self.set_job_status_result(RequestsUtils.check_response(response))
+        return self
 
+    def retrieve_result(self):
+        url = os.path.join(ConfigReader().dps_job, self.id)
+        headers = RequestsUtils.generate_dps_headers()
+        logger.debug('GET request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
+        response = requests.get(
+            url=url,
+            verify=self.__self_signed,
+            headers=headers
+        )
+        self.set_job_results_result(RequestsUtils.check_response(response))
+        return self
+
+    def retrieve_metrics(self):
+        url = os.path.join(ConfigReader().dps_job, self.id, endpoints.DPS_JOB_METRICS)
+        headers = RequestsUtils.generate_dps_headers()
+        logger.debug('GET request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
+        response = requests.get(
+            url=url,
+            verify=self.__self_signed,
+            headers=headers
+        )
+        self.set_job_metrics_result(RequestsUtils.check_response(response))
+        return self
+
+    def dismiss_job(self):
+        url = os.path.join(ConfigReader().dps_job, endpoints.DPS_JOB_DISMISS, self.id)
+        headers = RequestsUtils.generate_dps_headers()
+        logger.debug('DELETE request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
+        response = requests.delete(
+            url=url,
+            headers=headers
+        )
+        return RequestsUtils.check_response(response)
+
+    def delete_job(self):
+        url = os.path.join(ConfigReader().dps_job, self.id)
+        headers = RequestsUtils.generate_dps_headers()
+        logger.debug('DELETE request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
+        response = requests.delete(
+            url=url,
+            headers=headers
+        )
+        return RequestsUtils.check_response(response)
+    
     def set_submitted_job_result(self, input_json_str: str):
         """
         Sample:
@@ -44,13 +119,13 @@ class DPSJobProps:
         Sample:
         <?xml version="1.0" ?>
         <wps:StatusInfo xmlns:ows="http://www.opengis.net/ows/2.0" xmlns:schemaLocation="http://schemas.opengis.net/wps/2.0/wps.xsd" xmlns:wps="http://www.opengis.net/wps/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            <wps:JobID>50314f32-6099-47fa-8270-c378ac5ff83b</wps:JobID>
+            <wps:self.id>50314f32-6099-47fa-8270-c378ac5ff83b</wps:self.id>
             <wps:Status>Succeeded</wps:Status>
         </wps:StatusInfo>
         """
         input_xml = ET.ElementTree(ET.fromstring(input_xml_str))
         for each in input_xml.getroot():
-            if each.tag.endswith('JobID'):
+            if each.tag.endswith('self.id'):
                 self.id = each.text.strip()
             elif each.tag.endswith('Status'):
                 self.status = each.text.strip()
@@ -125,7 +200,7 @@ class DPSJobProps:
     def set_job_results_result(self, input_xml_str: str):
         """
         Sample:
-        <wps:Result xmlns:ows="http://www.opengis.net/ows/2.0" xmlns:schemaLocation="http://schemas.opengis.net/wps/2.0/wps.xsd" xmlns:wps="http://www.opengis.net/wps/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><wps:JobID>f3780917-92c0-4440-8a84-9b28c2e64fa8</wps:JobID><wps:Output id="output-2021-05-26T18:39:14.381083"><wps:Data>http://geospec-dataset-bucket-dev.s3-website.amazonaws.com/malarout/dps_output/hytools_ubuntu/v-system-test-5/2021/05/26/18/39/14/381083</wps:Data><wps:Data>s3://s3.amazonaws.com:80/geospec-dataset-bucket-dev/malarout/dps_output/hytools_ubuntu/v-system-test-5/2021/05/26/18/39/14/381083</wps:Data><wps:Data>https://s3.console.aws.amazon.com/s3/buckets/geospec-dataset-bucket-dev/malarout/dps_output/hytools_ubuntu/v-system-test-5/2021/05/26/18/39/14/381083/?region=us-east-1&amp;tab=overview</wps:Data></wps:Output></wps:Result>
+        <wps:Result xmlns:ows="http://www.opengis.net/ows/2.0" xmlns:schemaLocation="http://schemas.opengis.net/wps/2.0/wps.xsd" xmlns:wps="http://www.opengis.net/wps/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><wps:self.id>f3780917-92c0-4440-8a84-9b28c2e64fa8</wps:self.id><wps:Output id="output-2021-05-26T18:39:14.381083"><wps:Data>http://geospec-dataset-bucket-dev.s3-website.amazonaws.com/malarout/dps_output/hytools_ubuntu/v-system-test-5/2021/05/26/18/39/14/381083</wps:Data><wps:Data>s3://s3.amazonaws.com:80/geospec-dataset-bucket-dev/malarout/dps_output/hytools_ubuntu/v-system-test-5/2021/05/26/18/39/14/381083</wps:Data><wps:Data>https://s3.console.aws.amazon.com/s3/buckets/geospec-dataset-bucket-dev/malarout/dps_output/hytools_ubuntu/v-system-test-5/2021/05/26/18/39/14/381083/?region=us-east-1&amp;tab=overview</wps:Data></wps:Output></wps:Result>
         """
         input_xml = ET.ElementTree(ET.fromstring(input_xml_str))
         for each in input_xml.getroot():
