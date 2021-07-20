@@ -49,6 +49,45 @@ class Result(dict):
 
             return destpath + '/' + destfile
 
+    def getRelatedData(self, destpath=".", overwrite=False):
+        """
+        Download the dataset into file system
+        :param destpath: use the current directory as default
+        :param overwrite: don't download by default if the target file exists
+        :return:
+        """
+
+        downloads = self._relatedUrls
+        output = []
+
+        # Downloadable url does not exist
+        if not downloads:
+            return None
+
+        for download in downloads:
+            url = download['URL']
+            destfile = url.split("/")[-1].replace('/', '')
+
+            if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+
+                # Get granule oauth2 URL
+                s = requests.Session()
+                response = s.get(url)
+                #print(response.status_code, response.url)
+                # Get granule
+                s.headers.update({'Authorization': f'Bearer {self._ursToken},Basic {os.environ.get("MAAP_APP_CREDS")}',
+                                  'Connection':'close'})
+
+                r = s.get(url=response.url, stream=True)
+                r.raw.decode_content = True
+
+                with open(destpath + "/" + destfile, 'wb') as f:
+                    shutil.copyfileobj(r.raw, f)
+
+                output.append(destpath + "/" + destfile)
+
+        return output
+
 
     def getDownloadUrl(self):
         """
@@ -74,10 +113,11 @@ class Collection(Result):
 
 
 class Granule(Result):
-    def __init__(self, metaResult, awsAccessKey, awsAccessSecret):
+    def __init__(self, metaResult, awsAccessKey, awsAccessSecret, ursToken):
 
         self._awsKey = awsAccessKey
         self._awsSecret = awsAccessSecret
+        self._ursToken = ursToken
 
         for k in metaResult:
             self[k] = metaResult[k]
@@ -86,8 +126,14 @@ class Granule(Result):
         try:
             self._location = self['Granule']['OnlineAccessURLs']['OnlineAccessURL']['URL']
             self._downloadname = self._location.split("/")[-1]
-        except KeyError:
+        except :
             self._location = None
+
+        # TODO: make self._location an array and consolidate with _relatedUrls
+        try:
+            self._relatedUrls = self['Granule']['OnlineAccessURLs']['OnlineAccessURL']
+        except :
+            self._relatedUrls = None
 
         # Retrieve OPeNDAPUrl
         try:

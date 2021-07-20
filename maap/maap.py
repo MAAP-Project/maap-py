@@ -26,7 +26,7 @@ except ImportError:
 
 
 class MAAP(object):
-    def __init__(self):
+    def __init__(self, maap_host=''):
         self.config = ConfigParser()
 
         config_paths = list(map(self._get_config_path, [os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
@@ -47,18 +47,19 @@ class MAAP(object):
         self._PAGE_SIZE = self.config.getint("request", "page_size")
         self._CONTENT_TYPE = self.config.get("request", "content_type")
 
-        self._SEARCH_GRANULE_URL = self.config.get("service", "search_granule_url")
-        self._SEARCH_COLLECTION_URL = self.config.get("service", "search_collection_url")
-        self._ALGORITHM_REGISTER = self.config.get("service", "algorithm_register")
-        self._ALGORITHM_BUILD = self.config.get("service", "algorithm_build")
-        self._MAS_ALGO = self.config.get("service", "mas_algo")
-        self._DPS_JOB = self.config.get("service", "dps_job")
-        self._WMTS = self.config.get("service", "wmts")
-        self._MEMBER = self.config.get("service", "member")
-        self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
-        self._MAAP_HOST = self.config.get("service", "maap_host")
-        self._QUERY_ENDPOINT = self.config.get("service", "query_endpoint")
+        # Take maap_host from constructor if provided, otherwise use the default config value
+        self._MAAP_HOST = maap_host if maap_host else self.config.get("service", "maap_host")
+        self._SEARCH_GRANULE_URL = self._get_api_endpoint("search_granule_url")
+        self._SEARCH_COLLECTION_URL = self._get_api_endpoint("search_collection_url")
+        self._ALGORITHM_REGISTER = self._get_api_endpoint("algorithm_register")
+        self._ALGORITHM_BUILD = self._get_api_endpoint("algorithm_build")
+        self._MAS_ALGO = self._get_api_endpoint("mas_algo")
+        self._DPS_JOB = self._get_api_endpoint("dps_job")
+        self._WMTS = self._get_api_endpoint("wmts")
+        self._MEMBER = self._get_api_endpoint("member")
+        self._QUERY_ENDPOINT = self._get_api_endpoint("query_endpoint")
 
+        self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
         self._AWS_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID") or self.config.get("aws", "aws_access_key_id")
         self._AWS_ACCESS_SECRET = os.environ.get("AWS_SECRET_ACCESS_KEY") or self.config.get("aws", "aws_secret_access_key")
         self._S3_USER_UPLOAD_BUCKET = os.environ.get("S3_USER_UPLOAD_BUCKET") or self.config.get("aws", "user_upload_bucket")
@@ -69,6 +70,15 @@ class MAAP(object):
         self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
         self._DPS = DpsHelper(self._get_api_header())
         self.profile = Profile(self._MEMBER, self._get_api_header())
+        self._ursToken = ''
+
+        if os.environ.get("MAAP_PGT"):
+            urs_token = self.profile.urs_token()
+            if urs_token:
+                self._ursToken = urs_token['access_token']
+
+    def _get_api_endpoint(self, config_key):
+        return 'https://{}/api/{}'.format(self._MAAP_HOST, self.config.get("maap_endpoint", config_key))
 
     def _get_api_header(self, content_type=None):
 
@@ -90,7 +100,7 @@ class MAAP(object):
         :param objectKey (string) - S3 directory and filename to upload the local file to
         :return: S3 upload_file response
         """
-        return s3_client.upload_file(filename, bucket, objectKey)
+        return s3_client.upload_file(filename, bucket, objectKey, ExtraArgs={'ACL': 'bucket-owner-full-control'})
 
     def searchGranule(self, limit=20, **kwargs):
         """
@@ -101,7 +111,7 @@ class MAAP(object):
             :return: list of results (<Instance of Result>)
             """
         results = self._CMR.get_search_results(url=self._SEARCH_GRANULE_URL, limit=limit, **kwargs)
-        return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET) for result in results][:limit]
+        return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET, self._ursToken) for result in results][:limit]
 
     def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
         """
