@@ -54,7 +54,7 @@ class MAAP(object):
         :param objectKey (string) - S3 directory and filename to upload the local file to
         :return: S3 upload_file response
         """
-        return s3_client.upload_file(filename, bucket, objectKey)
+        return s3_client.upload_file(filename, bucket, objectKey, ExtraArgs={'ACL': 'bucket-owner-full-control'})
 
     def searchGranule(self, limit=20, **kwargs):
         """
@@ -65,7 +65,7 @@ class MAAP(object):
             :return: list of results (<Instance of Result>)
             """
         results = self._CMR.get_search_results(url=self.__config.search_granule_url, limit=limit, **kwargs)
-        return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET) for result in results][:limit]
+        return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET, self._ursToken) for result in results][:limit]
 
     def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
         """
