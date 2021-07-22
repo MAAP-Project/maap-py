@@ -36,6 +36,18 @@ $ python
 #results omitted for brevity
 ```
 
+### Optionally set the MAAP API base URL
+
+Useful for changing the API host during development, you may override the API host using the constructor:
+
+```python
+$ python
+>>> from maap.maap import MAAP
+>>> maap = MAAP(maap_host='custom.maap-project-org') 
+```
+
+When left parameter-less, maap-py uses the [default setting](maap.cfg#L6).
+
 ### Custom 'Named Attribute'  Parameters
 
 Named parameters are recommended as an alternative to CMR's [additional attributes](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute) as a way to improve usability.
