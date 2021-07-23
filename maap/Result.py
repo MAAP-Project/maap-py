@@ -32,62 +32,32 @@ class Result(dict):
 
             return destpath + '/' + destfile
         elif url.startswith('s3'):
-            o = urlparse(url)
-            filename = url[url.rfind("/") + 1:]
-            if not overwrite and not os.path.isfile(destpath + "/" + filename):
-                s3 = boto3.client('s3', aws_access_key_id=self._awsKey, aws_secret_access_key=self._awsSecret)
-                s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
+            try:
+                o = urlparse(url)
+                filename = url[url.rfind("/") + 1:]
+                if not overwrite and not os.path.isfile(destpath + "/" + filename):
+                    s3 = boto3.client('s3')
+                    s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
+            except:
+                # Fall back to http
+                url = url[5:].split('/')
+                url[0] += '.s3.amazonaws.com'
+                url = 'https://' + '/'.join(url)
+                return self._getLocalPathHttp(url, overwrite, destpath, destfile)
 
             return destpath + '/' + filename
         else:
-            if not overwrite and not os.path.isfile(destpath + "/" + destfile):
-                r = requests.get(url, stream=True)
-                r.raw.decode_content = True
+            return self._getLocalPathHttp(url, overwrite, destpath, destfile)
 
-                with open(destpath + "/" + destfile, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
+    def _getLocalPathHttp(self, url, overwrite, destpath, destfile):
+        if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+            r = requests.get(url, stream=True)
+            r.raw.decode_content = True
 
-            return destpath + '/' + destfile
+            with open(destpath + "/" + destfile, 'wb') as f:
+                shutil.copyfileobj(r.raw, f)
 
-    def getRelatedData(self, destpath=".", overwrite=False):
-        """
-        Download the dataset into file system
-        :param destpath: use the current directory as default
-        :param overwrite: don't download by default if the target file exists
-        :return:
-        """
-
-        downloads = self._relatedUrls
-        output = []
-
-        # Downloadable url does not exist
-        if not downloads:
-            return None
-
-        for download in downloads:
-            url = download['URL']
-            destfile = url.split("/")[-1].replace('/', '')
-
-            if not overwrite and not os.path.isfile(destpath + "/" + destfile):
-
-                # Get granule oauth2 URL
-                s = requests.Session()
-                response = s.get(url)
-                #print(response.status_code, response.url)
-                # Get granule
-                s.headers.update({'Authorization': f'Bearer {self._ursToken},Basic {os.environ.get("MAAP_APP_CREDS")}',
-                                  'Connection':'close'})
-
-                r = s.get(url=response.url, stream=True)
-                r.raw.decode_content = True
-
-                with open(destpath + "/" + destfile, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-
-                output.append(destpath + "/" + destfile)
-
-        return output
-
+        return destpath + '/' + destfile
 
     def getDownloadUrl(self):
         """
