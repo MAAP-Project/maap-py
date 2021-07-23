@@ -40,14 +40,18 @@ class Result(dict):
                     s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
             except:
                 # Fall back to http
-                url = url[5:].split('/')
-                url[0] += '.s3.amazonaws.com'
-                url = 'https://' + '/'.join(url)
-                return self._getLocalPathHttp(url, overwrite, destpath, destfile)
+                http_url = self._convertS3toHttp(url)
+                return self._getLocalPathHttp(http_url, overwrite, destpath, destfile)
 
             return destpath + '/' + filename
         else:
             return self._getLocalPathHttp(url, overwrite, destpath, destfile)
+
+    def _convertS3toHttp(self, url):
+        url = url[5:].split('/')
+        url[0] += '.s3.amazonaws.com'
+        url = 'https://' + '/'.join(url)
+        return url
 
     def _getLocalPathHttp(self, url, overwrite, destpath, destfile):
         if not overwrite and not os.path.isfile(destpath + "/" + destfile):
