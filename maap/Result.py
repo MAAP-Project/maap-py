@@ -56,6 +56,17 @@ class Result(dict):
     def _getLocalPathHttp(self, url, overwrite, destpath, destfile):
         if not overwrite and not os.path.isfile(destpath + "/" + destfile):
             r = requests.get(url, stream=True)
+
+            # Try with a federated token if necessary
+            if r.status_code == 401:
+                r = requests.get(
+                    url=os.path.join(self._cmrFileUrl, urllib.parse.quote(urllib.parse.quote(url, safe=''))),
+                    headers=self._apiHeader
+                )
+
+                if r.status_code != 200:
+                    raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
+
             r.raw.decode_content = True
 
             with open(destpath + "/" + destfile, 'wb') as f:
@@ -87,11 +98,12 @@ class Collection(Result):
 
 
 class Granule(Result):
-    def __init__(self, metaResult, awsAccessKey, awsAccessSecret, ursToken):
+    def __init__(self, metaResult, awsAccessKey, awsAccessSecret, cmrFileUrl, apiHeader):
 
         self._awsKey = awsAccessKey
         self._awsSecret = awsAccessSecret
-        self._ursToken = ursToken
+        self._cmrFileUrl = cmrFileUrl
+        self._apiHeader = apiHeader
 
         for k in metaResult:
             self[k] = metaResult[k]
