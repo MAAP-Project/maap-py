@@ -4,7 +4,7 @@ import os
 import urllib
 import boto3
 from urllib.parse import urlparse
-
+from maap.utils import endpoints
 
 class Result(dict):
     """
@@ -12,8 +12,7 @@ class Result(dict):
     """
     _location = None
 
-    # TODO: add destpath as config setting
-    def getLocalPath(self, destpath=".", overwrite=False):
+    def getData(self, destpath=".", overwrite=False):
         """
         Download the dataset into file system
         :param destpath: use the current directory as default
@@ -23,8 +22,8 @@ class Result(dict):
         url = self._location
         destfile = self._downloadname.replace('/', '')
 
-        # Downloadable url does not exist
         if not url:
+            # Downloadable url does not exist
             return None
         if url.startswith('ftp'):
             if not overwrite and not os.path.isfile(destpath + "/" + destfile):
@@ -39,13 +38,19 @@ class Result(dict):
                     s3 = boto3.client('s3')
                     s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
             except:
-                # Fall back to http
+                # Fall back to HTTP
                 http_url = self._convertS3toHttp(url)
-                return self._getLocalPathHttp(http_url, overwrite, destpath, destfile)
+                return self._getHttpData(http_url, overwrite, destpath, destfile)
 
             return destpath + '/' + filename
         else:
-            return self._getLocalPathHttp(url, overwrite, destpath, destfile)
+            return self._getHttpData(url, overwrite, destpath, destfile)
+
+    def getLocalPath(self, destpath=".", overwrite=False):
+        """
+        Deprecated method. User getData() instead.
+        """
+        return self.getData(destpath, overwrite)
 
     def _convertS3toHttp(self, url):
         url = url[5:].split('/')
@@ -53,14 +58,16 @@ class Result(dict):
         url = 'https://' + '/'.join(url)
         return url
 
-    def _getLocalPathHttp(self, url, overwrite, destpath, destfile):
+    def _getHttpData(self, url, overwrite, destpath, destfile):
         if not overwrite and not os.path.isfile(destpath + "/" + destfile):
             r = requests.get(url, stream=True)
 
-            # Try with a federated token if necessary
+            # Try with a federated token if unauthorized
             if r.status_code == 401:
                 r = requests.get(
-                    url=os.path.join(self._cmrFileUrl, urllib.parse.quote(urllib.parse.quote(url, safe=''))),
+                    url=os.path.join(self._cmrFileUrl,
+                                     urllib.parse.quote(urllib.parse.quote(url, safe='')),
+                                     endpoints.CMR_ALGORITHM_DATA),
                     headers=self._apiHeader
                 )
 

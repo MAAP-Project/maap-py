@@ -51,7 +51,6 @@ class MAAP(object):
         self._MAAP_HOST = maap_host if maap_host else self.config.get("service", "maap_host")
         self._SEARCH_GRANULE_URL = self._get_api_endpoint("search_granule_url")
         self._SEARCH_COLLECTION_URL = self._get_api_endpoint("search_collection_url")
-        self._CMR_FILE_URL = self._get_api_endpoint("cmr_file_url")
         self._ALGORITHM_REGISTER = self._get_api_endpoint("algorithm_register")
         self._ALGORITHM_BUILD = self._get_api_endpoint("algorithm_build")
         self._MAS_ALGO = self._get_api_endpoint("mas_algo")
@@ -109,7 +108,7 @@ class MAAP(object):
         return [Granule(result,
                         self._AWS_ACCESS_KEY,
                         self._AWS_ACCESS_SECRET,
-                        self._CMR_FILE_URL,
+                        self._SEARCH_GRANULE_URL,
                         self._get_api_header()) for result in results][:limit]
 
     def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
