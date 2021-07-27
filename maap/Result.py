@@ -125,6 +125,8 @@ class Granule(Result):
         # TODO: make self._location an array and consolidate with _relatedUrls
         try:
             self._relatedUrls = self['Granule']['OnlineAccessURLs']['OnlineAccessURL']
+            self._location = self['Granule']['OnlineAccessURLs']['OnlineAccessURL'][0]['URL']
+            self._downloadname = self._location.split("/")[-1]
         except :
             self._relatedUrls = None
 
