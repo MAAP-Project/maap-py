@@ -68,7 +68,8 @@ class Result(dict):
                     url=os.path.join(self._cmrFileUrl,
                                      urllib.parse.quote(urllib.parse.quote(url, safe='')),
                                      endpoints.CMR_ALGORITHM_DATA),
-                    headers=self._apiHeader
+                    headers=self._apiHeader,
+                    stream=True
                 )
 
                 if r.status_code != 200:
