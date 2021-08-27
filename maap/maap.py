@@ -70,12 +70,6 @@ class MAAP(object):
         self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
         self._DPS = DpsHelper(self._get_api_header())
         self.profile = Profile(self._MEMBER, self._get_api_header())
-        self._ursToken = ''
-
-        if os.environ.get("MAAP_PGT"):
-            urs_token = self.profile.urs_token()
-            if urs_token:
-                self._ursToken = urs_token['access_token']
 
     def _get_api_endpoint(self, config_key):
         return 'https://{}/api/{}'.format(self._MAAP_HOST, self.config.get("maap_endpoint", config_key))
@@ -111,7 +105,11 @@ class MAAP(object):
             :return: list of results (<Instance of Result>)
             """
         results = self._CMR.get_search_results(url=self._SEARCH_GRANULE_URL, limit=limit, **kwargs)
-        return [Granule(result, self._AWS_ACCESS_KEY, self._AWS_ACCESS_SECRET, self._ursToken) for result in results][:limit]
+        return [Granule(result,
+                        self._AWS_ACCESS_KEY,
+                        self._AWS_ACCESS_SECRET,
+                        self._SEARCH_GRANULE_URL,
+                        self._get_api_header()) for result in results][:limit]
 
     def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
         """
