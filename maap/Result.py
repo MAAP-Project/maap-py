@@ -58,7 +58,7 @@ class Result(dict):
         url = 'https://' + '/'.join(url)
         return url
     
-    # When retrieving granule data, always triy an unauthenticated HTTPS request first, then fall back to EDL federated login. 
+    # When retrieving granule data, always try an unauthenticated HTTPS request first, then fall back to EDL federated login. 
     # In the case where an external DAAC is called (which we know from the cmr_host parameter), we may consider skipping 
     # the unauthenticated HTTPS request, but this method assumes that granules can both be publicly accessible or EDL-restricted. 
     # In the former case, this conditional logic will stream the data directly from CMR, rather than via the MAAP API proxy. 
