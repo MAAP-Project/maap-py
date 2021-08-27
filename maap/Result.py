@@ -38,7 +38,7 @@ class Result(dict):
                     s3 = boto3.client('s3')
                     s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
             except:
-                # Fall back to HTTP
+                # Fallback to HTTP
                 http_url = self._convertS3toHttp(url)
                 return self._getHttpData(http_url, overwrite, destpath, destfile)
 
