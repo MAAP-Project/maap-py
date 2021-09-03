@@ -13,12 +13,12 @@ class AWS:
         self._s3_signed_url_endpoint = s3_signed_url_endpoint
         self._logger = logging.getLogger(__name__)
 
-    def requester_pays_credentials(self):
+    def requester_pays_credentials(self, expiration=60 * 60 * 12):
         headers = self._api_header
         headers['Accept'] = 'application/json'
 
         response = requests.get(
-            url=self._requester_pays_endpoint,
+            url=self._requester_pays_endpoint + '?exp=' + str(expiration),
             headers=self._api_header
         )
 
@@ -27,12 +27,13 @@ class AWS:
         else:
             return None
 
-    def s3_signed_url(self, bucket, key):
+    def s3_signed_url(self, bucket, key, expiration=60 * 60 * 12):
         headers = self._api_header
         headers['Accept'] = 'application/json'
+        _url = self._s3_signed_url_endpoint.replace("{bucket}", bucket).replace("{key}", key)
 
         response = requests.get(
-            url=self._s3_signed_url_endpoint.replace("{bucket}", bucket).replace("{key}", key),
+            url=_url + '?exp=' + str(expiration),
             headers=self._api_header
         )
 
