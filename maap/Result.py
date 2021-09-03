@@ -4,7 +4,7 @@ import os
 import urllib
 import boto3
 from urllib.parse import urlparse
-
+from maap.utils import endpoints
 
 class Result(dict):
     """
@@ -12,8 +12,7 @@ class Result(dict):
     """
     _location = None
 
-    # TODO: add destpath as config setting
-    def getLocalPath(self, destpath=".", overwrite=False):
+    def getData(self, destpath=".", overwrite=False):
         """
         Download the dataset into file system
         :param destpath: use the current directory as default
@@ -23,8 +22,8 @@ class Result(dict):
         url = self._location
         destfile = self._downloadname.replace('/', '')
 
-        # Downloadable url does not exist
         if not url:
+            # Downloadable url does not exist
             return None
         if url.startswith('ftp'):
             if not overwrite and not os.path.isfile(destpath + "/" + destfile):
@@ -32,62 +31,56 @@ class Result(dict):
 
             return destpath + '/' + destfile
         elif url.startswith('s3'):
-            o = urlparse(url)
-            filename = url[url.rfind("/") + 1:]
-            if not overwrite and not os.path.isfile(destpath + "/" + filename):
-                s3 = boto3.client('s3', aws_access_key_id=self._awsKey, aws_secret_access_key=self._awsSecret)
-                s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
+            try:
+                o = urlparse(url)
+                filename = url[url.rfind("/") + 1:]
+                if not overwrite and not os.path.isfile(destpath + "/" + filename):
+                    s3 = boto3.client('s3')
+                    s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
+            except:
+                # Fall back to HTTP
+                http_url = self._convertS3toHttp(url)
+                return self._getHttpData(http_url, overwrite, destpath, destfile)
 
             return destpath + '/' + filename
         else:
-            if not overwrite and not os.path.isfile(destpath + "/" + destfile):
-                r = requests.get(url, stream=True)
-                r.raw.decode_content = True
+            return self._getHttpData(url, overwrite, destpath, destfile)
 
-                with open(destpath + "/" + destfile, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-
-            return destpath + '/' + destfile
-
-    def getRelatedData(self, destpath=".", overwrite=False):
+    def getLocalPath(self, destpath=".", overwrite=False):
         """
-        Download the dataset into file system
-        :param destpath: use the current directory as default
-        :param overwrite: don't download by default if the target file exists
-        :return:
+        Deprecated method. User getData() instead.
         """
+        return self.getData(destpath, overwrite)
 
-        downloads = self._relatedUrls
-        output = []
+    def _convertS3toHttp(self, url):
+        url = url[5:].split('/')
+        url[0] += '.s3.amazonaws.com'
+        url = 'https://' + '/'.join(url)
+        return url
 
-        # Downloadable url does not exist
-        if not downloads:
-            return None
+    def _getHttpData(self, url, overwrite, destpath, destfile):
+        if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+            r = requests.get(url, stream=True)
 
-        for download in downloads:
-            url = download['URL']
-            destfile = url.split("/")[-1].replace('/', '')
+            # Try with a federated token if unauthorized
+            if r.status_code == 401:
+                r = requests.get(
+                    url=os.path.join(self._cmrFileUrl,
+                                     urllib.parse.quote(urllib.parse.quote(url, safe='')),
+                                     endpoints.CMR_ALGORITHM_DATA),
+                    headers=self._apiHeader,
+                    stream=True
+                )
 
-            if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+                if r.status_code != 200:
+                    raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
 
-                # Get granule oauth2 URL
-                s = requests.Session()
-                response = s.get(url)
-                #print(response.status_code, response.url)
-                # Get granule
-                s.headers.update({'Authorization': f'Bearer {self._ursToken},Basic {os.environ.get("MAAP_APP_CREDS")}',
-                                  'Connection':'close'})
+            r.raw.decode_content = True
 
-                r = s.get(url=response.url, stream=True)
-                r.raw.decode_content = True
+            with open(destpath + "/" + destfile, 'wb') as f:
+                shutil.copyfileobj(r.raw, f)
 
-                with open(destpath + "/" + destfile, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-
-                output.append(destpath + "/" + destfile)
-
-        return output
-
+        return destpath + '/' + destfile
 
     def getDownloadUrl(self):
         """
@@ -113,11 +106,12 @@ class Collection(Result):
 
 
 class Granule(Result):
-    def __init__(self, metaResult, awsAccessKey, awsAccessSecret, ursToken):
+    def __init__(self, metaResult, awsAccessKey, awsAccessSecret, cmrFileUrl, apiHeader):
 
         self._awsKey = awsAccessKey
         self._awsSecret = awsAccessSecret
-        self._ursToken = ursToken
+        self._cmrFileUrl = cmrFileUrl
+        self._apiHeader = apiHeader
 
         for k in metaResult:
             self[k] = metaResult[k]
@@ -132,6 +126,8 @@ class Granule(Result):
         # TODO: make self._location an array and consolidate with _relatedUrls
         try:
             self._relatedUrls = self['Granule']['OnlineAccessURLs']['OnlineAccessURL']
+            self._location = self['Granule']['OnlineAccessURLs']['OnlineAccessURL'][0]['URL']
+            self._downloadname = self._location.split("/")[-1]
         except :
             self._relatedUrls = None
 

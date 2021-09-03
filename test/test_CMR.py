@@ -34,6 +34,13 @@ class TestCMR(TestCase):
         download = results[0].getLocalPath('/Users/satorius/source')
         self.assertTrue(len(download) > 0)
 
+    def test_granuleDownloadExternalDAAC(self):
+        results = self.maap.searchGranule(
+            collection_concept_id='C1200231010-NASA_MAAP')
+
+        download = results[0].getLocalPath()
+        self.assertTrue(len(download) > 0)
+
     def test_searchGranuleByInstrumentAndSiteName(self):
         results = self.maap.searchGranule(
             instrument=self._test_instrument_name_lvis,
