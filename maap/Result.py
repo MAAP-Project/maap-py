@@ -38,7 +38,8 @@ class Result(dict):
                     s3 = boto3.client('s3')
                     s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
             except:
-                # Fall back to HTTP
+
+                # Fallback to HTTP
                 http_url = self._convertS3toHttp(url)
                 return self._getHttpData(http_url, overwrite, destpath, destfile)
 
@@ -57,7 +58,12 @@ class Result(dict):
         url[0] += '.s3.amazonaws.com'
         url = 'https://' + '/'.join(url)
         return url
-
+    
+    # When retrieving granule data, always try an unauthenticated HTTPS request first, then fall back to EDL federated login. 
+    # In the case where an external DAAC is called (which we know from the cmr_host parameter), we may consider skipping 
+    # the unauthenticated HTTPS request, but this method assumes that granules can both be publicly accessible or EDL-restricted. 
+    # In the former case, this conditional logic will stream the data directly from CMR, rather than via the MAAP API proxy. 
+    # This direct interface with CMR is the default method since it reduces traffic to the MAAP API.
     def _getHttpData(self, url, overwrite, destpath, destfile):
         if not overwrite and not os.path.isfile(destpath + "/" + destfile):
             r = requests.get(url, stream=True)
