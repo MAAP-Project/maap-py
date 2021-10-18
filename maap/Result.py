@@ -97,6 +97,9 @@ class Result(dict):
                             headers=_headers,
                             stream=True
                         )
+
+                        if r.status_code != 200:
+                            raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
                 else:
                     # Running in ADE, so call MAAP API
                     r = requests.get(
@@ -107,8 +110,8 @@ class Result(dict):
                         stream=True
                     )
 
-                if r.status_code != 200:
-                    raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
+                    if r.status_code != 200:
+                        raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
 
             r.raw.decode_content = True
 
