@@ -76,14 +76,27 @@ class Result(dict):
             if r.status_code == 401:
 
                 if self._dps.running_in_dps:
-                    _headers = {'Authorization': 'Bearer {},Basic {}'.format(self._dps._user_token, self._dps._app_token), 'Connection': 'close'}
+                    _headers = {"dps-machine-token": self._dps.dps_machine_token,
+                                "dps-job-id": self._dps.job_id,
+                                "Accept": "application/json"}
 
-                    # Running inside a DPS job, so call DAAC directly
-                    r = requests.get(
-                        url=r.url,
-                        headers=_headers,
-                        stream=True
+                    dps_token_response = requests.get(
+                        url=self._dps.dps_token_endpoint,
+                        headers=_headers
                     )
+
+                    if dps_token_response:
+                        dps_token_info = json.loads(dps_token_response.text)
+
+                        _headers = {'Authorization': 'Bearer {},Basic {}'.format(
+                            dps_token_info['user_token'], dps_token_info['app_token']), 'Connection': 'close'}
+
+                        # Running inside a DPS job, so call DAAC directly
+                        r = requests.get(
+                            url=r.url,
+                            headers=_headers,
+                            stream=True
+                        )
                 else:
                     # Running in ADE, so call MAAP API
                     r = requests.get(

@@ -16,15 +16,15 @@ class DpsHelper:
     """
     def __init__(self, api_header, dps_token_endpoint):
         self._api_header = api_header
-        self._dps_token_endpoint = dps_token_endpoint
         self._location = os.path.dirname(os.path.abspath(__file__))
         self._logger = logging.getLogger(__name__)
+        self.dps_token_endpoint = dps_token_endpoint
         self.running_in_dps = self._running_in_dps_mode()
-        # If running within a DPS context, load the necessary tokens on init
+
         if self.running_in_dps:
-            dps_token_info = self._dps_token_info()
-            self._app_token = dps_token_info['app_token']
-            self._user_token = dps_token_info['user_token']
+            self.dps_machine_token = self._file_contents(self.DPS_INTERNAL_FILE_DPS_TOKEN)
+            job_data = json.loads(self._file_contents(self.DPS_INTERNAL_FILE_JOB))
+            self.job_id = job_data['job_info']['job_payload']['payload_task_id']
 
     def _skit(self, lines, kwargs):
         res = {}
@@ -152,25 +152,6 @@ class DpsHelper:
     def _file_contents(self, file_name):
         with open(file_name, 'r') as file:
             return file.read().replace('\n', '')
-
-    def _dps_token_info(self):
-        dps_machine_token = self._file_contents(self.DPS_INTERNAL_FILE_DPS_TOKEN)
-        job_data = json.loads(self._file_contents(self.DPS_INTERNAL_FILE_JOB))
-        job_id = job_data['job_info']['job_payload']['payload_task_id']
-
-        _headers = {"dps-machine-token": dps_machine_token,
-                    "dps-job-id": job_id,
-                    "Accept": "application/json"}
-
-        response = requests.get(
-            url=self._dps_token_endpoint,
-            headers=_headers
-        )
-
-        if response:
-            return json.loads(response.text)
-        else:
-            return None
 
     def _running_in_dps_mode(self):
         return exists(self.DPS_INTERNAL_FILE_JOB) and exists(self.DPS_INTERNAL_FILE_DPS_TOKEN)
