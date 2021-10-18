@@ -98,8 +98,12 @@ class Result(dict):
                             stream=True
                         )
 
-                        if r.status_code != 200:
-                            raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
+                        # if r.status_code != 200:
+                        #     raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
+                        r.raw.decode_content = True
+
+                        with open(destpath + "/" + destfile, 'wb') as f:
+                            shutil.copyfileobj(r.raw, f)
                 else:
                     # Running in ADE, so call MAAP API
                     r = requests.get(
@@ -110,13 +114,12 @@ class Result(dict):
                         stream=True
                     )
 
-                    if r.status_code != 200:
-                        raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
+                    # if r.status_code != 200:
+                    #     raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
+                    r.raw.decode_content = True
 
-            r.raw.decode_content = True
-
-            with open(destpath + "/" + destfile, 'wb') as f:
-                shutil.copyfileobj(r.raw, f)
+                    with open(destpath + "/" + destfile, 'wb') as f:
+                        shutil.copyfileobj(r.raw, f)
 
         return destpath + '/' + destfile
 
