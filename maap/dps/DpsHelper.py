@@ -3,17 +3,28 @@ import requests
 import xml.etree.ElementTree as ET
 import logging
 import os
-import sys
+import json
+from os.path import exists
 
 
 class DpsHelper:
+    DPS_INTERNAL_FILE_JOB = "_job.json"
+    DPS_INTERNAL_FILE_DPS_TOKEN = "_maap_dps_token.txt"
+
     """
     Functions used for DPS API interfacing
     """
-    def __init__(self, api_header):
+    def __init__(self, api_header, dps_token_endpoint):
         self._api_header = api_header
+        self._dps_token_endpoint = dps_token_endpoint
         self._location = os.path.dirname(os.path.abspath(__file__))
         self._logger = logging.getLogger(__name__)
+        self.running_in_dps = self._running_in_dps_mode()
+        # If running within a DPS context, load the necessary tokens on init
+        if self.running_in_dps:
+            dps_token_info = self._dps_token_info()
+            self._app_token = dps_token_info['app_token']
+            self._user_token = dps_token_info['user_token']
 
     def _skit(self, lines, kwargs):
         res = {}
@@ -137,3 +148,29 @@ class DpsHelper:
                 return {"status": "failed", "http_status_code": r.status_code, "job_id": ""}
         except:
             return {"status": "failed", "http_status_code": r.status_code, "job_id": ""}
+
+    def _file_contents(self, file_name):
+        with open(file_name, 'r') as file:
+            return file.read().replace('\n', '')
+
+    def _dps_token_info(self):
+        dps_machine_token = self._file_contents(self.DPS_INTERNAL_FILE_DPS_TOKEN)
+        job_data = json.loads(self._file_contents(self.DPS_INTERNAL_FILE_JOB))
+        job_id = job_data['job_info']['job_payload']['payload_task_id']
+
+        _headers = {"dps-machine-token": dps_machine_token,
+                    "dps-job-id": job_id,
+                    "Accept": "application/json"}
+
+        response = requests.get(
+            url=self._dps_token_endpoint,
+            headers=_headers
+        )
+
+        if response:
+            return json.loads(response.text)
+        else:
+            return None
+
+    def _running_in_dps_mode(self):
+        return exists(self.DPS_INTERNAL_FILE_JOB) and exists(self.DPS_INTERNAL_FILE_DPS_TOKEN)

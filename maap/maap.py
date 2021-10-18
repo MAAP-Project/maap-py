@@ -58,6 +58,7 @@ class MAAP(object):
         self._DPS_JOB = self._get_api_endpoint("dps_job")
         self._WMTS = self._get_api_endpoint("wmts")
         self._MEMBER = self._get_api_endpoint("member")
+        self._MEMBER_DPS_TOKEN = self._get_api_endpoint("member_dps_token")
         self._REQUESTER_PAYS = self._get_api_endpoint("requester_pays")
         self._S3_SIGNED_URL = self._get_api_endpoint("s3_signed_url")
         self._QUERY_ENDPOINT = self._get_api_endpoint("query_endpoint")
@@ -71,7 +72,7 @@ class MAAP(object):
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
         self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
-        self._DPS = DpsHelper(self._get_api_header())
+        self._DPS = DpsHelper(self._get_api_header(), self._MEMBER_DPS_TOKEN)
         self.profile = Profile(self._MEMBER, self._get_api_header())
         self.aws = AWS(self._REQUESTER_PAYS, self._S3_SIGNED_URL, self._get_api_header())
 
@@ -113,7 +114,8 @@ class MAAP(object):
                         self._AWS_ACCESS_KEY,
                         self._AWS_ACCESS_SECRET,
                         self._SEARCH_GRANULE_URL,
-                        self._get_api_header()) for result in results][:limit]
+                        self._get_api_header(),
+                        self._DPS) for result in results][:limit]
 
     def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
         """
