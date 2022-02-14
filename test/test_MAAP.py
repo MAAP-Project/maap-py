@@ -75,6 +75,10 @@ class TestMAAP(TestCase):
         upload_msg_regex = re.compile('Upload file subdirectory: .+ \\(keep a record of this if you want to share these files with other users\\)')
         self.assertTrue(re.match(upload_msg_regex, result))
 
+    def test_edc_credentials(self):
+        results = self.maap.aws.earthdata_s3_credentials('https://data.lpdaac.earthdatacloud.nasa.gov/s3credentials');
+        self.assertTrue(results != 'unauthorized' and len(results) > 0)
+
     def test_executeQuery(self):
         response = self.maap.executeQuery(
             src={
