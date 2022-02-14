@@ -1,15 +1,17 @@
 import requests
 import logging
 import json
+import urllib
 
 
 class AWS:
     """
     Functions used for Member API interfacing
     """
-    def __init__(self, requester_pays_endpoint, s3_signed_url_endpoint, api_header):
+    def __init__(self, requester_pays_endpoint, s3_signed_url_endpoint, earthdata_s3_credentials_endpoint, api_header):
         self._api_header = api_header
         self._requester_pays_endpoint = requester_pays_endpoint
+        self._earthdata_s3_credentials_endpoint = earthdata_s3_credentials_endpoint
         self._s3_signed_url_endpoint = s3_signed_url_endpoint
         self._logger = logging.getLogger(__name__)
 
@@ -34,6 +36,22 @@ class AWS:
 
         response = requests.get(
             url=_url + '?exp=' + str(expiration),
+            headers=self._api_header
+        )
+
+        if response:
+            return json.loads(response.text)
+        else:
+            return None
+
+    def earthdata_s3_credentials(self, endpoint_uri):
+        headers = self._api_header
+        headers['Accept'] = 'application/json'
+        _parsed_endpoint = urllib.parse.quote(urllib.parse.quote(endpoint_uri, safe=''))
+        _url = self._earthdata_s3_credentials_endpoint.replace("{endpoint_uri}", _parsed_endpoint)
+
+        response = requests.get(
+            url=_url,
             headers=self._api_header
         )
 
