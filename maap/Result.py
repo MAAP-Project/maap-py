@@ -59,7 +59,7 @@ class Result(dict):
         url[0] += '.s3.amazonaws.com'
         url = 'https://' + '/'.join(url)
         return url
-    
+
     # When retrieving granule data, always try an unauthenticated HTTPS request first,
     # then fall back to EDL federated login.
     # In the case where an external DAAC is called (which we know from the cmr_host parameter),
@@ -74,7 +74,6 @@ class Result(dict):
 
             # Try with a federated token if unauthorized
             if r.status_code == 401:
-
                 if self._dps.running_in_dps:
                     _headers = {"dps-machine-token": self._dps.dps_machine_token,
                                 "dps-job-id": self._dps.job_id,
@@ -92,18 +91,7 @@ class Result(dict):
                             dps_token_info['user_token'], dps_token_info['app_token']), 'Connection': 'close'}
 
                         # Running inside a DPS job, so call DAAC directly
-                        r = requests.get(
-                            url=r.url,
-                            headers=_headers,
-                            stream=True
-                        )
-
-                        # if r.status_code != 200:
-                        #     raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
-                        r.raw.decode_content = True
-
-                        with open(destpath + "/" + destfile, 'wb') as f:
-                            shutil.copyfileobj(r.raw, f)
+                        r = requests.get(url=r.url, headers=_headers, stream=True)
                 else:
                     # Running in ADE, so call MAAP API
                     r = requests.get(
@@ -114,12 +102,11 @@ class Result(dict):
                         stream=True
                     )
 
-                    # if r.status_code != 200:
-                    #     raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
-                    r.raw.decode_content = True
+            r.raise_for_status()
+            r.raw.decode_content = True
 
-                    with open(destpath + "/" + destfile, 'wb') as f:
-                        shutil.copyfileobj(r.raw, f)
+            with open(destpath + "/" + destfile, 'wb') as f:
+                shutil.copyfileobj(r.raw, f)
 
         return destpath + '/' + destfile
 
