@@ -2,17 +2,19 @@
 
 Python client library that abstracts [MAAP API](https://github.com/MAAP-Project/maap-api) calls including CMR querying, algorithm change management, and HySDS job execution. CMR components in this library are largely derived from the [pyCMR](https://github.com/nasa/pyCMR) library.
 
-
-
 ## Setup
 
 Run:
 
-    $ python setup.py install
+```bash
+python setup.py install
+```
 
 Or
 
-    $ pip install -e .
+```bash
+pip install -e .
+```
 
 ## Usage
 
@@ -23,13 +25,13 @@ Then, run:
 ```python
 $ python
 >>> from maap.maap import MAAP
->>> maap = MAAP() 
+>>> maap = MAAP()
 
 >>> granules = maap.searchGranule(sitename='lope', instrument='uavsar')
 >>> for res in granules:
     print(res.getDownloadUrl())
     res.download()
-#results omitted for brevity
+# results omitted for brevity
 ```
 
 ### Optionally set the MAAP API base URL
@@ -39,7 +41,7 @@ Useful for changing the API host during development, you may override the API ho
 ```python
 $ python
 >>> from maap.maap import MAAP
->>> maap = MAAP(maap_host='custom.maap-project-org') 
+>>> maap = MAAP(maap_host='custom.maap-project-org')
 ```
 
 When left parameter-less, maap-py uses the [default setting](maap.cfg#L6).
@@ -48,7 +50,16 @@ When left parameter-less, maap-py uses the [default setting](maap.cfg#L6).
 
 Named parameters are recommended as an alternative to CMR's [additional attributes](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#g-additional-attribute) as a way to improve usability.
 This list of attributes is editable in the [maap.cfg](maap.cfg) `indexed_attributes` setting. E.g.:
-- "site_name,Site Name,string" where `site_name` is the parameter, `Site Name` is the CMR attribute name, and `string` is the parameter type.
+
+```plain
+"site_name,Site Name,string"
+```
+
+where:
+
+- `site_name` is the parameter
+- `Site Name` is the CMR attribute name
+- `string` is the parameter type
 
 With named attribute parameters, this query:
 
@@ -57,7 +68,7 @@ lidarGranule = maap.searchGranule(instrument='lvis', attribute='string,Site Name
 ```
 
 Simplifies to:
- 
+
 ```python
 lidarGranule = maap.searchGranule(instrument='lvis', site_name='lope')
 ```

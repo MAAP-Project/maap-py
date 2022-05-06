@@ -5,6 +5,7 @@ import urllib
 import boto3
 from urllib.parse import urlparse
 from maap.utils import endpoints
+import json
 
 class Result(dict):
     """
@@ -58,11 +59,14 @@ class Result(dict):
         url[0] += '.s3.amazonaws.com'
         url = 'https://' + '/'.join(url)
         return url
-    
-    # When retrieving granule data, always try an unauthenticated HTTPS request first, then fall back to EDL federated login. 
-    # In the case where an external DAAC is called (which we know from the cmr_host parameter), we may consider skipping 
-    # the unauthenticated HTTPS request, but this method assumes that granules can both be publicly accessible or EDL-restricted. 
-    # In the former case, this conditional logic will stream the data directly from CMR, rather than via the MAAP API proxy. 
+
+    # When retrieving granule data, always try an unauthenticated HTTPS request first,
+    # then fall back to EDL federated login.
+    # In the case where an external DAAC is called (which we know from the cmr_host parameter),
+    # we may consider skipping the unauthenticated HTTPS request,
+    # but this method assumes that granules can both be publicly accessible or EDL-restricted.
+    # In the former case, this conditional logic will stream the data directly from CMR,
+    # rather than via the MAAP API proxy.
     # This direct interface with CMR is the default method since it reduces traffic to the MAAP API.
     def _getHttpData(self, url, overwrite, destpath, destfile):
         if not overwrite and not os.path.isfile(destpath + "/" + destfile):
@@ -70,17 +74,35 @@ class Result(dict):
 
             # Try with a federated token if unauthorized
             if r.status_code == 401:
-                r = requests.get(
-                    url=os.path.join(self._cmrFileUrl,
-                                     urllib.parse.quote(urllib.parse.quote(url, safe='')),
-                                     endpoints.CMR_ALGORITHM_DATA),
-                    headers=self._apiHeader,
-                    stream=True
-                )
+                if self._dps.running_in_dps:
+                    _headers = {"dps-machine-token": self._dps.dps_machine_token,
+                                "dps-job-id": self._dps.job_id,
+                                "Accept": "application/json"}
 
-                if r.status_code != 200:
-                    raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
+                    dps_token_response = requests.get(
+                        url=self._dps.dps_token_endpoint,
+                        headers=_headers
+                    )
 
+                    if dps_token_response:
+                        dps_token_info = json.loads(dps_token_response.text)
+
+                        _headers = {'Authorization': 'Bearer {},Basic {}'.format(
+                            dps_token_info['user_token'], dps_token_info['app_token']), 'Connection': 'close'}
+
+                        # Running inside a DPS job, so call DAAC directly
+                        r = requests.get(url=r.url, headers=_headers, stream=True)
+                else:
+                    # Running in ADE, so call MAAP API
+                    r = requests.get(
+                        url=os.path.join(self._cmrFileUrl,
+                                         urllib.parse.quote(urllib.parse.quote(url, safe='')),
+                                         endpoints.CMR_ALGORITHM_DATA),
+                        headers=self._apiHeader,
+                        stream=True
+                    )
+
+            r.raise_for_status()
             r.raw.decode_content = True
 
             with open(destpath + "/" + destfile, 'wb') as f:
@@ -112,12 +134,13 @@ class Collection(Result):
 
 
 class Granule(Result):
-    def __init__(self, metaResult, awsAccessKey, awsAccessSecret, cmrFileUrl, apiHeader):
+    def __init__(self, metaResult, awsAccessKey, awsAccessSecret, cmrFileUrl, apiHeader, dps):
 
         self._awsKey = awsAccessKey
         self._awsSecret = awsAccessSecret
         self._cmrFileUrl = cmrFileUrl
         self._apiHeader = apiHeader
+        self._dps = dps
 
         for k in metaResult:
             self[k] = metaResult[k]
