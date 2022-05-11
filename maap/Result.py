@@ -1,14 +1,19 @@
 import json
 import os
 import shutil
+import sys
 import urllib.parse
-import urllib.request
 from urllib.parse import urlparse
 
 import boto3
 import requests
 
 from maap.utils import endpoints
+
+if sys.version_info < (3, 0):
+    from urllib import urlretrieve
+else:
+    from urllib.request import urlretrieve
 
 
 class Result(dict):
@@ -32,7 +37,7 @@ class Result(dict):
             return None
         if url.startswith("ftp"):
             if overwrite or not os.path.exists(dest):
-                urllib.request.urlretrieve(url, dest)
+                urlretrieve(url, dest)
 
             return dest
         if url.startswith("s3"):
