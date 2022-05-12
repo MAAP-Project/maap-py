@@ -1,6 +1,8 @@
+import json
 import os
 import shutil
-import urllib
+import sys
+import urllib.parse
 from urllib.parse import urlparse
 
 import boto3
@@ -8,11 +10,14 @@ import requests
 
 from maap.utils import endpoints
 
+if sys.version_info < (3, 0):
+    from urllib import urlretrieve
+else:
+    from urllib.request import urlretrieve
+
 
 class Result(dict):
-    """
-    The class to structure the response xml string from the cmr API
-    """
+    """Class to structure the response XML from a CMR API request."""
 
     _location = None
     _fallback = None
@@ -26,40 +31,41 @@ class Result(dict):
         """
         url = self._location
         destfile = self._downloadname.replace("/", "")
+        dest = os.path.join(destpath, destfile)
 
         if not url:
             # Downloadable url does not exist
             return None
         if url.startswith("ftp"):
-            if not overwrite and not os.path.isfile(f"{destpath}/{destfile}"):
-                urllib.urlretrieve(url, f"{destpath}/{destfile}")
+            if overwrite or not os.path.exists(dest):
+                urlretrieve(url, dest)
 
-            return destpath + "/" + destfile
-        elif url.startswith("s3"):
+            return dest
+        if url.startswith("s3"):
             try:
-                o = urlparse(url)
-                filename = os.path.basename(o.path)
-                if not overwrite and not os.path.isfile(f"{destpath}/{filename}"):
+                filename = url[url.rfind("/") + 1 :]
+                dest = os.path.join(destpath, filename)
+
+                if overwrite or not os.path.exists(dest):
+                    url = urlparse(url)
                     s3 = boto3.client("s3")
-                    s3.download_file(
-                        o.netloc, o.path.lstrip("/"), f"{destpath}/{filename}"
-                    )
+                    s3.download_file(url.netloc, url.path.lstrip("/"), dest)
+
+                return dest
             except:
                 # Fallback to HTTP
                 if self._fallback:
                     return self._getHttpData(
-                        self._fallback, overwrite, destpath, destfile
+                        self._fallback, overwrite, dest
                     )
                 else:
                     raise
 
-            return f"{destpath}/{filename}"
-        else:
-            return self._getHttpData(url, overwrite, destpath, destfile)
+        return self._getHttpData(url, overwrite, dest)
 
     def getLocalPath(self, destpath=".", overwrite=False):
         """
-        Deprecated method. User getData() instead.
+        Deprecated method. Use getData() instead.
         """
         return self.getData(destpath, overwrite)
 
@@ -71,14 +77,17 @@ class Result(dict):
 
     # When retrieving granule data, always try an unauthenticated HTTPS request first,
     # then fall back to EDL federated login.
-    # In the case where an external DAAC is called (which we know from the cmr_host parameter),
-    # we may consider skipping the unauthenticated HTTPS request,
-    # but this method assumes that granules can both be publicly accessible or EDL-restricted.
+    #
+    # In the case where an external DAAC is called (which we know from the `cmr_host`
+    # parameter), we may consider skipping the unauthenticated HTTPS request, but this
+    # method assumes that granules can both be publicly accessible or EDL-restricted.
     # In the former case, this conditional logic will stream the data directly from CMR,
     # rather than via the MAAP API proxy.
-    # This direct interface with CMR is the default method since it reduces traffic to the MAAP API.
-    def _getHttpData(self, url, overwrite, destpath, destfile):
-        if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+    #
+    # This direct interface with CMR is the default method since it reduces traffic to
+    # the MAAP API.
+    def _getHttpData(self, url, overwrite, dest):
+        if overwrite or not os.path.exists(dest):
             r = requests.get(url, stream=True)
 
             # Try with a federated token if unauthorized
@@ -96,10 +105,10 @@ class Result(dict):
             r.raise_for_status()
             r.raw.decode_content = True
 
-            with open(destpath + "/" + destfile, "wb") as f:
+            with open(dest, "wb") as f:
                 shutil.copyfileobj(r.raw, f)
 
-        return destpath + "/" + destfile
+        return dest
 
     def getDownloadUrl(self):
         """
@@ -109,16 +118,12 @@ class Result(dict):
 
     def getDescription(self):
         """
-
         :return:
         """
-        return (
-            self["Granule"]["GranuleUR"].ljust(70)
-            + "Updated "
-            + self["Granule"]["LastUpdate"]
-            + " ("
-            + self["collection-concept-id"]
-            + ")"
+        return "{} Updated {} ({})".format(
+            self["Granule"]["GranuleUR"].ljust(70),
+            self["Granule"]["LastUpdate"],
+            self["collection-concept-id"],
         )
 
 
@@ -142,6 +147,12 @@ class Granule(Result):
         self._awsSecret = awsAccessSecret
         self._cmrFileUrl = cmrFileUrl
         self._apiHeader = apiHeader
+
+        self._relatedUrls = None
+        self._location = None
+        self._downloadname = None
+        self._OPeNDAPUrl = None
+        self._BrowseUrl = None
 
         for k in metaResult:
             self[k] = metaResult[k]
@@ -194,8 +205,7 @@ class Granule(Result):
                 "URL"
             ]
         except:
-            self._OPeNDAPUrl = None
-            self._BrowseUrl = None
+            pass
 
     def getOPeNDAPUrl(self):
         return self._OPeNDAPUrl
