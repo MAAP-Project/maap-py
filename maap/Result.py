@@ -1,16 +1,24 @@
-import requests
-import shutil
-import os
-import urllib
-import boto3
-from urllib.parse import urlparse
-from maap.utils import endpoints
 import json
+import os
+import shutil
+import sys
+import urllib.parse
+from urllib.parse import urlparse
+
+import boto3
+import requests
+
+from maap.utils import endpoints
+
+if sys.version_info < (3, 0):
+    from urllib import urlretrieve
+else:
+    from urllib.request import urlretrieve
+
 
 class Result(dict):
-    """
-    The class to structure the response xml string from the cmr API
-    """
+    """Class to structure the response XML from a CMR API request."""
+
     _location = None
 
     def getData(self, destpath=".", overwrite=False):
@@ -21,94 +29,107 @@ class Result(dict):
         :return:
         """
         url = self._location
-        destfile = self._downloadname.replace('/', '')
+        destfile = self._downloadname.replace("/", "")
+        dest = os.path.join(destpath, destfile)
 
         if not url:
             # Downloadable url does not exist
             return None
-        if url.startswith('ftp'):
-            if not overwrite and not os.path.isfile(destpath + "/" + destfile):
-                urllib.urlretrieve(url, destpath + "/" + destfile)
+        if url.startswith("ftp"):
+            if overwrite or not os.path.exists(dest):
+                urlretrieve(url, dest)
 
-            return destpath + '/' + destfile
-        elif url.startswith('s3'):
+            return dest
+        if url.startswith("s3"):
             try:
-                o = urlparse(url)
-                filename = url[url.rfind("/") + 1:]
-                if not overwrite and not os.path.isfile(destpath + "/" + filename):
-                    s3 = boto3.client('s3')
-                    s3.download_file(o.netloc, o.path.lstrip('/'), destpath + "/" + filename)
-            except:
+                filename = url[url.rfind("/") + 1 :]
+                dest = os.path.join(destpath, filename)
 
+                if overwrite or not os.path.exists(dest):
+                    url = urlparse(url)
+                    s3 = boto3.client("s3")
+                    s3.download_file(url.netloc, url.path.lstrip("/"), dest)
+
+                return dest
+            except:
                 # Fallback to HTTP
                 http_url = self._convertS3toHttp(url)
-                return self._getHttpData(http_url, overwrite, destpath, destfile)
+                return self._getHttpData(http_url, overwrite, dest)
 
-            return destpath + '/' + filename
-        else:
-            return self._getHttpData(url, overwrite, destpath, destfile)
+        return self._getHttpData(url, overwrite, dest)
 
     def getLocalPath(self, destpath=".", overwrite=False):
         """
-        Deprecated method. User getData() instead.
+        Deprecated method. Use getData() instead.
         """
         return self.getData(destpath, overwrite)
 
     def _convertS3toHttp(self, url):
-        url = url[5:].split('/')
-        url[0] += '.s3.amazonaws.com'
-        url = 'https://' + '/'.join(url)
+        url = url[5:].split("/")
+        url[0] += ".s3.amazonaws.com"
+        url = "https://" + "/".join(url)
         return url
 
     # When retrieving granule data, always try an unauthenticated HTTPS request first,
     # then fall back to EDL federated login.
-    # In the case where an external DAAC is called (which we know from the cmr_host parameter),
-    # we may consider skipping the unauthenticated HTTPS request,
-    # but this method assumes that granules can both be publicly accessible or EDL-restricted.
+    #
+    # In the case where an external DAAC is called (which we know from the `cmr_host`
+    # parameter), we may consider skipping the unauthenticated HTTPS request, but this
+    # method assumes that granules can both be publicly accessible or EDL-restricted.
     # In the former case, this conditional logic will stream the data directly from CMR,
     # rather than via the MAAP API proxy.
-    # This direct interface with CMR is the default method since it reduces traffic to the MAAP API.
-    def _getHttpData(self, url, overwrite, destpath, destfile):
-        if not overwrite and not os.path.isfile(destpath + "/" + destfile):
+    #
+    # This direct interface with CMR is the default method since it reduces traffic to
+    # the MAAP API.
+    def _getHttpData(self, url, overwrite, dest):
+        if overwrite or not os.path.exists(dest):
             r = requests.get(url, stream=True)
 
             # Try with a federated token if unauthorized
             if r.status_code == 401:
                 if self._dps.running_in_dps:
-                    _headers = {"dps-machine-token": self._dps.dps_machine_token,
-                                "dps-job-id": self._dps.job_id,
-                                "Accept": "application/json"}
-
                     dps_token_response = requests.get(
                         url=self._dps.dps_token_endpoint,
-                        headers=_headers
+                        headers={
+                            "dps-machine-token": self._dps.dps_machine_token,
+                            "dps-job-id": self._dps.job_id,
+                            "Accept": "application/json",
+                        },
                     )
 
                     if dps_token_response:
-                        dps_token_info = json.loads(dps_token_response.text)
-
-                        _headers = {'Authorization': 'Bearer {},Basic {}'.format(
-                            dps_token_info['user_token'], dps_token_info['app_token']), 'Connection': 'close'}
-
                         # Running inside a DPS job, so call DAAC directly
-                        r = requests.get(url=r.url, headers=_headers, stream=True)
+                        dps_token_info = json.loads(dps_token_response.text)
+                        r = requests.get(
+                            url=r.url,
+                            headers={
+                                "Authorization": "Bearer {},Basic {}".format(
+                                    dps_token_info["user_token"],
+                                    dps_token_info["app_token"],
+                                ),
+                                "Connection": "close",
+                            },
+                            stream=True,
+                        )
                 else:
                     # Running in ADE, so call MAAP API
                     r = requests.get(
-                        url=os.path.join(self._cmrFileUrl,
-                                         urllib.parse.quote(urllib.parse.quote(url, safe='')),
-                                         endpoints.CMR_ALGORITHM_DATA),
+                        url=os.path.join(
+                            self._cmrFileUrl,
+                            urllib.parse.quote(urllib.parse.quote(url, safe="")),
+                            endpoints.CMR_ALGORITHM_DATA,
+                        ),
                         headers=self._apiHeader,
-                        stream=True
+                        stream=True,
                     )
 
             r.raise_for_status()
             r.raw.decode_content = True
 
-            with open(destpath + "/" + destfile, 'wb') as f:
+            with open(dest, "wb") as f:
                 shutil.copyfileobj(r.raw, f)
 
-        return destpath + '/' + destfile
+        return dest
 
     def getDownloadUrl(self):
         """
@@ -118,10 +139,13 @@ class Result(dict):
 
     def getDescription(self):
         """
-
         :return:
         """
-        return self['Granule']['GranuleUR'].ljust(70) + 'Updated ' + self['Granule']['LastUpdate'] + ' (' + self['collection-concept-id'] + ')'
+        return "{} Updated {} ({})".format(
+            self["Granule"]["GranuleUR"].ljust(70),
+            self["Granule"]["LastUpdate"],
+            self["collection-concept-id"],
+        )
 
 
 class Collection(Result):
@@ -129,46 +153,60 @@ class Collection(Result):
         for k in metaResult:
             self[k] = metaResult[k]
 
-        self._location = 'https://{}/search/concepts/{}.umm-json'.format(maap_host, metaResult['concept-id'])
-        self._downloadname = metaResult['Collection']['ShortName']
+        self._location = "https://{}/search/concepts/{}.umm-json".format(
+            maap_host, metaResult["concept-id"]
+        )
+        self._downloadname = metaResult["Collection"]["ShortName"]
 
 
 class Granule(Result):
-    def __init__(self, metaResult, awsAccessKey, awsAccessSecret, cmrFileUrl, apiHeader, dps):
-
+    def __init__(
+        self, metaResult, awsAccessKey, awsAccessSecret, cmrFileUrl, apiHeader, dps
+    ):
         self._awsKey = awsAccessKey
         self._awsSecret = awsAccessSecret
         self._cmrFileUrl = cmrFileUrl
         self._apiHeader = apiHeader
         self._dps = dps
 
+        self._relatedUrls = None
+        self._location = None
+        self._downloadname = None
+        self._OPeNDAPUrl = None
+        self._BrowseUrl = None
+
         for k in metaResult:
             self[k] = metaResult[k]
 
         # Retrieve downloadable url
         try:
-            self._location = self['Granule']['OnlineAccessURLs']['OnlineAccessURL']['URL']
+            self._location = self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"][
+                "URL"
+            ]
             self._downloadname = self._location.split("/")[-1]
-        except :
-            self._location = None
+        except:
+            pass
 
         # TODO: make self._location an array and consolidate with _relatedUrls
         try:
-            self._relatedUrls = self['Granule']['OnlineAccessURLs']['OnlineAccessURL']
-            self._location = self['Granule']['OnlineAccessURLs']['OnlineAccessURL'][0]['URL']
+            self._relatedUrls = self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
+            self._location = self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"][0][
+                "URL"
+            ]
             self._downloadname = self._location.split("/")[-1]
-        except :
-            self._relatedUrls = None
+        except:
+            pass
 
         # Retrieve OPeNDAPUrl
         try:
-            urls = self['Granule']['OnlineResources']['OnlineResource']
+            urls = self["Granule"]["OnlineResources"]["OnlineResource"]
             # This throws an error "filter object is not subscriptable"
-            self._OPeNDAPUrl = filter(lambda x: x["Type"] == "OPeNDAP", urls)['URL']
-            self._BrowseUrl = list(filter(lambda x: x["Type"] == "BROWSE", urls))[0]['URL']
-        except :
-            self._OPeNDAPUrl = None
-            self._BrowseUrl = None
+            self._OPeNDAPUrl = filter(lambda x: x["Type"] == "OPeNDAP", urls)["URL"]
+            self._BrowseUrl = list(filter(lambda x: x["Type"] == "BROWSE", urls))[0][
+                "URL"
+            ]
+        except:
+            pass
 
     def getOPeNDAPUrl(self):
         return self._OPeNDAPUrl
