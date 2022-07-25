@@ -15,26 +15,26 @@ class AWS:
         self._s3_signed_url_endpoint = s3_signed_url_endpoint
         self._logger = logging.getLogger(__name__)
 
-        def requests_response(_url: str, _headers: object):
-            try:
-                response = requests.get(
-                    url=_url,
-                    headers=_headers
-                )
+    def requests_response(_url: str, _headers: object):
+        try:
+            response = requests.get(
+                url=_url,
+                headers=_headers
+            )
 
-                if response:
-                    return json.loads(response.text)
-                response.raise_for_status()
-            except requests.exceptions.ConnectionError as e:
-                return ("Connection Error:", e)
-            except requests.exceptions.HTTPError as e:
-                return ("HTTP Error:", e)
-            except requests.exceptions.Timeout as e:
-                return ("Request Timeout:", e)
-            except requests.exceptions.TooManyRedirects as e:
-                return ("Redirects Error:", e)
-            except requests.exceptions.RequestException as e:
-                return ("Request Exception:", e)
+            if response:
+                return json.loads(response.text)
+            response.raise_for_status()
+        except requests.exceptions.ConnectionError as e:
+            return ("Connection Error:", e)
+        except requests.exceptions.HTTPError as e:
+            return ("HTTP Error:", e)
+        except requests.exceptions.Timeout as e:
+            return ("Request Timeout:", e)
+        except requests.exceptions.TooManyRedirects as e:
+            return ("Redirects Error:", e)
+        except requests.exceptions.RequestException as e:
+            return ("Request Exception:", e)
 
     def requester_pays_credentials(self, expiration=60 * 60 * 12):
         headers = self._api_header
