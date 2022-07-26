@@ -58,11 +58,14 @@ class Result(dict):
         url[0] += '.s3.amazonaws.com'
         url = 'https://' + '/'.join(url)
         return url
-    
-    # When retrieving granule data, always try an unauthenticated HTTPS request first, then fall back to EDL federated login. 
-    # In the case where an external DAAC is called (which we know from the cmr_host parameter), we may consider skipping 
-    # the unauthenticated HTTPS request, but this method assumes that granules can both be publicly accessible or EDL-restricted. 
-    # In the former case, this conditional logic will stream the data directly from CMR, rather than via the MAAP API proxy. 
+
+    # When retrieving granule data, always try an unauthenticated HTTPS request first,
+    # then fall back to EDL federated login.
+    # In the case where an external DAAC is called (which we know from the cmr_host parameter),
+    # we may consider skipping the unauthenticated HTTPS request,
+    # but this method assumes that granules can both be publicly accessible or EDL-restricted.
+    # In the former case, this conditional logic will stream the data directly from CMR,
+    # rather than via the MAAP API proxy.
     # This direct interface with CMR is the default method since it reduces traffic to the MAAP API.
     def _getHttpData(self, url, overwrite, destpath, destfile):
         if not overwrite and not os.path.isfile(destpath + "/" + destfile):
@@ -78,9 +81,7 @@ class Result(dict):
                     stream=True
                 )
 
-                if r.status_code != 200:
-                    raise ValueError('Bad search response for url {}: {}'.format(url, r.text))
-
+            r.raise_for_status()
             r.raw.decode_content = True
 
             with open(destpath + "/" + destfile, 'wb') as f:
