@@ -23,11 +23,9 @@ class AWS:
             url=self._requester_pays_endpoint + '?exp=' + str(expiration),
             headers=self._api_header
         )
+        response.raise_for_status()
 
-        if response:
-            return json.loads(response.text)
-        else:
-            return None
+        return json.loads(response.text)
 
     def s3_signed_url(self, bucket, key, expiration=60 * 60 * 12):
         headers = self._api_header
@@ -38,11 +36,9 @@ class AWS:
             url=_url + '?exp=' + str(expiration),
             headers=self._api_header
         )
+        response.raise_for_status()
 
-        if response:
-            return json.loads(response.text)
-        else:
-            return None
+        return json.loads(response.text)
 
     def earthdata_s3_credentials(self, endpoint_uri):
         headers = self._api_header
@@ -54,12 +50,6 @@ class AWS:
             url=_url,
             headers=self._api_header
         )
+        response.raise_for_status()
 
-        if response:
-            return json.loads(response.text)
-        else:
-            return None
-
-
-
-
+        return json.loads(response.text)
