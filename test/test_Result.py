@@ -35,5 +35,5 @@ def test_getData_403_raises(tmp_path: pathlib.Path):
         cmrFileUrl="",
     )
 
-    with pytest.raises(requests.exceptions.HTTPError):
+    with pytest.raises(requests.exceptions.HTTPError, match="403"):
         granule.getData(str(tmp_path))
