@@ -57,7 +57,7 @@ setup(
     include_package_data=True,
     install_requires=_requirements,
     setup_requires=['pytest-runner'],
-    tests_require=['pytest'],
+    tests_require=['pytest', 'responses'],
     keywords=_keywords,
     license=_license,
     long_description=_long_description,
