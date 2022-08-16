@@ -1,6 +1,7 @@
 pytest==3.1.1
 urllib3==1.21.1
 requests
+responses
 boto3
 botocore
 mapboxgl
