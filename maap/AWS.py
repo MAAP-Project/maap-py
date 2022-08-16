@@ -55,8 +55,11 @@ class AWS:
             headers=self._api_header
         )
 
+        result = json.loads(response.text)
+        result['DAAC'] = urllib.parse.urlparse(endpoint_uri).netloc
+
         if response:
-            return json.loads(response.text)
+            return result
         else:
             return None
 
