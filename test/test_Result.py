@@ -4,6 +4,8 @@ import re
 import pytest
 import requests
 import responses
+from mypy_boto3_s3.client import S3Client
+
 from maap.Result import Granule
 
 GRANULE_BASE_URL = "https://data.mydaac.earthdata.nasa.gov"
@@ -40,8 +42,8 @@ def test_getData_403_raises(tmp_path: pathlib.Path):
 
 def test_Granule_single_location():
     """
-        _location should be s3 url
-        _fallback should be None since only the s3 location is provided
+    _location should be s3 url
+    _fallback should be None since only the s3 location is provided
     """
     granule = Granule(
         metaResult={
@@ -64,8 +66,8 @@ def test_Granule_single_location():
 
 def test_Granule_fallback_location():
     """
-        _location should be s3 url
-        _fallback should be https://.../*.h5 since a https url is provided
+    _location should be s3 url
+    _fallback should be https://.../*.h5 since a https url is provided
     """
     granule = Granule(
         metaResult={
@@ -97,8 +99,8 @@ def test_Granule_fallback_location():
 
 def test_Granule_https_locations():
     """
-        _location should be https url since no s3 location is provided
-        _fallback should be the same as _location
+    _location should be https url since no s3 location is provided
+    _fallback should be the same as _location
     """
     granule = Granule(
         metaResult={
@@ -128,3 +130,169 @@ def test_Granule_https_locations():
         granule._fallback
         == "https://data.ornldaac.earthdata.nasa.gov/protected/gedi/*/data/*.h5"
     )
+
+
+def test_getData_s3_url_only(s3: S3Client, tmp_path: pathlib.Path):
+    s3.create_bucket(Bucket="mybucket")
+    s3.put_object(Bucket="mybucket", Key="file.txt", Body="s3 contents")
+
+    granule = Granule(
+        metaResult={
+            "Granule": {
+                "OnlineAccessURLs": {
+                    "OnlineAccessURL": {"URL": "s3://mybucket/file.txt"}
+                }
+            }
+        },
+        awsAccessKey="",
+        awsAccessSecret="",
+        apiHeader={},
+        cmrFileUrl="",
+    )
+
+    with open(granule.getData(str(tmp_path))) as f:
+        assert f.read() == "s3 contents"
+
+
+@responses.activate
+def test_getData_s3_url_with_fallback_in_order(tmp_path: pathlib.Path):
+    responses.get(
+        url="https://host/file.txt",
+        status=200,
+        body="http contents",
+    )
+
+    granule = Granule(
+        metaResult={
+            "Granule": {
+                "OnlineAccessURLs": {
+                    "OnlineAccessURL": [
+                        {
+                            # getData should try this first, but should fail because
+                            # we have not mocked the indicated S3 object.
+                            "URL": "s3://mybucket/file.txt"
+                        },
+                        {
+                            # getData should fallback to using this URL after failing
+                            # with the S3 URL above.
+                            "URL": "https://host/file.txt"
+                        },
+                    ]
+                }
+            }
+        },
+        awsAccessKey="",
+        awsAccessSecret="",
+        apiHeader={},
+        cmrFileUrl="",
+    )
+
+    with open(granule.getData(str(tmp_path))) as f:
+        assert f.read() == "http contents"
+
+
+@responses.activate
+def test_getData_s3_url_with_fallback_wrong_order(s3: S3Client, tmp_path: pathlib.Path):
+    s3.create_bucket(Bucket="mybucket")
+    s3.put_object(Bucket="mybucket", Key="file.txt", Body="s3 contents")
+
+    granule = Granule(
+        metaResult={
+            "Granule": {
+                "OnlineAccessURLs": {
+                    "OnlineAccessURL": [
+                        {
+                            # getData should NOT attempt to use this because it should
+                            # use the S3 URL below, even though this URL is the first
+                            # in the list.
+                            "URL": "https://host/file.txt"
+                        },
+                        {
+                            # getData should use this URL first, and it should succeed
+                            # because we have mocked the indicated S3 object.
+                            "URL": "s3://mybucket/file.txt"
+                        },
+                    ]
+                }
+            }
+        },
+        awsAccessKey="",
+        awsAccessSecret="",
+        apiHeader={},
+        cmrFileUrl="",
+    )
+
+    with open(granule.getData(str(tmp_path))) as f:
+        assert f.read() == "s3 contents"
+
+
+@responses.activate
+def test_getData_https_url_only(tmp_path: pathlib.Path):
+    responses.get(
+        url="https://host/file.txt",
+        status=200,
+        body="http contents",
+    )
+
+    granule = Granule(
+        metaResult={
+            "Granule": {
+                "OnlineAccessURLs": {
+                    "OnlineAccessURL": {
+                        # getData should use this URL since there is no S3 URL to try.
+                        "URL": "https://host/file.txt"
+                    }
+                }
+            }
+        },
+        awsAccessKey="",
+        awsAccessSecret="",
+        apiHeader={},
+        cmrFileUrl="",
+    )
+
+    with open(granule.getData(str(tmp_path))) as f:
+        assert f.read() == "http contents"
+
+
+@responses.activate
+def test_getData_s3_with_multiple_fallbacks(tmp_path: pathlib.Path):
+    responses.get(
+        url="https://host/file.txt",
+        status=200,
+        body="http contents",
+    )
+
+    granule = Granule(
+        metaResult={
+            "Granule": {
+                "OnlineAccessURLs": {
+                    "OnlineAccessURL": [
+                        {
+                            # getData should NOT attempt to use this because the
+                            # filename does not match the filename in the S3 URL.
+                            "URL": "https://host/file.txt.sha256"
+                        },
+                        {
+                            # getData should use this URL first, but should fail because
+                            # because we have not mocked the indicated S3 object.
+                            "URL": "s3://mybucket/file.txt"
+                        },
+                        {
+                            # getData should use this after failing with the S3 URL
+                            # above, because the filename in this URL matches the
+                            # filename in the S3 URL.
+                            "URL": "https://host/file.txt"
+                        },
+                    ]
+                }
+            }
+        },
+        awsAccessKey="",
+        awsAccessSecret="",
+        apiHeader={},
+        cmrFileUrl="",
+    )
+
+    with open(granule.getData(str(tmp_path))) as f:
+        assert f.read() == "http contents"
