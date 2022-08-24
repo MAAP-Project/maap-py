@@ -45,11 +45,16 @@ class Result(dict):
                     )
             except:
                 # Fallback to HTTP
-                return self._getHttpData(self._fallback, overwrite, destpath, destfile)
+                if self._fallback:
+                    return self._getHttpData(
+                        self._fallback, overwrite, destpath, destfile
+                    )
+                else:
+                    raise
 
             return f"{destpath}/{filename}"
-        # else:
-        #     return self._getHttpData(url, overwrite, destpath, destfile)
+        else:
+            return self._getHttpData(url, overwrite, destpath, destfile)
 
     def getLocalPath(self, destpath=".", overwrite=False):
         """
@@ -140,24 +145,35 @@ class Granule(Result):
         for k in metaResult:
             self[k] = metaResult[k]
 
-        # Retrieve downloadable url
+        # TODO: make self._location an array and consolidate with _relatedUrls
         try:
+            self._relatedUrls = self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
+
+            # XML of singular OnlineAccessURL is an object, convert it to a list of one object
+            if isinstance(self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"], dict):
+                self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"] = [
+                    self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
+                ]
+
+            # Sets _location to s3 url, defaults to first url in list
             self._location = next(
                 (
                     obj["URL"]
-                    for obj in self["Granule"]["OnlineAccessURLs"]
+                    for obj in self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
                     if obj["URL"].startswith("s3://")
-                )
+                ),
+                self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"][0]["URL"],
             )
 
             if self._location:
                 o = urlparse(self._location)
                 filename = os.path.basename(o.path)
 
+            # Sets _fallback to https url with the same basename as _location
             self._fallback = next(
                 (
                     obj["URL"]
-                    for obj in self["Granule"]["OnlineAccessURLs"]
+                    for obj in self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
                     if obj["URL"].startswith("https://")
                     and obj["URL"].endswith(filename)
                 ),
@@ -165,17 +181,6 @@ class Granule(Result):
             )
 
             self._downloadname = filename
-        except:
-            self._location = None
-            self._fallback = None
-
-        # TODO: make self._location an array and consolidate with _relatedUrls
-        try:
-            self._relatedUrls = self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
-            self._location = self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"][0][
-                "URL"
-            ]
-            self._downloadname = self._location.split("/")[-1]
         except:
             self._relatedUrls = None
 
