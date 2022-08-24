@@ -1,10 +1,11 @@
-import requests
-import shutil
 import os
+import shutil
 import urllib
-import boto3
-import re
 from urllib.parse import urlparse
+
+import boto3
+import requests
+
 from maap.utils import endpoints
 
 
