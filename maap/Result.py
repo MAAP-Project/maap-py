@@ -20,6 +20,7 @@ class Result(dict):
     """Class to structure the response XML from a CMR API request."""
 
     _location = None
+    _fallback = None
 
     def getData(self, destpath=".", overwrite=False):
         """
@@ -53,8 +54,12 @@ class Result(dict):
                 return dest
             except:
                 # Fallback to HTTP
-                http_url = self._convertS3toHttp(url)
-                return self._getHttpData(http_url, overwrite, dest)
+                if self._fallback:
+                    return self._getHttpData(
+                        self._fallback, overwrite, dest
+                    )
+                else:
+                    raise
 
         return self._getHttpData(url, overwrite, dest)
 
@@ -178,22 +183,42 @@ class Granule(Result):
         for k in metaResult:
             self[k] = metaResult[k]
 
-        # Retrieve downloadable url
-        try:
-            self._location = self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"][
-                "URL"
-            ]
-            self._downloadname = self._location.split("/")[-1]
-        except:
-            pass
-
         # TODO: make self._location an array and consolidate with _relatedUrls
         try:
             self._relatedUrls = self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
-            self._location = self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"][0][
-                "URL"
-            ]
-            self._downloadname = self._location.split("/")[-1]
+
+            # XML of singular OnlineAccessURL is an object, convert it to a list of one object
+            if isinstance(self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"], dict):
+                self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"] = [
+                    self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
+                ]
+
+            # Sets _location to s3 url, defaults to first url in list
+            self._location = next(
+                (
+                    obj["URL"]
+                    for obj in self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
+                    if obj["URL"].startswith("s3://")
+                ),
+                self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"][0]["URL"],
+            )
+
+            if self._location:
+                o = urlparse(self._location)
+                filename = os.path.basename(o.path)
+
+            # Sets _fallback to https url with the same basename as _location
+            self._fallback = next(
+                (
+                    obj["URL"]
+                    for obj in self["Granule"]["OnlineAccessURLs"]["OnlineAccessURL"]
+                    if obj["URL"].startswith("https://")
+                    and obj["URL"].endswith(filename)
+                ),
+                None,
+            )
+
+            self._downloadname = filename
         except:
             pass
 
