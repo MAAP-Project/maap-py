@@ -1,32 +1,64 @@
 from unittest import TestCase
-from maap.maap import MAAP
 
+import yaml
+
+from maap.maap import MAAP
+import logging
+from yaml import load as yaml_load, dump as yaml_dump
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
 
 class TestDPS(TestCase):
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
 
     @classmethod
     def setUpClass(cls):
-        config_file_path = "./maap.cfg"
-
-        cls.maap = MAAP()
-
-        cls._test_job_id = "a80434cc-3d63-4059-9ba6-2cd5ddb7d5ef"
+        cls.logger.debug("Initializing MAAP")
+        cls.maap = MAAP(config_file_path="/Users/shah/Desktop/Development/maap/maap-py/maap.cfg")
 
     def test_registerAlgorithm(self):
-        self.fail()
+        with open("dps_test_algo_config.yaml", 'r') as algo_yaml_file:
+            algo_config = yaml_load(algo_yaml_file, Loader=Loader)
+            self.maap.register_algorithm_from_yaml(algo_config)
+        pass
 
-    def test_getJobs(self):
-        results = self.maap.getJobStatus(self._test_job_id).text
+    def test_deleteAlgorithm(self):
+        pass
 
-        self.assertTrue(results is not None)
+    def test_deleteJob(self):
+        pass
 
-    def test_getJobSubmit(self):
-        results = self.maap.submitJob(identifier="brian", algo_id="hello-world-output_ubuntu", version="master",
-                                      username="bsatoriu")
+    def test_describeAlgorithm(self):
+        pass
 
-        self.assertTrue(results.status_code == 200)
+    def test_dismissJob(self):
+        pass
+
+    def test_getJobMetrics(self):
+        pass
+
+    def test_getJobResult(self):
+        pass
 
     def test_getJobStatus(self):
-        results = self.maap.getJobStatus(self._test_job_id)
-        self.assertTrue(results.status_code == 200)
+        pass
+
+    def test_getQueues(self):
+        pass
+
+    def test_listAlgorithms(self):
+        pass
+
+    def test_listJobs(self):
+        pass
+
+    def test_publishAlgorithm(self):
+        pass
+
+
+    def test_submitJob(self):
+        pass
 

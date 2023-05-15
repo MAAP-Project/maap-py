@@ -1,3 +1,4 @@
+import json
 import logging
 import boto3
 import uuid
@@ -8,8 +9,11 @@ from mapboxgl.utils import *
 from mapboxgl.viz import *
 from datetime import datetime
 from .Result import Collection, Granule
+from maap.config_reader import ConfigReader
+from maap.dps.dps_job import DPSJob
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
+from maap.utils import algorithm_utils
 from maap.Profile import Profile
 from maap.AWS import AWS
 from maap.dps.DpsHelper import DpsHelper
@@ -27,17 +31,23 @@ except ImportError:
 
 
 class MAAP(object):
-    def __init__(self, maap_host=''):
+
+    def __init__(self, maap_host='', config_file_path=''):
         self.config = ConfigParser()
 
-        config_paths = list(map(self._get_config_path, [os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
+        # Adding this for newer capability imported frm SISTER, leaving the rest of config imports as is
+        self._singlelton_config = ConfigReader(config_file_path=config_file_path)
+
+        config_paths = list(map(self._get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
 
         for loc in config_paths:
+            logger.info("Loading config file from source %s " % loc)
             try:
                 with open(loc) as source:
                     self.config.read_file(source)
                     break
             except IOError:
+                logger.warning("Unable to load config file from source %s " % loc)
                 pass
 
         if not self.config.has_option('service', 'maap_host'):
@@ -178,6 +188,29 @@ class MAAP(object):
         )
         return response
 
+    def register_algorithm_from_yaml_file(self, file_path):
+        algo_config = algorithm_utils.read_yaml_file(file_path)
+        return self.registerAlgorithm(algo_config)
+
+    def register_algorithm_from_yaml_file_backwards_compatible(self, algo_yaml):
+        key_map = {"algo_name": "algorithm_name", "version": "code_version", "environment": "environment_name",
+                   "description": "algorithm_description", "docker_url": "docker_container_url",
+                   "inputs": "algorithm_params", "run_command": "script_command"}
+        output_config = {}
+        for key, value in algo_yaml.items():
+            if key in key_map:
+                if key == "inputs":
+                    inputs = []
+                    for argument in value:
+                        inputs.append({"field": argument.get("name"), "download": argument.get("download")})
+                    output_config.update({"algorithm_params": inputs})
+                else:
+                    output_config.update({key_map.get(key): value})
+            else:
+                output_config.update({key: value})
+        logger.debug("Registering with config %s " % json.dumps(output_config))
+        self.registerAlgorithm(json.dumps(output_config))
+
     def listAlgorithms(self):
         url = self._MAS_ALGO
         headers = self._get_api_header()
@@ -242,65 +275,36 @@ class MAAP(object):
         )
         return response
 
+    def getJob(self, jobid):
+        job = DPSJob()
+        job.id = jobid
+        job.retrieve_attributes()
+        return job
+
     def getJobStatus(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_STATUS)
-        headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob()
+        job.id = jobid
+        return job.retrieve_status()
 
     def getJobResult(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid)
-        headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob()
+        job.id = jobid
+        return job.retrieve_result()
 
     def getJobMetrics(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_METRICS)
-        headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob()
+        job.id = jobid
+        return job.retrieve_metrics()
 
     def dismissJob(self, jobid):
-        url = os.path.join(self._DPS_JOB, endpoints.DPS_JOB_DISMISS, jobid)
-        headers = self._get_api_header()
-        logging.debug('DELETE request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.delete(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob()
+        job.id = jobid
+        return job.dismiss_job()
 
     def deleteJob(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid)
-        headers = self._get_api_header()
-        logging.debug('DELETE request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.delete(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob()
+        job.id = jobid
+        return job.delete_job()
 
     def listJobs(self, username=None):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
@@ -318,7 +322,10 @@ class MAAP(object):
 
     def submitJob(self, **kwargs):
         response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
-        return response
+        job = DPSJob()
+        job.set_submitted_job_result(response)
+        job.retrieve_attributes()
+        return job
 
     def uploadFiles(self, filenames):
         """

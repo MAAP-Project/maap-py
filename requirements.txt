@@ -1,3 +1,4 @@
+backoff
 black
 boto3-stubs[s3]
 botocore-stubs

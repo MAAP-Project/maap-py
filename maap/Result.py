@@ -4,6 +4,7 @@ import shutil
 import sys
 import urllib.parse
 from urllib.parse import urlparse
+from maap.utils import endpoints
 
 import boto3
 import requests
