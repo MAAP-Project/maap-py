@@ -11,6 +11,7 @@ from datetime import datetime
 from .Result import Collection, Granule
 from maap.config_reader import ConfigReader
 from maap.dps.dps_job import DPSJob
+from maap.utils.requests_utils import RequestsUtils
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
 from maap.utils import algorithm_utils
@@ -174,28 +175,31 @@ class MAAP(object):
         return response
 
     def registerAlgorithm(self, arg):
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         headers['Content-Type'] = 'application/json'
-        logger.debug('POST request sent to {}'.format(self._ALGORITHM_REGISTER))
         logger.debug('headers:')
         logger.debug(headers)
         logger.debug('request is')
+        if type(arg) is dict:
+            arg = json.dumps(arg)
         logger.debug(arg)
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
             data=arg,
             headers=headers
         )
+        logger.debug('POST request sent to {}'.format(self._ALGORITHM_REGISTER))
         return response
 
     def register_algorithm_from_yaml_file(self, file_path):
         algo_config = algorithm_utils.read_yaml_file(file_path)
         return self.registerAlgorithm(algo_config)
 
-    def register_algorithm_from_yaml_file_backwards_compatible(self, algo_yaml):
+    def register_algorithm_from_yaml_file_backwards_compatible(self, file_path):
+        algo_yaml = algorithm_utils.read_yaml_file(file_path)
         key_map = {"algo_name": "algorithm_name", "version": "code_version", "environment": "environment_name",
                    "description": "algorithm_description", "docker_url": "docker_container_url",
-                   "inputs": "algorithm_params", "run_command": "script_command"}
+                   "inputs": "algorithm_params", "run_command": "script_command", "repository_url": "repo_url"}
         output_config = {}
         for key, value in algo_yaml.items():
             if key in key_map:
@@ -209,7 +213,7 @@ class MAAP(object):
             else:
                 output_config.update({key: value})
         logger.debug("Registering with config %s " % json.dumps(output_config))
-        self.registerAlgorithm(json.dumps(output_config))
+        return self.registerAlgorithm(json.dumps(output_config))
 
     def listAlgorithms(self):
         url = self._MAS_ALGO
