@@ -143,11 +143,11 @@ class DpsHelper:
                         if job_id is not None:
                             return {"status": "success", "http_status_code": r.status_code, "job_id": job_id}
                 except:
-                    return {"status": "failed", "http_status_code": r.status_code, "job_id": ""}
+                    return {"status": "failed", "http_status_code": r.status_code, "job_id": "", "details": r.text}
             else:
-                return {"status": "failed", "http_status_code": r.status_code, "job_id": ""}
+                return {"status": "failed", "http_status_code": r.status_code, "job_id": "", "details": r.text}
         except:
-            return {"status": "failed", "http_status_code": r.status_code, "job_id": ""}
+            return {"status": "failed", "http_status_code": r.status_code, "job_id": "", "details": r.text}
 
     def _file_contents(self, file_name):
         with open(file_name, 'r') as file:
