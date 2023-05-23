@@ -115,8 +115,15 @@ class DPSJob:
     def retrieve_attributes(self):
         self.retrieve_status()
         if self.status.lower() in ["succeeded", "failed"]:
-            self.retrieve_result()
-            self.retrieve_metrics()
+            try:
+                self.retrieve_result()
+            except:
+                pass
+            try:
+                # In case job is failed, metrics will throw an error
+                self.retrieve_metrics()
+            except:
+                pass
 
     def dismiss_job(self):
         url = os.path.join(ConfigReader().dps_job, endpoints.DPS_JOB_DISMISS, self.id)
