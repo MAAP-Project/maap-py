@@ -48,7 +48,7 @@ class MAAP(object):
                     self.config.read_file(source)
                     break
             except IOError:
-                logger.warning("Unable to load config file from source %s " % loc)
+                logger.debug("Unable to load config file from source %s " % loc)
                 pass
 
         if not self.config.has_option('service', 'maap_host'):
@@ -328,7 +328,10 @@ class MAAP(object):
         response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
         job = DPSJob()
         job.set_submitted_job_result(response)
-        job.retrieve_attributes()
+        try:
+            job.retrieve_attributes()
+        except:
+            logger.debug(f"Unable to retrieve attributes for job: {job}")
         return job
 
     def uploadFiles(self, filenames):
