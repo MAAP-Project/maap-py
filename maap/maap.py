@@ -42,13 +42,12 @@ class MAAP(object):
         config_paths = list(map(self._get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
 
         for loc in config_paths:
-            logger.info("Loading config file from source %s " % loc)
             try:
                 with open(loc) as source:
                     self.config.read_file(source)
+                    logger.debug("Loaded config file from source %s " % loc)
                     break
             except IOError:
-                logger.debug("Unable to load config file from source %s " % loc)
                 pass
 
         if not self.config.has_option('service', 'maap_host'):
@@ -258,9 +257,9 @@ class MAAP(object):
     def deleteAlgorithm(self, algoid):
         url = os.path.join(self._MAS_ALGO, algoid)
         headers = self._get_api_header()
-        logging.debug('DELETE request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
+        logger.debug('DELETE request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
         response = requests.delete(
             url=url,
             headers=headers
@@ -270,9 +269,9 @@ class MAAP(object):
     def getCapabilities(self):
         url = self._DPS_JOB
         headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
+        logger.debug('GET request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
         response = requests.get(
             url=url,
             headers=headers
