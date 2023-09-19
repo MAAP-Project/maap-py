@@ -2,11 +2,11 @@ import logging
 import boto3
 import uuid
 import urllib.parse
-import time
+import json
 import os
 from mapboxgl.utils import *
 from mapboxgl.viz import *
-from datetime import datetime
+
 from .Result import Collection, Granule
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
@@ -14,7 +14,7 @@ from maap.Profile import Profile
 from maap.AWS import AWS
 from maap.dps.DpsHelper import DpsHelper
 from maap.utils import endpoints
-from .errors import QueryTimeout, QueryFailure
+
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,6 @@ class MAAP(object):
         self._REQUESTER_PAYS = self._get_api_endpoint("requester_pays")
         self._EDC_CREDENTIALS = self._get_api_endpoint("edc_credentials")
         self._S3_SIGNED_URL = self._get_api_endpoint("s3_signed_url")
-        self._QUERY_ENDPOINT = self._get_api_endpoint("query_endpoint")
 
         self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
         self._AWS_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID") or self.config.get("aws", "aws_access_key_id")
@@ -333,94 +332,6 @@ class MAAP(object):
             basename = os.path.basename(filename)
             response = self._upload_s3(filename, bucket, f"{prefix}/{uuid_dir}/{basename}")
         return f"Upload file subdirectory: {uuid_dir} (keep a record of this if you want to share these files with other users)"
-
-    def executeQuery(self, src, query={}, poll_results=True, timeout=180, wait_interval=.5, max_redirects=5):
-        """
-        Helper to execute query and poll results URL until results are returned
-        or timeout is reached.
-
-        src -- a dict-like object stipulating which dataset is to be queried.
-            Object must contain 'Collection' key. 'Collection' value must
-            contain 'ShortName' and 'VersionId' entries. Granule-related value
-            must contain a 'Collection' entry, complying with aforementioned
-            'Collection' object requirements.
-        query -- dict-like object describing parameters for query (default {}).
-            Currently supported parameters:
-                - where -- optional dict-like object mapping fields to required
-                    values, used for filtering query by properties
-                - bbox -- optional GeoJSON-compliant bounding box ([minX, minY,
-                    maxX, maxY]) by which to spatially filter data
-                - fields -- optional list of fields to return in query response
-        poll_results -- system will poll for results and return results response
-            if True, otherwise will return response from Query Service (default
-            True)
-        timeout -- maximum number of seconds to wait for response, only used if
-            poll_results=True (default 180)
-        wait_interval -- number of seconds to wait between each poll for
-            results, only used if poll_results=True (default 0.5)
-        max_redirects -- maximum number of redirects to follow when scheduling
-            an execution (default 5)
-        """
-        url = self._QUERY_ENDPOINT
-        redirect_count = 0
-        while True:
-            response = requests.post(
-                url=url,
-                headers=dict(Accept='application/json'),
-                json=dict(src=src, query=query),
-                allow_redirects=False
-            )
-
-            if not response.is_redirect:
-                break
-
-            # By default, requests follows POST redirects with GET request.
-            # Instead, we'll make the POST again to the new URL.
-            redirect_url = response.headers.get('Location', url)
-            if redirect_url is url:
-                break
-
-            redirect_count += 1
-            if redirect_count >= max_redirects:
-                break
-
-            logger.debug(f'Received redirect at {url}. Retrying query at {redirect_url}')
-            url = redirect_url
-
-        if not poll_results:
-            # Return the response of query execution
-            return response
-
-        response.raise_for_status()
-        if (response.is_redirect):
-            raise requests.HTTPError(
-                'Received redirect as query execution response '
-                'Is your the "query_endpoint" configuration correct?'
-                f'\n{response.status_code}: {response.text}'
-            )
-        execution = response.json()
-        results = execution['results']
-
-        # Poll results
-        start = datetime.now()
-        while (datetime.now() - start).seconds < timeout:
-            r = requests.get(url=results)
-
-            if r.status_code == 200:
-                # Return the response of query results
-                if r.headers.get('x-amz-meta-failed'):
-                    raise QueryFailure(
-                        f'The backing query service failed to process query:\n{r.text}'
-                    )
-                return r
-
-            if r.status_code == 404:
-                continue
-
-            r.raise_for_status()
-            time.sleep(wait_interval)
-
-        raise QueryTimeout('Query results did not appear within {} seconds'.format(timeout))
 
     def _get_browse(self, granule_ur):
         response = requests.get(
