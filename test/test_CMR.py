@@ -46,6 +46,14 @@ class TestCMR(TestCase):
         download = results[0].getData()
         self.assertTrue(len(download) > 0)
 
+    def test_direct_granuleDownload(self):
+        results = self.maap.downloadGranule(
+            online_access_url='https://datapool.asf.alaska.edu/GRD_HD/SA/S1A_S3_GRDH_1SDH_20140615T034444_20140615T034512_001055_00107C_8977.zip',
+            destination_path='./tmp'
+        )
+
+        self.assertTrue(len(results) > 0)
+
     def test_searchGranuleByInstrumentAndSiteName(self):
         results = self.maap.searchGranule(
             instrument=self._test_instrument_name_lvis,
