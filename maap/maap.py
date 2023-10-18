@@ -6,7 +6,7 @@ import urllib.parse
 import os
 from mapboxgl.utils import *
 from mapboxgl.viz import *
-from .Result import Collection, Granule
+from .Result import Collection, Granule, Result
 from maap.config_reader import ConfigReader
 from maap.dps.dps_job import DPSJob
 from maap.utils.requests_utils import RequestsUtils
@@ -123,6 +123,27 @@ class MAAP(object):
                         self._SEARCH_GRANULE_URL,
                         self._get_api_header(),
                         self._DPS) for result in results][:limit]
+
+    def downloadGranule(self, online_access_url, destination_path=".", overwrite=False):
+        """
+            Direct download of http Earthdata granule URL (protected or public).
+
+            :param online_access_url: the value of the granule's http OnlineAccessURL
+            :param destination_path: use the current directory as default
+            :param overwrite: don't download by default if the target file exists
+            :return: the file path of the download file
+            """
+
+        filename = os.path.basename(urllib.parse.urlparse(online_access_url).path)
+        destination_file = filename.replace("/", "")
+        final_destination = os.path.join(destination_path, destination_file)
+
+        proxy = Result({})
+        proxy._dps = self._DPS
+        proxy._cmrFileUrl = self._SEARCH_GRANULE_URL
+        proxy._apiHeader = self._get_api_header()
+        # noinspection PyProtectedMember
+        return proxy._getHttpData(online_access_url, overwrite, final_destination)
 
     def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
         """
