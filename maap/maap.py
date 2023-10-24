@@ -34,7 +34,7 @@ class MAAP(object):
         self.config = ConfigParser()
 
         # Adding this for newer capability imported frm SISTER, leaving the rest of config imports as is
-        self._singlelton_config = ConfigReader(config_file_path=config_file_path)
+        self._singlelton_config = ConfigReader(maap_host=maap_host,config_file_path=config_file_path)
 
         config_paths = list(map(self._get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
 
@@ -316,15 +316,10 @@ class MAAP(object):
         job.id = jobid
         return job.retrieve_metrics()
 
-    def dismissJob(self, jobid):
+    def cancelJob(self, jobid):
         job = DPSJob()
         job.id = jobid
-        return job.dismiss_job()
-
-    def deleteJob(self, jobid):
-        job = DPSJob()
-        job.id = jobid
-        return job.delete_job()
+        return job.cancel_job()
 
     def listJobs(self, username=None):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():

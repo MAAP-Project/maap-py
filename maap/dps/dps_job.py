@@ -125,30 +125,18 @@ class DPSJob:
             except:
                 pass
 
-    def dismiss_job(self):
+    def cancel_job(self):
         url = os.path.join(ConfigReader().dps_job, endpoints.DPS_JOB_DISMISS, self.id)
         headers = RequestsUtils.generate_dps_headers()
         logger.debug('DELETE request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
-        response = requests.delete(
+        response = requests.post(
             url=url,
             headers=headers
         )
         return RequestsUtils.check_response(response)
 
-    def delete_job(self):
-        url = os.path.join(ConfigReader().dps_job, self.id)
-        headers = RequestsUtils.generate_dps_headers()
-        logger.debug('DELETE request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.delete(
-            url=url,
-            headers=headers
-        )
-        return RequestsUtils.check_response(response)
-    
     def set_submitted_job_result(self, input_json: dict):
         """
         Sample:
