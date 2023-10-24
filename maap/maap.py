@@ -340,12 +340,13 @@ class MAAP(object):
         )
         return response
 
-    def submitJob(self, **kwargs):
+    def submitJob(self, retrieve_attributes=False, **kwargs):
         response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
         job = DPSJob()
         job.set_submitted_job_result(response)
         try:
-            job.retrieve_attributes()
+            if retrieve_attributes:
+                job.retrieve_attributes()
         except:
             logger.debug(f"Unable to retrieve attributes for job: {job}")
         return job
