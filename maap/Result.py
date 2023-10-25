@@ -4,11 +4,8 @@ import shutil
 import sys
 import urllib.parse
 from urllib.parse import urlparse
-from maap.utils import endpoints
-
 import boto3
 import requests
-
 from maap.utils import endpoints
 
 if sys.version_info < (3, 0):
@@ -181,6 +178,12 @@ class Granule(Result):
         self._OPeNDAPUrl = None
         self._BrowseUrl = None
 
+        self._relatedUrls = None
+        self._location = None
+        self._downloadname = None
+        self._OPeNDAPUrl = None
+        self._BrowseUrl = None
+
         for k in metaResult:
             self[k] = metaResult[k]
 
@@ -221,7 +224,7 @@ class Granule(Result):
 
             self._downloadname = filename
         except:
-            pass
+            self._relatedUrls = None
 
         # Retrieve OPeNDAPUrl
         try:

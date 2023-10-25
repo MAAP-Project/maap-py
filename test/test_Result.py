@@ -39,7 +39,7 @@ def test_getData_403_raises(tmp_path: pathlib.Path):
         dps=None,
     )
 
-    with pytest.raises(requests.exceptions.HTTPError):
+    with pytest.raises(requests.exceptions.HTTPError, match="403"):
         granule.getData(str(tmp_path))
 
 
@@ -116,7 +116,7 @@ def test_getData_overwrite_existing(tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
-        dps=None,
+        dps=None
     )
 
     destpath = granule.getData(str(tmp_path), overwrite=True)

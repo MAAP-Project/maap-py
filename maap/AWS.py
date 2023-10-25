@@ -1,7 +1,6 @@
 import json
 import logging
 import urllib
-
 import requests
 
 
@@ -75,6 +74,7 @@ class AWS:
             url=self._workspace_bucket_endpoint,
             headers=self._api_header,
         )
+
         response.raise_for_status()
 
         return json.loads(response.text)
