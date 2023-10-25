@@ -68,6 +68,7 @@ class MAAP(object):
         self._MEMBER_DPS_TOKEN = self._get_api_endpoint("member_dps_token")
         self._REQUESTER_PAYS = self._get_api_endpoint("requester_pays")
         self._EDC_CREDENTIALS = self._get_api_endpoint("edc_credentials")
+        self._WORKSPACE_BUCKET_CREDENTIALS = self._get_api_endpoint("workspace_bucket_credentials")
         self._S3_SIGNED_URL = self._get_api_endpoint("s3_signed_url")
 
         self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
@@ -81,7 +82,13 @@ class MAAP(object):
         self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
         self._DPS = DpsHelper(self._get_api_header(), self._MEMBER_DPS_TOKEN)
         self.profile = Profile(self._MEMBER, self._get_api_header())
-        self.aws = AWS(self._REQUESTER_PAYS, self._S3_SIGNED_URL, self._EDC_CREDENTIALS, self._get_api_header())
+        self.aws = AWS(
+            self._REQUESTER_PAYS,
+            self._S3_SIGNED_URL,
+            self._EDC_CREDENTIALS,
+            self._WORKSPACE_BUCKET_CREDENTIALS,
+            self._get_api_header()
+        )
 
     def _get_api_endpoint(self, config_key):
         return 'https://{}/api/{}'.format(self._MAAP_HOST, self.config.get("maap_endpoint", config_key))
