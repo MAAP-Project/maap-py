@@ -21,7 +21,7 @@ class RequestsUtils:
 
     @staticmethod
     def check_response(dps_response):
-        if dps_response.status_code not in [200, 201]:
-            raise RuntimeError('response is not 200 or 201. code: {}. details: {}'.format(dps_response.status_code,
-                                                                                          dps_response.content))
+        # if dps_response.status_code not in [200, 201]:
+        #     raise RuntimeError('response is not 200 or 201. code: {}. details: {}'.format(dps_response.status_code,
+        #                                                                                   dps_response.content))
         return dps_response.content.decode('UTF-8')
