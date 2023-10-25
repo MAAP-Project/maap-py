@@ -27,3 +27,11 @@ def test_earthdata_s3_credentials(aws: AWS):
 
     with pytest.raises(requests.exceptions.HTTPError, match="403"):
         aws.earthdata_s3_credentials("")
+
+
+@responses.activate
+def test_workspace_bucket_credentials(aws: AWS):
+    responses.get(url=aws._workspace_bucket_endpoint, status=403)
+
+    with pytest.raises(requests.exceptions.HTTPError, match="403"):
+        aws.workspace_bucket_credentials("")
