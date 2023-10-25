@@ -1,20 +1,22 @@
+import json
 import logging
 import boto3
 import uuid
 import urllib.parse
-import time
 import os
 from mapboxgl.utils import *
 from mapboxgl.viz import *
-from datetime import datetime
-from .Result import Collection, Granule
+from .Result import Collection, Granule, Result
+from maap.config_reader import ConfigReader
+from maap.dps.dps_job import DPSJob
+from maap.utils.requests_utils import RequestsUtils
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
+from maap.utils import algorithm_utils
 from maap.Profile import Profile
 from maap.AWS import AWS
 from maap.dps.DpsHelper import DpsHelper
 from maap.utils import endpoints
-from .errors import QueryTimeout, QueryFailure
 
 logger = logging.getLogger(__name__)
 
@@ -27,15 +29,20 @@ except ImportError:
 
 
 class MAAP(object):
-    def __init__(self, maap_host=''):
+
+    def __init__(self, maap_host='', config_file_path=''):
         self.config = ConfigParser()
 
-        config_paths = list(map(self._get_config_path, [os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
+        # Adding this for newer capability imported frm SISTER, leaving the rest of config imports as is
+        self._singlelton_config = ConfigReader(maap_host=maap_host,config_file_path=config_file_path)
+
+        config_paths = list(map(self._get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
 
         for loc in config_paths:
             try:
                 with open(loc) as source:
                     self.config.read_file(source)
+                    logger.debug("Loaded config file from source %s " % loc)
                     break
             except IOError:
                 pass
@@ -58,10 +65,11 @@ class MAAP(object):
         self._DPS_JOB = self._get_api_endpoint("dps_job")
         self._WMTS = self._get_api_endpoint("wmts")
         self._MEMBER = self._get_api_endpoint("member")
+        self._MEMBER_DPS_TOKEN = self._get_api_endpoint("member_dps_token")
         self._REQUESTER_PAYS = self._get_api_endpoint("requester_pays")
         self._EDC_CREDENTIALS = self._get_api_endpoint("edc_credentials")
+        self._WORKSPACE_BUCKET_CREDENTIALS = self._get_api_endpoint("workspace_bucket_credentials")
         self._S3_SIGNED_URL = self._get_api_endpoint("s3_signed_url")
-        self._QUERY_ENDPOINT = self._get_api_endpoint("query_endpoint")
 
         self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
         self._AWS_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID") or self.config.get("aws", "aws_access_key_id")
@@ -72,9 +80,15 @@ class MAAP(object):
         self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
 
         self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
-        self._DPS = DpsHelper(self._get_api_header())
+        self._DPS = DpsHelper(self._get_api_header(), self._MEMBER_DPS_TOKEN)
         self.profile = Profile(self._MEMBER, self._get_api_header())
-        self.aws = AWS(self._REQUESTER_PAYS, self._S3_SIGNED_URL, self._EDC_CREDENTIALS, self._get_api_header())
+        self.aws = AWS(
+            self._REQUESTER_PAYS,
+            self._S3_SIGNED_URL,
+            self._EDC_CREDENTIALS,
+            self._WORKSPACE_BUCKET_CREDENTIALS,
+            self._get_api_header()
+        )
 
     def _get_api_endpoint(self, config_key):
         return 'https://{}/api/{}'.format(self._MAAP_HOST, self.config.get("maap_endpoint", config_key))
@@ -114,7 +128,29 @@ class MAAP(object):
                         self._AWS_ACCESS_KEY,
                         self._AWS_ACCESS_SECRET,
                         self._SEARCH_GRANULE_URL,
-                        self._get_api_header()) for result in results][:limit]
+                        self._get_api_header(),
+                        self._DPS) for result in results][:limit]
+
+    def downloadGranule(self, online_access_url, destination_path=".", overwrite=False):
+        """
+            Direct download of http Earthdata granule URL (protected or public).
+
+            :param online_access_url: the value of the granule's http OnlineAccessURL
+            :param destination_path: use the current directory as default
+            :param overwrite: don't download by default if the target file exists
+            :return: the file path of the download file
+            """
+
+        filename = os.path.basename(urllib.parse.urlparse(online_access_url).path)
+        destination_file = filename.replace("/", "")
+        final_destination = os.path.join(destination_path, destination_file)
+
+        proxy = Result({})
+        proxy._dps = self._DPS
+        proxy._cmrFileUrl = self._SEARCH_GRANULE_URL
+        proxy._apiHeader = self._get_api_header()
+        # noinspection PyProtectedMember
+        return proxy._getHttpData(online_access_url, overwrite, final_destination)
 
     def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
         """
@@ -162,19 +198,45 @@ class MAAP(object):
         return response
 
     def registerAlgorithm(self, arg):
-        headers = self._get_api_header()
+        headers = RequestsUtils.generate_dps_headers()
         headers['Content-Type'] = 'application/json'
-        logger.debug('POST request sent to {}'.format(self._ALGORITHM_REGISTER))
         logger.debug('headers:')
         logger.debug(headers)
         logger.debug('request is')
+        if type(arg) is dict:
+            arg = json.dumps(arg)
         logger.debug(arg)
         response = requests.post(
             url=self._ALGORITHM_REGISTER,
             data=arg,
             headers=headers
         )
+        logger.debug('POST request sent to {}'.format(self._ALGORITHM_REGISTER))
         return response
+
+    def register_algorithm_from_yaml_file(self, file_path):
+        algo_config = algorithm_utils.read_yaml_file(file_path)
+        return self.registerAlgorithm(algo_config)
+
+    def register_algorithm_from_yaml_file_backwards_compatible(self, file_path):
+        algo_yaml = algorithm_utils.read_yaml_file(file_path)
+        key_map = {"algo_name": "algorithm_name", "version": "code_version", "environment": "environment_name",
+                   "description": "algorithm_description", "docker_url": "docker_container_url",
+                   "inputs": "algorithm_params", "run_command": "script_command", "repository_url": "repo_url"}
+        output_config = {}
+        for key, value in algo_yaml.items():
+            if key in key_map:
+                if key == "inputs":
+                    inputs = []
+                    for argument in value:
+                        inputs.append({"field": argument.get("name"), "download": argument.get("download")})
+                    output_config.update({"algorithm_params": inputs})
+                else:
+                    output_config.update({key_map.get(key): value})
+            else:
+                output_config.update({key: value})
+        logger.debug("Registering with config %s " % json.dumps(output_config))
+        return self.registerAlgorithm(json.dumps(output_config))
 
     def listAlgorithms(self):
         url = self._MAS_ALGO
@@ -219,9 +281,9 @@ class MAAP(object):
     def deleteAlgorithm(self, algoid):
         url = os.path.join(self._MAS_ALGO, algoid)
         headers = self._get_api_header()
-        logging.debug('DELETE request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
+        logger.debug('DELETE request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
         response = requests.delete(
             url=url,
             headers=headers
@@ -231,74 +293,40 @@ class MAAP(object):
     def getCapabilities(self):
         url = self._DPS_JOB
         headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
+        logger.debug('GET request sent to {}'.format(url))
+        logger.debug('headers:')
+        logger.debug(headers)
         response = requests.get(
             url=url,
             headers=headers
         )
         return response
+
+    def getJob(self, jobid):
+        job = DPSJob()
+        job.id = jobid
+        job.retrieve_attributes()
+        return job
 
     def getJobStatus(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_STATUS)
-        headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob()
+        job.id = jobid
+        return job.retrieve_status()
 
     def getJobResult(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid)
-        headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob()
+        job.id = jobid
+        return job.retrieve_result()
 
     def getJobMetrics(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid, endpoints.DPS_JOB_METRICS)
-        headers = self._get_api_header()
-        logging.debug('GET request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
+        job = DPSJob()
+        job.id = jobid
+        return job.retrieve_metrics()
 
-    def dismissJob(self, jobid):
-        url = os.path.join(self._DPS_JOB, endpoints.DPS_JOB_DISMISS, jobid)
-        headers = self._get_api_header()
-        logging.debug('DELETE request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.delete(
-            url=url,
-            headers=headers
-        )
-        return response
-
-    def deleteJob(self, jobid):
-        url = os.path.join(self._DPS_JOB, jobid)
-        headers = self._get_api_header()
-        logging.debug('DELETE request sent to {}'.format(url))
-        logging.debug('headers:')
-        logging.debug(headers)
-        response = requests.delete(
-            url=url,
-            headers=headers
-        )
-        return response
+    def cancelJob(self, jobid):
+        job = DPSJob()
+        job.id = jobid
+        return job.cancel_job()
 
     def listJobs(self, username=None):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
@@ -314,9 +342,16 @@ class MAAP(object):
         )
         return response
 
-    def submitJob(self, **kwargs):
+    def submitJob(self, retrieve_attributes=False, **kwargs):
         response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
-        return response
+        job = DPSJob()
+        job.set_submitted_job_result(response)
+        try:
+            if retrieve_attributes:
+                job.retrieve_attributes()
+        except:
+            logger.debug(f"Unable to retrieve attributes for job: {job}")
+        return job
 
     def uploadFiles(self, filenames):
         """
@@ -333,94 +368,6 @@ class MAAP(object):
             basename = os.path.basename(filename)
             response = self._upload_s3(filename, bucket, f"{prefix}/{uuid_dir}/{basename}")
         return f"Upload file subdirectory: {uuid_dir} (keep a record of this if you want to share these files with other users)"
-
-    def executeQuery(self, src, query={}, poll_results=True, timeout=180, wait_interval=.5, max_redirects=5):
-        """
-        Helper to execute query and poll results URL until results are returned
-        or timeout is reached.
-
-        src -- a dict-like object stipulating which dataset is to be queried.
-            Object must contain 'Collection' key. 'Collection' value must
-            contain 'ShortName' and 'VersionId' entries. Granule-related value
-            must contain a 'Collection' entry, complying with aforementioned
-            'Collection' object requirements.
-        query -- dict-like object describing parameters for query (default {}).
-            Currently supported parameters:
-                - where -- optional dict-like object mapping fields to required
-                    values, used for filtering query by properties
-                - bbox -- optional GeoJSON-compliant bounding box ([minX, minY,
-                    maxX, maxY]) by which to spatially filter data
-                - fields -- optional list of fields to return in query response
-        poll_results -- system will poll for results and return results response
-            if True, otherwise will return response from Query Service (default
-            True)
-        timeout -- maximum number of seconds to wait for response, only used if
-            poll_results=True (default 180)
-        wait_interval -- number of seconds to wait between each poll for
-            results, only used if poll_results=True (default 0.5)
-        max_redirects -- maximum number of redirects to follow when scheduling
-            an execution (default 5)
-        """
-        url = self._QUERY_ENDPOINT
-        redirect_count = 0
-        while True:
-            response = requests.post(
-                url=url,
-                headers=dict(Accept='application/json'),
-                json=dict(src=src, query=query),
-                allow_redirects=False
-            )
-
-            if not response.is_redirect:
-                break
-
-            # By default, requests follows POST redirects with GET request.
-            # Instead, we'll make the POST again to the new URL.
-            redirect_url = response.headers.get('Location', url)
-            if redirect_url is url:
-                break
-
-            redirect_count += 1
-            if redirect_count >= max_redirects:
-                break
-
-            logger.debug(f'Received redirect at {url}. Retrying query at {redirect_url}')
-            url = redirect_url
-
-        if not poll_results:
-            # Return the response of query execution
-            return response
-
-        response.raise_for_status()
-        if (response.is_redirect):
-            raise requests.HTTPError(
-                'Received redirect as query execution response '
-                'Is your the "query_endpoint" configuration correct?'
-                f'\n{response.status_code}: {response.text}'
-            )
-        execution = response.json()
-        results = execution['results']
-
-        # Poll results
-        start = datetime.now()
-        while (datetime.now() - start).seconds < timeout:
-            r = requests.get(url=results)
-
-            if r.status_code == 200:
-                # Return the response of query results
-                if r.headers.get('x-amz-meta-failed'):
-                    raise QueryFailure(
-                        f'The backing query service failed to process query:\n{r.text}'
-                    )
-                return r
-
-            if r.status_code == 404:
-                continue
-
-            r.raise_for_status()
-            time.sleep(wait_interval)
-
-        raise QueryTimeout('Query results did not appear within {} seconds'.format(timeout))
 
     def _get_browse(self, granule_ur):
         response = requests.get(

@@ -4,10 +4,8 @@ import shutil
 import sys
 import urllib.parse
 from urllib.parse import urlparse
-
 import boto3
 import requests
-
 from maap.utils import endpoints
 
 if sys.version_info < (3, 0):
@@ -92,15 +90,41 @@ class Result(dict):
 
             # Try with a federated token if unauthorized
             if r.status_code == 401:
-                r = requests.get(
-                    url=os.path.join(
-                        self._cmrFileUrl,
-                        urllib.parse.quote(urllib.parse.quote(url, safe="")),
-                        endpoints.CMR_ALGORITHM_DATA,
-                    ),
-                    headers=self._apiHeader,
-                    stream=True,
-                )
+                if self._dps.running_in_dps:
+                    dps_token_response = requests.get(
+                        url=self._dps.dps_token_endpoint,
+                        headers={
+                            "dps-machine-token": self._dps.dps_machine_token,
+                            "dps-job-id": self._dps.job_id,
+                            "Accept": "application/json",
+                        },
+                    )
+
+                    if dps_token_response:
+                        # Running inside a DPS job, so call DAAC directly
+                        dps_token_info = json.loads(dps_token_response.text)
+                        r = requests.get(
+                            url=r.url,
+                            headers={
+                                "Authorization": "Bearer {},Basic {}".format(
+                                    dps_token_info["user_token"],
+                                    dps_token_info["app_token"],
+                                ),
+                                "Connection": "close",
+                            },
+                            stream=True,
+                        )
+                else:
+                    # Running in ADE, so call MAAP API
+                    r = requests.get(
+                        url=os.path.join(
+                            self._cmrFileUrl,
+                            urllib.parse.quote(urllib.parse.quote(url, safe="")),
+                            endpoints.CMR_ALGORITHM_DATA,
+                        ),
+                        headers=self._apiHeader,
+                        stream=True,
+                    )
 
             r.raise_for_status()
             r.raw.decode_content = True
@@ -140,13 +164,19 @@ class Collection(Result):
 
 class Granule(Result):
     def __init__(
-        self, metaResult, awsAccessKey, awsAccessSecret, cmrFileUrl, apiHeader
+        self, metaResult, awsAccessKey, awsAccessSecret, cmrFileUrl, apiHeader, dps
     ):
-
         self._awsKey = awsAccessKey
         self._awsSecret = awsAccessSecret
         self._cmrFileUrl = cmrFileUrl
         self._apiHeader = apiHeader
+        self._dps = dps
+
+        self._relatedUrls = None
+        self._location = None
+        self._downloadname = None
+        self._OPeNDAPUrl = None
+        self._BrowseUrl = None
 
         self._relatedUrls = None
         self._location = None

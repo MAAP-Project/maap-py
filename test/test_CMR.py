@@ -35,11 +35,24 @@ class TestCMR(TestCase):
         self.assertTrue(len(download) > 0)
 
     def test_granuleDownloadExternalDAAC(self):
-        results = self.maap.searchGranule(
-            collection_concept_id='C1200231010-NASA_MAAP')
+        # results = self.maap.searchGranule(
+        #     collection_concept_id='C1200231010-NASA_MAAP')
 
-        download = results[0].getLocalPath()
+        results = self.maap.searchGranule(
+            cmr_host='cmr.earthdata.nasa.gov',
+            collection_concept_id='C2067521974-ORNL_CLOUD',
+            granule_ur='GEDI_L3_Land_Surface_Metrics.GEDI03_elev_lowestmode_stddev_2019108_2020106_001_08.tif')
+
+        download = results[0].getData()
         self.assertTrue(len(download) > 0)
+
+    def test_direct_granuleDownload(self):
+        results = self.maap.downloadGranule(
+            online_access_url='https://datapool.asf.alaska.edu/GRD_HD/SA/S1A_S3_GRDH_1SDH_20140615T034444_20140615T034512_001055_00107C_8977.zip',
+            destination_path='./tmp'
+        )
+
+        self.assertTrue(len(results) > 0)
 
     def test_searchGranuleByInstrumentAndSiteName(self):
         results = self.maap.searchGranule(

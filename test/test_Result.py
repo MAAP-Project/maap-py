@@ -36,6 +36,7 @@ def test_getData_403_raises(tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
 
     with pytest.raises(requests.exceptions.HTTPError, match="403"):
@@ -61,6 +62,7 @@ def test_getData_no_overwrite_existing(tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
 
     destpath = granule.getData(str(tmp_path))
@@ -86,6 +88,7 @@ def test_getData_no_overwrite_non_existing(tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
 
     destfile = granule.getData(str(tmp_path))
@@ -113,6 +116,7 @@ def test_getData_overwrite_existing(tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None
     )
 
     destpath = granule.getData(str(tmp_path), overwrite=True)
@@ -138,6 +142,7 @@ def test_getData_overwrite_non_existing(tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
 
     destfile = granule.getData(str(tmp_path), overwrite=True)
@@ -165,6 +170,7 @@ def test_Granule_single_location():
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
     assert granule._location == "s3://ornl-cumulus-prod-protected/gedi/*/data/*.h5"
     assert granule._fallback == None
@@ -195,6 +201,7 @@ def test_Granule_fallback_location():
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
     assert granule._location == "s3://ornl-cumulus-prod-protected/gedi/*/data/*.h5"
     assert (
@@ -227,6 +234,7 @@ def test_Granule_https_locations():
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
     assert (
         granule._location
@@ -254,6 +262,7 @@ def test_getData_s3_url_only(s3: S3Client, tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
 
     with open(granule.getData(str(tmp_path))) as f:
@@ -291,6 +300,7 @@ def test_getData_s3_url_with_fallback_in_order(tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
 
     with open(granule.getData(str(tmp_path))) as f:
@@ -326,6 +336,7 @@ def test_getData_s3_url_with_fallback_wrong_order(s3: S3Client, tmp_path: pathli
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
 
     with open(granule.getData(str(tmp_path))) as f:
@@ -355,6 +366,7 @@ def test_getData_https_url_only(tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
 
     with open(granule.getData(str(tmp_path))) as f:
@@ -398,6 +410,7 @@ def test_getData_s3_with_multiple_fallbacks(tmp_path: pathlib.Path):
         awsAccessSecret="",
         apiHeader={},
         cmrFileUrl="",
+        dps=None,
     )
 
     with open(granule.getData(str(tmp_path))) as f:
