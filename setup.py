@@ -31,7 +31,7 @@ _name = 'maapPy'
 _namespaces = []
 _test_suite = ''
 _url = 'https://github.com/MAAP-Project/maap-py'
-_version = '3.0.0'
+_version = '3.1.3'
 _zip_safe = False
 
 # Setup Metadata

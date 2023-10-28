@@ -46,7 +46,9 @@ class ConfigReader(metaclass=Singleton):
         self.__member = self._get_api_endpoint("member")
         self.__tiler_endpoint = self.__config.get("service", "tiler_endpoint")
 
-        self.__query_endpoint = self._get_api_endpoint("query_endpoint")
+
+
+
         self.__aws_access_key = os.environ.get("AWS_ACCESS_KEY_ID") or self.__config.get("aws", "aws_access_key_id")
         self.__aws_access_secret = os.environ.get("AWS_SECRET_ACCESS_KEY") or self.__config.get("aws",
                                                                                               "aws_secret_access_key")
@@ -242,19 +244,6 @@ class ConfigReader(metaclass=Singleton):
         :return: None
         """
         self.__maap_host = val
-        return
-
-    @property
-    def query_endpoint(self):
-        return self.__query_endpoint
-
-    @query_endpoint.setter
-    def query_endpoint(self, val):
-        """
-        :param val:
-        :return: None
-        """
-        self.__query_endpoint = val
         return
 
     @property
