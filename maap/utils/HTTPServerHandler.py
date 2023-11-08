@@ -43,7 +43,7 @@ class HTTPServerHandler(BaseHTTPRequestHandler):
             'redirect_uri': REDIRECT_URL
         }
 
-        r = requests.post(url, data=body, auth=('MAAP', 'Icbinb1!'))
+        r = requests.post(url, data=body, auth=('edl_client_name', 'edl_client_password'))
 
         if r.status_code == 401:
             return "unauthorized"
