@@ -134,10 +134,13 @@ class Result(dict):
 
         return dest
 
-    def getDownloadUrl(self):
-        """
-        :return:
-        """
+    def getDownloadUrl(self, s3=True):
+        return self.getS3Url() if s3 else self.getHttpUrl()
+
+    def getHttpUrl(self):
+        return self._fallback
+
+    def getS3Url(self):
         return self._location
 
     def getDescription(self):
