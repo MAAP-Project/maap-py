@@ -134,8 +134,24 @@ class Result(dict):
 
         return dest
 
-    def getDownloadUrl(self):
+    def getDownloadUrl(self, s3=True):
         """
+        Get granule download url
+        :param s3: True returns the s3 url, False the http url
+        :return:
+        """
+        return self.getS3Url() if s3 else self.getHttpUrl()
+
+    def getHttpUrl(self):
+        """
+        Get granule http url
+        :return:
+        """
+        return self._fallback
+
+    def getS3Url(self):
+        """
+        Get granule s3 url
         :return:
         """
         return self._location
