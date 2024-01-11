@@ -83,3 +83,12 @@ class TestCMR(TestCase):
                                               readable_granule_name='*185*')
         self.assertTrue('concept-id' in results[0].keys())
 
+    def test_getUrl(self):
+        results = self.maap.searchGranule(page_num="1", concept_id="C1214470488-ASF", sort_key="-start_date", limit=1)
+
+        url = results[0].getHttpUrl()
+        self.assertTrue(url.startswith("http"))
+
+        url = results[0].getS3Url()
+        self.assertTrue(url.startswith("s3"))
+
