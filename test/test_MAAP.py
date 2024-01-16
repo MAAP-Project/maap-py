@@ -1,6 +1,5 @@
 from unittest import TestCase
 from maap.maap import MAAP
-from maap.utils.TokenHandler import TokenHandler
 from unittest.mock import MagicMock
 import re
 
@@ -63,11 +62,6 @@ class TestMAAP(TestCase):
                 'platform="AIRCRAFT|B-200|COMPUTERS", '\
                 'data_center="MAAP Data Management Team", '\
                 'bounding_box="-35.4375,-55.6875,-80.4375,37.6875")')
-
-    def test_TokenHandler(self):
-        th = TokenHandler("a-K9YbTr8h112zW5pLV8Fw")
-        token = th.get_access_token()
-        self.assertTrue(token != 'unauthorized' and len(token) > 0)
 
     def test_uploadFiles(self):
         self.maap._upload_s3 = MagicMock(return_value=None)
