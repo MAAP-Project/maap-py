@@ -37,7 +37,7 @@ class DpsHelper:
     def submit_job(self, request_url, **kwargs):
         xml_file = os.path.join(self._location, 'execute.xml')
         input_xml = os.path.join(self._location, 'execute_inputs.xml')
-        
+
         # ==================================
         # Part 1: Parse Required Arguments
         # ==================================
@@ -88,7 +88,7 @@ class DpsHelper:
         # Insert XML for algorithm inputs
         # -------------------------------
         for key in input_names:
-            other += ins_xml.format(name=key).format(value=input_names[key])
+            other += ins_xml.format(name=key, value=input_names[key])
             other += '\n'
 
         # print(other)
