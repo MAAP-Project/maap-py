@@ -1,1 +1,2 @@
 include maap/dps/*.xml
+include maap/maap.cfg

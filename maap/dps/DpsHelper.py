@@ -2,9 +2,10 @@ import datetime
 import requests
 import xml.etree.ElementTree as ET
 import logging
-import os
 import json
 from os.path import exists
+
+import importlib_resources as resources
 
 
 class DpsHelper:
@@ -16,7 +17,6 @@ class DpsHelper:
     """
     def __init__(self, api_header, dps_token_endpoint):
         self._api_header = api_header
-        self._location = os.path.dirname(os.path.abspath(__file__))
         self._logger = logging.getLogger(__name__)
         self.dps_token_endpoint = dps_token_endpoint
         self.running_in_dps = self._running_in_dps_mode()
@@ -35,8 +35,8 @@ class DpsHelper:
         return res
 
     def submit_job(self, request_url, **kwargs):
-        xml_file = os.path.join(self._location, 'execute.xml')
-        input_xml = os.path.join(self._location, 'execute_inputs.xml')
+        xml_file = resources.files("maap.dps").joinpath("execute.xml")
+        input_xml = resources.files("maap.dps").joinpath("execute_inputs.xml")
 
         # ==================================
         # Part 1: Parse Required Arguments
@@ -81,8 +81,7 @@ class DpsHelper:
         ins_xml = ''
 
         other = ''
-        with open(input_xml) as xml:
-            ins_xml = xml.read()
+        ins_xml = input_xml.read_text()
 
         # -------------------------------
         # Insert XML for algorithm inputs
@@ -94,10 +93,7 @@ class DpsHelper:
         # print(other)
         params['other_inputs'] = other
 
-        with open(xml_file) as xml:
-            req_xml = xml.read()
-
-        req_xml = req_xml.format(**params)
+        req_xml = xml_file.read_text().format(**params)
 
         # log request body
         logging.debug('request is')
