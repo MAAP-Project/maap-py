@@ -22,15 +22,28 @@ _classifiers = [
 ]
 _description = "maapPy Python API"
 _download_url = ""
+_boto3_version = "1.33.0"
 _requirements = [
     "backoff~=2.2",
-    "boto3~=1.33",
+    f"boto3~={_boto3_version}",
     "ConfigParser~=6.0",
     "mapboxgl~=0.10",
     "PyYAML~=6.0",
     "requests~=2.31",
-    "setuptools",
+    "setuptools~=69.0",
 ]
+_extra_requirements = {
+    "dev": [
+        f"boto3-stubs[s3]~={_boto3_version}",
+        "ipython~=8.12",
+        "moto~=4.2",
+        "mypy~=1.8",
+        "pytest~=7.4",
+        "responses~=0.24",
+        "types-requests~=2.31",
+        "types-PyYAML~=6.0",
+    ]
+}
 _keywords = ["dataset", "granule", "nasa", "MAAP", "CMR"]
 _license = "Apache License, Version 2.0"
 _long_description = "Python client API for interacting with the NASA MAAP API"
@@ -51,7 +64,9 @@ def _read(*rnames):
 
 _header = "*" * len(_name) + "\n" + _name + "\n" + "*" * len(_name)
 _longDescription = "\n\n".join([_header, _read("README.md")])
-open("doc.txt", "w").write(_longDescription)
+
+with open("doc.txt", "w") as doc:
+    doc.write(_longDescription)
 
 setup(
     author=_author,
@@ -60,21 +75,9 @@ setup(
     description=_description,
     download_url=_download_url,
     include_package_data=True,
-    install_requires=_requirements,
     setup_requires=["pytest-runner"],
-    extras_require={
-        "dev": [
-            "boto3-stubs[s3]~=1.33",
-            "ipython~=8.12",
-            "moto~=4.2",
-            "mypy~=1.8",
-            "mypy_boto3_s3~=1.33",
-            "pytest~=7.4",
-            "responses~=0.24",
-            "types-requests~=2.31",
-            "types-PyYAML~=6.0",
-        ]
-    },
+    install_requires=_requirements,
+    extras_require=_extra_requirements,
     keywords=_keywords,
     license=_license,
     long_description=_long_description,
