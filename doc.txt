@@ -1,6 +1,6 @@
-******
-maapPy
-******
+*******
+maap-py
+*******
 
 # Python MAAP Client Library
 
