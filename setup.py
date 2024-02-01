@@ -27,6 +27,7 @@ _requirements = [
     "backoff~=2.2",
     f"boto3~={_boto3_version}",
     "ConfigParser~=6.0",
+    "importlib_resources~=6.0",
     "mapboxgl~=0.10",
     "PyYAML~=6.0",
     "requests~=2.31",
