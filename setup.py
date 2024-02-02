@@ -28,6 +28,11 @@ _requirements = [
     f"boto3~={_boto3_version}",
     "ConfigParser~=6.0",
     "importlib_resources~=6.0",
+    # We must explicitly specify ipython because mapboxgl requires it, but
+    # does not specify it in its own requirements.  This is a bug in mapboxgl
+    # that has been fixed, but the fix has not been released even though it was
+    # fixed in 2019.  See https://github.com/mapbox/mapboxgl-jupyter/pull/172.
+    "ipython~=8.12",
     "mapboxgl~=0.10",
     "PyYAML~=6.0",
     "requests~=2.31",
@@ -36,7 +41,6 @@ _requirements = [
 _extra_requirements = {
     "dev": [
         f"boto3-stubs[s3]~={_boto3_version}",
-        "ipython~=8.12",
         "moto~=4.2",
         "mypy~=1.8",
         "pytest~=7.4",
