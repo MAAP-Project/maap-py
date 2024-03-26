@@ -4,8 +4,10 @@ import boto3
 import uuid
 import urllib.parse
 import os
-from mapboxgl.utils import *
-from mapboxgl.viz import *
+import sys
+
+import importlib_resources as resources
+import requests
 from .Result import Collection, Granule, Result
 from maap.config_reader import ConfigReader
 from maap.dps.dps_job import DPSJob
@@ -22,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 s3_client = boto3.client('s3')
 
-try:
+if sys.version_info >= (3,):
     from configparser import ConfigParser
-except ImportError:
+else:
     from ConfigParser import ConfigParser
 
 
@@ -33,10 +35,20 @@ class MAAP(object):
     def __init__(self, maap_host='', config_file_path=''):
         self.config = ConfigParser()
 
-        # Adding this for newer capability imported frm SISTER, leaving the rest of config imports as is
-        self._singlelton_config = ConfigReader(maap_host=maap_host,config_file_path=config_file_path)
+        # Adding this for newer capability imported from SISTER, leaving the rest of config imports as is
+        self._singlelton_config = ConfigReader(maap_host=maap_host, config_file_path=config_file_path)
 
-        config_paths = list(map(self._get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
+        config_paths = list(
+            map(
+                self._get_config_path,
+                [
+                    os.path.dirname(config_file_path),
+                    os.curdir,
+                    os.path.expanduser("~"),
+                    os.environ.get("MAAP_CONF", resources.files("maap")),
+                ],
+            )
+        )
 
         for loc in config_paths:
             try:
@@ -386,6 +398,8 @@ class MAAP(object):
         return response
 
     def show(self, granule, display_config={}):
+        from mapboxgl.viz import RasterTilesViz
+
         granule_ur = granule['Granule']['GranuleUR']
         browse_file = json.loads(self._get_browse(granule_ur).text)['browse']
         capabilities = json.loads(self._get_capabilities(granule_ur).text)['body']
@@ -409,4 +423,3 @@ class MAAP(object):
 
 if __name__ == "__main__":
     print("initialized")
-
