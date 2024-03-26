@@ -38,8 +38,8 @@ class ConfigReader(metaclass=Singleton):
                     break
             except IOError:
                 pass
-        if not configfile_present:
-            raise IOError("No maap.cfg file found. Locations checked: " + '; '.join(config_paths))
+        #if not configfile_present:
+        #    raise IOError("No maap.cfg file found. Locations checked: " + '; '.join(config_paths))
 
         if maap_host is None:
             if not self.__config.has_option('service', 'maap_host'):
