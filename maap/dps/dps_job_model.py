@@ -1,8 +1,8 @@
 import logging
-import os
 from datetime import datetime
 import xml.etree.ElementTree as ET
 
+import importlib_resources as resources
 import requests
 
 from maap.config_reader import ConfigReader
@@ -37,18 +37,16 @@ class DPSJobModel:
         self.__algorithm_version = None
         self.__username = 'anonymous'
         self.__inputs = {}
-        current_location = os.path.dirname(os.path.abspath(__file__))
-        self.__xml_file = os.path.join(current_location, 'execute.xml')
-        self.__input_xml = os.path.join(current_location, 'execute_inputs.xml')
+        self.__xml_file = resources.files("maap.dps").joinpath("execute.xml")
+        self.__input_xml = resources.files("maap.dps").joinpath("execute_inputs.xml")
 
     def with_param(self, key, val):
         self.__inputs[key] = val
         return self
 
     def __generate_xml_inputs(self):
-        with open(self.__input_xml) as xml:
-            input_xml = xml.read()
-        input_xmls = [input_xml.format(name=k).format(value=v) for k, v in self.__inputs.items()]
+        input_xml = self.__input_xml.read_text()
+        input_xmls = [input_xml.format(name=k, value=v) for k, v in self.__inputs.items()]
         return '\n'.join(input_xmls)
 
     def generate_request_xml(self):
@@ -61,10 +59,7 @@ class DPSJobModel:
             'inputs': '',  # TODO this is needed?
             'other_inputs': self.__generate_xml_inputs(),
         }
-        with open(self.__xml_file) as xml:
-            request_xml = xml.read()
-        request_xml = request_xml.format(**params)
-        return request_xml
+        return self.__xml_file.read_text().format(**params)
 
     def submit_job(self):
         """
