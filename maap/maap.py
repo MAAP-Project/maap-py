@@ -59,8 +59,8 @@ class MAAP(object):
             except IOError:
                 pass
 
-        if not self.config.has_option('service', 'maap_host'):
-            raise IOError("No maap.cfg file found. Locations checked: " + '; '.join(config_paths))
+        #if not self.config.has_option('service', 'maap_host'):
+        #    raise IOError("No maap.cfg file found. Locations checked: " + '; '.join(config_paths))
 
         self._MAAP_TOKEN = self.config.get("service", "maap_token")
         self._PROXY_GRANTING_TICKET = os.environ.get("MAAP_PGT") or ''
