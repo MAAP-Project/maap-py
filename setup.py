@@ -22,7 +22,7 @@ _classifiers = [
 ]
 _description = "maapPy Python API"
 _download_url = ""
-_boto3_version = "1.33.0"
+_boto3_version = "1.34.41"
 _requirements = [
     "backoff~=2.2",
     f"boto3~={_boto3_version}",
