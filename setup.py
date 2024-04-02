@@ -24,29 +24,29 @@ _description = "maapPy Python API"
 _download_url = ""
 _boto3_version = "1.34.41"
 _requirements = [
-    "backoff",
-    "boto3",
-    "ConfigParser",
-    "importlib_resources",
+    "backoff~=2.2",
+    f"boto3~={_boto3_version}",
+    "ConfigParser~=6.0",
+    "importlib_resources~=6.0",
     # We must explicitly specify ipython because mapboxgl requires it, but
     # does not specify it in its own requirements.  This is a bug in mapboxgl
     # that has been fixed, but the fix has not been released even though it was
     # fixed in 2019.  See https://github.com/mapbox/mapboxgl-jupyter/pull/172.
-    "ipython~=8.10.0",
-    "mapboxgl",
-    "PyYAML",
-    "requests",
-    "setuptools",
+    "ipython=8.11",
+    "mapboxgl~=0.10",
+    "PyYAML~=6.0",
+    "requests~=2.31",
+    "setuptools~=69.0",
 ]
 _extra_requirements = {
     "dev": [
-        "boto3-stubs[s3]",
-        "moto",
-        "mypy",
-        "pytest",
-        "responses",
-        "types-requests",
-        "types-PyYAML",
+        f"boto3-stubs[s3]~={_boto3_version}",
+        "moto~=4.2",
+        "mypy~=1.8",
+        "pytest~=7.4",
+        "responses~=0.24",
+        "types-requests~=2.31",
+        "types-PyYAML~=6.0",
     ]
 }
 _keywords = ["dataset", "granule", "nasa", "MAAP", "CMR"]
