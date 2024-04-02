@@ -32,7 +32,7 @@ _requirements = [
     # does not specify it in its own requirements.  This is a bug in mapboxgl
     # that has been fixed, but the fix has not been released even though it was
     # fixed in 2019.  See https://github.com/mapbox/mapboxgl-jupyter/pull/172.
-    "ipython",
+    "ipython~=8.10.0",
     "mapboxgl",
     "PyYAML",
     "requests",
