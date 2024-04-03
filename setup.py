@@ -22,7 +22,7 @@ _classifiers = [
 ]
 _description = "maapPy Python API"
 _download_url = ""
-_boto3_version = "1.33.0"
+_boto3_version = "1.34.41"
 _requirements = [
     "backoff~=2.2",
     f"boto3~={_boto3_version}",
@@ -32,7 +32,7 @@ _requirements = [
     # does not specify it in its own requirements.  This is a bug in mapboxgl
     # that has been fixed, but the fix has not been released even though it was
     # fixed in 2019.  See https://github.com/mapbox/mapboxgl-jupyter/pull/172.
-    "ipython~=8.12",
+    "ipython==8.11.0",
     "mapboxgl~=0.10",
     "PyYAML~=6.0",
     "requests~=2.31",
