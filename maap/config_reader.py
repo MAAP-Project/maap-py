@@ -17,6 +17,7 @@ class ConfigReader(metaclass=Singleton):
         self.__config = ConfigParser()
         configfile_present = False
         config_paths = list(map(self.__get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
+
         for loc in config_paths:
             try:
                 with open(loc) as source:

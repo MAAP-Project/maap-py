@@ -4,8 +4,10 @@ import boto3
 import uuid
 import urllib.parse
 import os
-from mapboxgl.utils import *
-from mapboxgl.viz import *
+import sys
+
+import importlib_resources as resources
+import requests
 from .Result import Collection, Granule, Result
 from maap.config_reader import ConfigReader
 from maap.dps.dps_job import DPSJob
@@ -386,6 +388,8 @@ class MAAP(object):
         return response
 
     def show(self, granule, display_config={}):
+        from mapboxgl.viz import RasterTilesViz
+
         granule_ur = granule['Granule']['GranuleUR']
         browse_file = json.loads(self._get_browse(granule_ur).text)['browse']
         capabilities = json.loads(self._get_capabilities(granule_ur).text)['body']
@@ -409,4 +413,3 @@ class MAAP(object):
 
 if __name__ == "__main__":
     print("initialized")
-
