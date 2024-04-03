@@ -56,7 +56,7 @@ _name = "maap-py"
 _namespaces: list[str] = []
 _test_suite = ""
 _url = "https://github.com/MAAP-Project/maap-py"
-_version = "3.2.0"
+_version = "3.1.5"
 _zip_safe = False
 
 # Setup Metadata
