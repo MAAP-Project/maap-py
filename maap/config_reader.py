@@ -1,14 +1,12 @@
 import json
 import logging
 import os
-import sys
 
-import importlib_resources as resources
 from maap.singleton import Singleton
 
-if sys.version_info >= (3,):
+try:
     from configparser import ConfigParser
-else:
+except ImportError:
     from ConfigParser import ConfigParser
 
 logger = logging.getLogger(__name__)
@@ -18,17 +16,7 @@ class ConfigReader(metaclass=Singleton):
     def __init__(self, maap_host=None, config_file_path=''):
         self.__config = ConfigParser()
         configfile_present = False
-        config_paths = list(
-            map(
-                self.__get_config_path,
-                [
-                    os.path.dirname(config_file_path),
-                    os.curdir,
-                    os.path.expanduser("~"),
-                    os.environ.get("MAAP_CONF", resources.files("maap")),
-                ],
-            )
-        )
+        config_paths = list(map(self.__get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
 
         for loc in config_paths:
             try:
