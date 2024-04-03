@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 s3_client = boto3.client('s3')
 
-if sys.version_info >= (3,):
+try:
     from configparser import ConfigParser
-else:
+except ImportError:
     from ConfigParser import ConfigParser
 
 
@@ -35,20 +35,10 @@ class MAAP(object):
     def __init__(self, maap_host='', config_file_path=''):
         self.config = ConfigParser()
 
-        # Adding this for newer capability imported from SISTER, leaving the rest of config imports as is
-        self._singlelton_config = ConfigReader(maap_host=maap_host, config_file_path=config_file_path)
+        # Adding this for newer capability imported frm SISTER, leaving the rest of config imports as is
+        self._singlelton_config = ConfigReader(maap_host=maap_host,config_file_path=config_file_path)
 
-        config_paths = list(
-            map(
-                self._get_config_path,
-                [
-                    os.path.dirname(config_file_path),
-                    os.curdir,
-                    os.path.expanduser("~"),
-                    os.environ.get("MAAP_CONF", resources.files("maap")),
-                ],
-            )
-        )
+        config_paths = list(map(self._get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
 
         for loc in config_paths:
             try:
