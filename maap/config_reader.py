@@ -1,27 +1,49 @@
-import json
 import logging
 import os
-import sys
 import requests
-from urllib.parse import urlparse, urljoin, urlunparse
-import importlib_resources as resources
+from urllib.parse import urlparse, urljoin, urlunsplit
+from collections import namedtuple
 from maap.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
 
-def _get_client_config(maap_host):
-    base_url = urlparse(maap_host)
+def _get_maap_api_host_url_scheme():
+    # Check if OS ENV override exists, used by dev testing
+    scheme = os.environ.get("MAAP_API_HOST_SCHEME", None)
+    if not scheme:
+        logger.debug("No url scheme defined in env var MAAP_API_HOST_SCHEME using https")
+        scheme = "https"
+    return scheme
+
+
+def _get_config_url(maap_host):
     # This is added to remove the assumption of scheme specially for local dev testing
     # also maintains backwards compatibility for user to use MAAP("api.maap-project.org")
-    if not base_url.scheme.startswith("http"):
-        scheme = os.environ.get("MAAP_HOST_SCHEME", None)
-        if not scheme:
-            logger.debug("No url scheme defined in env var MAAP_HOST_SCHEME using https")
-            scheme = "https"
-        config_url = base_url._replace(scheme=scheme, netloc=maap_host, path="api/environment/config").geturl()
+    base_url = urlparse(maap_host)
+    maap_api_config_endpoint = os.getenv("MAAP_API_CONFIG_ENDPOINT", "api/environment/config")
+    if not base_url.scheme == '':
+        if base_url.scheme not in ["https", "http"]:
+            raise ValueError(f"Provided scheme {base_url.scheme}. Only http or https schemes allowed for MAAP API Host")
+    # If the netloc is empty, that means that the url does not contain scheme:// and the url parser would put the
+    # hostname in the path section. See https://docs.python.org/3.11/library/urllib.parse.html#urllib.parse.urlparse
+    if base_url.netloc == '':
+        scheme = _get_maap_api_host_url_scheme()
+        url_components = namedtuple(typename='Components',
+                                    field_names=['scheme', 'netloc', 'path', 'query', 'fragments'])
+        config_url = urlunsplit(url_components(scheme=scheme, netloc=base_url.path, path=maap_api_config_endpoint,
+                                               query='', fragments=''))
+        # config_url = urlunparse(url_components(scheme=scheme, netloc=base_url.path, path=maap_api_config_endpoint,
+        #                                        query='', fragments=''))
     else:
-        config_url = urljoin(maap_host, "api/environment/config")
+        config_url = urljoin(maap_host, maap_api_config_endpoint)
+    return config_url
+
+
+def _get_client_config(maap_host):
+    # This is added to remove the assumption of scheme specially for local dev testing
+    # also maintains backwards compatibility for user to use MAAP("api.maap-project.org")
+    config_url = _get_config_url(maap_host)
     try:
         logger.debug(f"Requesting client config from api at: {config_url}")
         response = requests.get(config_url, verify=False)
