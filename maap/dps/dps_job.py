@@ -4,7 +4,7 @@ import os
 import xml.etree.ElementTree as ET
 import backoff
 import requests
-from maap.config_reader import ConfigReader
+from maap.config_reader import MaapConfig
 from maap.utils import endpoints
 
 from maap.utils.requests_utils import RequestsUtils
@@ -63,7 +63,7 @@ class DPSJob:
         self.__metrics = dict()
         
     def retrieve_status(self):
-        url = os.path.join(ConfigReader().dps_job, self.id, endpoints.DPS_JOB_STATUS)
+        url = os.path.join(MaapConfig().dps_job, self.id, endpoints.DPS_JOB_STATUS)
         headers = RequestsUtils.generate_dps_headers()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
@@ -85,7 +85,7 @@ class DPSJob:
         return self
 
     def retrieve_result(self):
-        url = os.path.join(ConfigReader().dps_job, self.id)
+        url = os.path.join(MaapConfig().dps_job, self.id)
         headers = RequestsUtils.generate_dps_headers()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
@@ -99,7 +99,7 @@ class DPSJob:
         return self.outputs
 
     def retrieve_metrics(self):
-        url = os.path.join(ConfigReader().dps_job, self.id, endpoints.DPS_JOB_METRICS)
+        url = os.path.join(MaapConfig().dps_job, self.id, endpoints.DPS_JOB_METRICS)
         headers = RequestsUtils.generate_dps_headers()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
@@ -126,7 +126,7 @@ class DPSJob:
                 pass
 
     def cancel_job(self):
-        url = os.path.join(ConfigReader().dps_job, endpoints.DPS_JOB_DISMISS, self.id)
+        url = os.path.join(MaapConfig().dps_job, endpoints.DPS_JOB_DISMISS, self.id)
         headers = RequestsUtils.generate_dps_headers()
         logger.debug('DELETE request sent to {}'.format(url))
         logger.debug('headers:')

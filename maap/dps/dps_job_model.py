@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import importlib_resources as resources
 import requests
 
-from maap.config_reader import ConfigReader
+from maap.config_reader import MaapConfig
 from maap.dps.dps_job import DPSJob
 from maap.utils.requests_utils import RequestsUtils
 
@@ -81,7 +81,7 @@ class DPSJobModel:
         request_xml = self.generate_request_xml()
         logger.debug(f'request_xml: {request_xml}')
         response = requests.post(
-            url=ConfigReader().dps_job,
+            url=MaapConfig().dps_job,
             data=request_xml,
             verify=self.__not_self_signed,
             headers=RequestsUtils.generate_dps_headers(),

@@ -1,12 +1,12 @@
 import os
 
-from maap.config_reader import ConfigReader
+from maap.config_reader import MaapConfig
 
 
 class RequestsUtils:
     @staticmethod
     def generate_dps_headers(content_type=None):
-        config = ConfigReader()
+        config = MaapConfig()
         api_header = {
             'Accept': content_type if content_type else config.content_type,
         }
