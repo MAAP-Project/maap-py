@@ -23,45 +23,12 @@ from maap.utils import endpoints
 logger = logging.getLogger(__name__)
 
 s3_client = boto3.client('s3')
-
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser
+from maap.config_reader import MaapConfig
 
 class MAAP(object):
 
     def __init__(self, maap_host='api.maap-project.org'):
-        # self.config = ConfigParser()
-
-        # Adding this for newer capability imported frm SISTER, leaving the rest of config imports as is
-        self._singlelton_config = ConfigReader(maap_host=maap_host,config_file_path=config_file_path)
-
-        config_paths = list(map(self._get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
-
-        # Take maap_host from constructor if provided, otherwise use the default config value
-        # self._MAAP_HOST = maap_host
-        # self._SEARCH_GRANULE_URL = self.config.search_granule_url
-        # self._SEARCH_COLLECTION_URL = self.config.search_collection_url
-        # self._ALGORITHM_REGISTER = self.config.algorithm_register
-        # self._ALGORITHM_BUILD = self.config.algorithm_build
-        # self._MAS_ALGO = self.config.mas_algo
-        # self._DPS_JOB = self.config.dps_job
-        # self._WMTS = self.config.wmts
-        # self._MEMBER = self.config.member
-        # self._MEMBER_DPS_TOKEN = self.config.member_dps_token
-        # self._REQUESTER_PAYS = self.config.requester_pays
-        # self._EDC_CREDENTIALS = self.config.edc_credentials
-        # self._WORKSPACE_BUCKET_CREDENTIALS = self.config.workspace_bucket_credentials
-        # self._S3_SIGNED_URL = self.config.s3_signed_url
-
-        # self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
-        # self._AWS_ACCESS_KEY = os.environ.get("MAAP_AWS_ACCESS_KEY_ID")
-        # self._AWS_ACCESS_SECRET = os.environ.get("MAAP_AWS_SECRET_ACCESS_KEY")
-        # self._S3_USER_UPLOAD_BUCKET = os.environ.get("MAAP_S3_USER_UPLOAD_BUCKET")
-        # self._S3_USER_UPLOAD_DIR = os.environ.get("MAAP_S3_USER_UPLOAD_DIR")
-        # self._MAPBOX_TOKEN = os.environ.get("MAAP_MAPBOX_ACCESS_TOKEN") or ''
-        # self._INDEXED_ATTRIBUTES = self.config.indexed_attributes
+        self.config = MaapConfig(maap_host=maap_host)
 
         self._CMR = CMR(self.config.indexed_attributes, self.config.page_size, self._get_api_header())
         self._DPS = DpsHelper(self._get_api_header(), self.config.member_dps_token)
@@ -82,9 +49,6 @@ class MAAP(object):
             api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
 
         return api_header
-
-    def _get_config_path(self, directory):
-        return os.path.join(directory, "maap.cfg")
 
     def _upload_s3(self, filename, bucket, objectKey):
         """
@@ -244,7 +208,7 @@ class MAAP(object):
         return response
 
     def publishAlgorithm(self, algoid):
-        url = self.config.mas_algo.replace('algorithm','publish')
+        url = self.config.mas_algo.replace('algorithm', 'publish')
         headers = self._get_api_header()
         body = { "algo_id": algoid}
         logger.debug('POST request sent to {}'.format(url))
