@@ -27,7 +27,7 @@ from maap.config_reader import MaapConfig
 
 class MAAP(object):
 
-    def __init__(self, maap_host='api.maap-project.org'):
+    def __init__(self, maap_host=os.getenv('MAAP_API_HOST', 'api.maap-project.org')):
         self.config = MaapConfig(maap_host=maap_host)
 
         self._CMR = CMR(self.config.indexed_attributes, self.config.page_size, self._get_api_header())
