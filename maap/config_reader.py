@@ -40,6 +40,15 @@ def _get_config_url(maap_host):
     return config_url
 
 
+def _get_api_root(config_url, config):
+    # Set maap api root to currently supplied maap host
+    api_root_url = urlparse(config.get("service").get("maap_api_root"))
+    config_url = urlparse(config_url)
+    url_components = namedtuple(typename='Components',
+                                field_names=['scheme', 'netloc', 'path', 'query', 'fragments'])
+    return urlunsplit(url_components(scheme=config_url.scheme, netloc=config_url.netloc, path=api_root_url.path,
+                                           query='', fragments=''))
+    
 def _get_client_config(maap_host):
     # This is added to remove the assumption of scheme specially for local dev testing
     # also maintains backwards compatibility for user to use MAAP("api.maap-project.org")
@@ -50,6 +59,8 @@ def _get_client_config(maap_host):
         if response.status_code != 200:
             raise EnvironmentError("Unable to get config from supplied maap_host")
         config = response.json()
+        api_root_url = _get_api_root(config_url, config)
+        config["service"]["maap_api_root"] = api_root_url
         return config
     except Exception as ex:
         logger.error(f"Unable to read maap config from api: {ex}")
