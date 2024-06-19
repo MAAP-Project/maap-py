@@ -30,15 +30,13 @@ def _get_config_url(maap_host):
     config_url = (
         urljoin(maap_host, maap_api_config_endpoint)
         if base_url.netloc
-        else urlunsplit(
-            SplitResult(
+        else SplitResult(
                 scheme=_get_maap_api_host_url_scheme(),
                 netloc=base_url.path,
                 path=maap_api_config_endpoint,
                 query='',
                 fragment=''
-            )
-        )
+            ).geturl()
     )
     return config_url
 
@@ -47,8 +45,11 @@ def _get_api_root(config_url, config):
     # Set maap api root to currently supplied maap host
     api_root_url = urlparse(config.get("service").get("maap_api_root"))
     config_url = urlparse(config_url)
-    return urlunsplit(SplitResult(scheme=config_url.scheme, netloc=config_url.netloc, path=api_root_url.path,
-                                           query='', fragments=''))
+    # Add trailing slash to api_root_url.path to ensure that urljoin does not remove it
+    # eg. urljoin("http://api.maap-project.org/api", "dps") will return http://api.dit.maap-project.org/dps
+    # But we want http://api.dit.maap-project.org/api/dps
+    return SplitResult(scheme=config_url.scheme, netloc=config_url.netloc, path=api_root_url.path+"/",
+                       query='', fragment='').geturl()
 
 
 @cache
@@ -99,7 +100,7 @@ class MaapConfig:
 
     def _get_api_endpoint(self, config_key):
         endpoint = str(self.__config.get("maap_endpoint").get(config_key)).strip("/")
-        return urllib.parse.urljoin(self.maap_api_root, endpoint)
+        return urljoin(self.maap_api_root, endpoint)
 
     def get(self, profile, key):
         return self.__config.get(profile, key)
