@@ -3,7 +3,7 @@ import os
 import requests
 from urllib.parse import urlparse, urljoin, urlunsplit, SplitResult
 from collections import namedtuple
-from maap.singleton import Singleton
+from functools import cache
 
 logger = logging.getLogger(__name__)
 
@@ -49,28 +49,26 @@ def _get_api_root(config_url, config):
     config_url = urlparse(config_url)
     return urlunsplit(SplitResult(scheme=config_url.scheme, netloc=config_url.netloc, path=api_root_url.path,
                                            query='', fragments=''))
-    
+
+
+@cache
 def _get_client_config(maap_host):
     # This is added to remove the assumption of scheme specially for local dev testing
     # also maintains backwards compatibility for user to use MAAP("api.maap-project.org")
     config_url = _get_config_url(maap_host)
+    logger.debug(f"Requesting client config from api at: {config_url}")
+    response = requests.get(config_url)
     try:
-        logger.debug(f"Requesting client config from api at: {config_url}")
-        response = requests.get(config_url, verify=False)
-        if response.status_code != 200:
-            raise EnvironmentError("Unable to get config from supplied maap_host")
+        response.raise_for_status()
         config = response.json()
-        api_root_url = _get_api_root(config_url, config)
-        config["service"]["maap_api_root"] = api_root_url
+        config["service"]["maap_api_root"] = _get_api_root(config_url, config)
         return config
     except Exception as ex:
         logger.error(f"Unable to read maap config from api: {ex}")
 
 
-class MaapConfig(metaclass=Singleton):
-    def __init__(self, maap_host=None):
-        if maap_host is None:
-            raise EnvironmentError("MAAP is not configured. Please initialize a MAAP object: maap = MAAP()")
+class MaapConfig:
+    def __init__(self, maap_host):
         self.__config = _get_client_config(maap_host)
         self.maap_host = maap_host
         self.maap_api_root = self.__config.get("service").get("maap_api_root")
@@ -105,202 +103,3 @@ class MaapConfig(metaclass=Singleton):
 
     def get(self, profile, key):
         return self.__config.get(profile, key)
-    #
-    # @property
-    # def s3_user_upload_bucket(self):
-    #     return self.__s3_user_upload_bucket
-    #
-    # @s3_user_upload_bucket.setter
-    # def s3_user_upload_bucket(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.s3_user_upload_bucket = val
-    #     return
-    #
-    # @property
-    # def s3_user_upload_dir(self):
-    #     return self.__s3_user_upload_dir
-    #
-    # @s3_user_upload_dir.setter
-    # def s3_user_upload_dir(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.s3_user_upload_dir = val
-    #     return
-    #
-    # @property
-    # def indexed_attributes(self):
-    #     return self.__indexed_attributes
-    #
-    # @indexed_attributes.setter
-    # def indexed_attributes(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.indexed_attributes = val
-    #     return
-    #
-    # @property
-    # def maap_token(self):
-    #     return self.__maap_token
-    #
-    # @maap_token.setter
-    # def maap_token(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.maap_token = val
-    #     return
-    #
-    # @property
-    # def page_size(self):
-    #     return self.__page_size
-    #
-    # @page_size.setter
-    # def page_size(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.page_size = val
-    #     return
-    #
-    # @property
-    # def content_type(self):
-    #     return self.__content_type
-    #
-    # @content_type.setter
-    # def content_type(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.content_type = val
-    #     return
-    #
-    # @property
-    # def algorithm_register(self):
-    #     return self.__algorithm_register
-    #
-    # @algorithm_register.setter
-    # def algorithm_register(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.algorithm_register = val
-    #     return
-    #
-    # @property
-    # def algorithm_build(self):
-    #     return self.__algorithm_build
-    #
-    # @algorithm_build.setter
-    # def algorithm_build(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.algorithm_build = val
-    #     return
-    #
-    # @property
-    # def mas_algo(self):
-    #     return self.__mas_algo
-    #
-    # @mas_algo.setter
-    # def mas_algo(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.mas_algo = val
-    #     return
-    #
-    # @property
-    # def wmts(self):
-    #     return self.__wmts
-    #
-    # @wmts.setter
-    # def wmts(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.wmts = val
-    #     return
-    #
-    # @property
-    # def member(self):
-    #     return self.__member
-    #
-    # @member.setter
-    # def member(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.member = val
-    #     return
-    #
-    # @property
-    # def tiler_endpoint(self):
-    #     return self.__tiler_endpoint
-    #
-    # @tiler_endpoint.setter
-    # def tiler_endpoint(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.tiler_endpoint = val
-    #     return
-    #
-    # @property
-    # def maap_host(self):
-    #     return self.__maap_host
-    #
-    # @maap_host.setter
-    # def maap_host(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.maap_host = val
-    #     return
-    #
-    # @property
-    # def aws_access_key(self):
-    #     return self.__aws_access_key
-    #
-    # @aws_access_key.setter
-    # def aws_access_key(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.aws_access_key = val
-    #     return
-    #
-    # @property
-    # def aws_access_secret(self):
-    #     return self.__aws_access_secret
-    #
-    # @aws_access_secret.setter
-    # def aws_access_secret(self, val):
-    #     """
-    #     :param val:
-    #     :return: None
-    #     """
-    #     self.aws_access_secret = val
-    #     return
-    #
-    # @staticmethod
-    # def __get_config_path(directory):
-    #     return os.path.join(directory, "maap.cfg")
