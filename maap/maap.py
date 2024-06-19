@@ -11,7 +11,7 @@ import requests
 from maap.Result import Collection, Granule, Result
 from maap.config_reader import MaapConfig
 from maap.dps.dps_job import DPSJob
-from maap.utils.requests_utils import RequestsUtils
+from maap.utils import requests_utils
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
 from maap.utils import algorithm_utils
@@ -23,7 +23,7 @@ from maap.utils import endpoints
 logger = logging.getLogger(__name__)
 
 s3_client = boto3.client('s3')
-from maap.config_reader import MaapConfig
+
 
 class MAAP(object):
 
@@ -143,19 +143,13 @@ class MAAP(object):
         return response
 
     def registerAlgorithm(self, arg):
-        headers = RequestsUtils.generate_dps_headers()
-        headers['Content-Type'] = 'application/json'
-        logger.debug('headers:')
-        logger.debug(headers)
-        logger.debug('request is')
+        logger.debug('Registering algorithm with args ')
         if type(arg) is dict:
             arg = json.dumps(arg)
         logger.debug(arg)
-        response = requests.post(
-            url=self.config.algorithm_register,
-            data=arg,
-            headers=headers
-        )
+        response = requests_utils.make_request(url=self.config.algorithm_register, config=self.config,
+                                               content_type='application/json', request_type=requests_utils.POST,
+                                               data=arg)
         logger.debug('POST request sent to {}'.format(self.config.algorithm_register))
         return response
 
@@ -237,28 +231,28 @@ class MAAP(object):
 
 
     def getJob(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         job.retrieve_attributes()
         return job
 
     def getJobStatus(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         return job.retrieve_status()
 
     def getJobResult(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         return job.retrieve_result()
 
     def getJobMetrics(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         return job.retrieve_metrics()
 
     def cancelJob(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         return job.cancel_job()
 
@@ -276,9 +270,10 @@ class MAAP(object):
         )
         return response
 
-    def submitJob(self, retrieve_attributes=False, **kwargs):
-        response = self._DPS.submit_job(request_url=self.config.dps_job, **kwargs)
-        job = DPSJob()
+    def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
+        response = self._DPS.submit_job(request_url=self.config.dps_job,
+                                        identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
+        job = DPSJob(self.config)
         job.set_submitted_job_result(response)
         try:
             if retrieve_attributes:

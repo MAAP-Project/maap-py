@@ -3,11 +3,9 @@ import logging
 import os
 import xml.etree.ElementTree as ET
 import backoff
-import requests
-from maap.config_reader import MaapConfig
 from maap.utils import endpoints
-
-from maap.utils.requests_utils import RequestsUtils
+from maap.config_reader import MaapConfig
+from maap.utils import requests_utils
 
 logger = logging.getLogger(__name__)
 BACKOFF_CONF = {}
@@ -34,7 +32,8 @@ class DPSJob:
     job.dismiss_job()
     job.delete_job()
     """
-    def __init__(self, not_self_signed=True):
+    def __init__(self, config: MaapConfig, not_self_signed=True):
+        self.config = config
         self.__not_self_signed = not_self_signed
         self.__response_code = None
         self.__error_details = None
@@ -63,17 +62,9 @@ class DPSJob:
         self.__metrics = dict()
         
     def retrieve_status(self):
-        url = os.path.join(MaapConfig().dps_job, self.id, endpoints.DPS_JOB_STATUS)
-        headers = RequestsUtils.generate_dps_headers()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
-            url=url,
-            verify=self.__not_self_signed,
-            headers=headers
-        )
-        self.set_job_status_result(RequestsUtils.check_response(response))
+        url = os.path.join(self.config.dps_job, self.id, endpoints.DPS_JOB_STATUS)
+        response = requests_utils.make_dps_request(url, self.config)
+        self.set_job_status_result(response)
         return self.status
 
     @backoff.on_exception(backoff.expo, Exception, max_value=64, max_time=172800)
@@ -85,31 +76,15 @@ class DPSJob:
         return self
 
     def retrieve_result(self):
-        url = os.path.join(MaapConfig().dps_job, self.id)
-        headers = RequestsUtils.generate_dps_headers()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
-            url=url,
-            verify=self.__not_self_signed,
-            headers=headers
-        )
-        self.set_job_results_result(RequestsUtils.check_response(response))
+        url = os.path.join(self.config.dps_job, self.id)
+        response = requests_utils.make_dps_request(url, self.config)
+        self.set_job_results_result(response)
         return self.outputs
 
     def retrieve_metrics(self):
-        url = os.path.join(MaapConfig().dps_job, self.id, endpoints.DPS_JOB_METRICS)
-        headers = RequestsUtils.generate_dps_headers()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
-            url=url,
-            verify=self.__not_self_signed,
-            headers=headers
-        )
-        self.set_job_metrics_result(RequestsUtils.check_response(response))
+        url = os.path.join(self.config.dps_job, self.id, endpoints.DPS_JOB_METRICS)
+        response = requests_utils.make_dps_request(url, self.config)
+        self.set_job_metrics_result(response)
         return self.metrics
 
     def retrieve_attributes(self):
@@ -124,18 +99,12 @@ class DPSJob:
                 self.retrieve_metrics()
             except:
                 pass
+        return self
 
     def cancel_job(self):
-        url = os.path.join(MaapConfig().dps_job, endpoints.DPS_JOB_DISMISS, self.id)
-        headers = RequestsUtils.generate_dps_headers()
-        logger.debug('DELETE request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.post(
-            url=url,
-            headers=headers
-        )
-        return RequestsUtils.check_response(response)
+        url = os.path.join(self.config.dps_job, endpoints.DPS_JOB_DISMISS, self.id)
+        response = requests_utils.make_dps_request(url, self.config, request_type=requests_utils.POST)
+        return response
 
     def set_submitted_job_result(self, input_json: dict):
         """
