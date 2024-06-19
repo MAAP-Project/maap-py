@@ -1,7 +1,7 @@
 import logging
 import os
 import requests
-from urllib.parse import urlparse, urljoin, urlunsplit
+from urllib.parse import urlparse, urljoin, urlunsplit, SplitResult
 from collections import namedtuple
 from maap.singleton import Singleton
 
@@ -12,7 +12,7 @@ def _get_maap_api_host_url_scheme():
     # Check if OS ENV override exists, used by dev testing
     scheme = os.environ.get("MAAP_API_HOST_SCHEME", None)
     if not scheme:
-        logger.debug("No url scheme defined in env var MAAP_API_HOST_SCHEME using https")
+        logger.debug("No url scheme defined in env var MAAP_API_HOST_SCHEME; defaulting to 'https'.")
         scheme = "https"
     return scheme
 
@@ -22,21 +22,24 @@ def _get_config_url(maap_host):
     # also maintains backwards compatibility for user to use MAAP("api.maap-project.org")
     base_url = urlparse(maap_host)
     maap_api_config_endpoint = os.getenv("MAAP_API_CONFIG_ENDPOINT", "api/environment/config")
-    if not base_url.scheme == '':
-        if base_url.scheme not in ["https", "http"]:
-            raise ValueError(f"Provided scheme {base_url.scheme}. Only http or https schemes allowed for MAAP API Host")
+    supported_schemes = ("http", "https")
+    if base_url.scheme and base_url.scheme not in supported_schemes:
+        raise ValueError(f"Unsupported scheme for MAAP API host: {base_url.scheme!r}. Must be one of: {', '.join(map(repr, allowed_schemes))}.")
     # If the netloc is empty, that means that the url does not contain scheme:// and the url parser would put the
     # hostname in the path section. See https://docs.python.org/3.11/library/urllib.parse.html#urllib.parse.urlparse
-    if base_url.netloc == '':
-        scheme = _get_maap_api_host_url_scheme()
-        url_components = namedtuple(typename='Components',
-                                    field_names=['scheme', 'netloc', 'path', 'query', 'fragments'])
-        config_url = urlunsplit(url_components(scheme=scheme, netloc=base_url.path, path=maap_api_config_endpoint,
-                                               query='', fragments=''))
-        # config_url = urlunparse(url_components(scheme=scheme, netloc=base_url.path, path=maap_api_config_endpoint,
-        #                                        query='', fragments=''))
-    else:
-        config_url = urljoin(maap_host, maap_api_config_endpoint)
+    config_url = (
+        urljoin(maap_host, maap_api_config_endpoint)
+        if base_url.netloc
+        else urlunsplit(
+            SplitResult(
+                scheme=_get_maap_api_host_url_scheme(),
+                netloc=base_url.path,
+                path=maap_api_config_endpoint,
+                query='',
+                fragment=''
+            )
+        )
+    )
     return config_url
 
 
@@ -44,9 +47,7 @@ def _get_api_root(config_url, config):
     # Set maap api root to currently supplied maap host
     api_root_url = urlparse(config.get("service").get("maap_api_root"))
     config_url = urlparse(config_url)
-    url_components = namedtuple(typename='Components',
-                                field_names=['scheme', 'netloc', 'path', 'query', 'fragments'])
-    return urlunsplit(url_components(scheme=config_url.scheme, netloc=config_url.netloc, path=api_root_url.path,
+    return urlunsplit(SplitResult(scheme=config_url.scheme, netloc=config_url.netloc, path=api_root_url.path,
                                            query='', fragments=''))
     
 def _get_client_config(maap_host):
@@ -100,7 +101,7 @@ class MaapConfig(metaclass=Singleton):
 
     def _get_api_endpoint(self, config_key):
         endpoint = str(self.__config.get("maap_endpoint").get(config_key)).strip("/")
-        return os.path.join(self.maap_api_root, endpoint)
+        return urllib.parse.urljoin(self.maap_api_root, endpoint)
 
     def get(self, profile, key):
         return self.__config.get(profile, key)
