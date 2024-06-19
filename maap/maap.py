@@ -235,18 +235,6 @@ class MAAP(object):
         )
         return response
 
-    # We no longer have a cmr do we need to support this
-    # def getCapabilities(self):
-    #     url = self.config.wmts
-    #     headers = self._get_api_header()
-    #     logger.debug('GET request sent to {}'.format(url))
-    #     logger.debug('headers:')
-    #     logger.debug(headers)
-    #     response = requests.get(
-    #         url=url,
-    #         headers=headers
-    #     )
-    #     return response
 
     def getJob(self, jobid):
         job = DPSJob()
@@ -317,7 +305,7 @@ class MAAP(object):
 
     def _get_browse(self, granule_ur):
         response = requests.get(
-            url='{}/GetTile'.format(self.config.wmts),
+            url=f'{self.config.wmts}/GetTile',
             params=dict(granule_ur=granule_ur),
             headers=dict(Accept='application/json')
         )
@@ -325,7 +313,7 @@ class MAAP(object):
 
     def _get_capabilities(self, granule_ur):
         response = requests.get(
-            url='{}/GetCapabilities'.format(self.config.wmts),
+            url=f'{self.config.wmts}/GetCapabilities',
             params=dict(granule_ur=granule_ur),
             headers=dict(Accept='application/json')
         )
