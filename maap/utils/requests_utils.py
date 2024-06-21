@@ -3,7 +3,6 @@ from maap.config_reader import MaapConfig
 import logging
 import requests
 from enum import Enum
-from urllib.parse import urlsplit, from urllib.parse import urlsplit, SplitResult
 
 logger = logging.getLogger(__name__)
 
