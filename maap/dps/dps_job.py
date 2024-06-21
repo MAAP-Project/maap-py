@@ -3,6 +3,7 @@ import logging
 import os
 import xml.etree.ElementTree as ET
 import backoff
+from urllib.parse import urljoin
 from maap.utils import endpoints
 from maap.config_reader import MaapConfig
 from maap.utils import requests_utils
@@ -62,7 +63,10 @@ class DPSJob:
         self.__metrics = dict()
         
     def retrieve_status(self):
-        url = os.path.join(self.config.dps_job, self.id, endpoints.DPS_JOB_STATUS)
+        # Not using os.path.join just to be safe as this can break if ever run on windows
+        # not using urljoin as that requires more preprocessing to avoid dropping api root while joining
+        # eg. urljoing("https://api.maap-project.org/api/dps", "id/status") will drop "api/dps" from the output
+        url = f"{self.config.dps_job}/{self.id}/{endpoints.DPS_JOB_STATUS}"
         response = requests_utils.make_dps_request(url, self.config)
         self.set_job_status_result(response)
         return self.status
@@ -76,13 +80,13 @@ class DPSJob:
         return self
 
     def retrieve_result(self):
-        url = os.path.join(self.config.dps_job, self.id)
+        url = f"{self.config.dps_job}/{self.id}"
         response = requests_utils.make_dps_request(url, self.config)
         self.set_job_results_result(response)
         return self.outputs
 
     def retrieve_metrics(self):
-        url = os.path.join(self.config.dps_job, self.id, endpoints.DPS_JOB_METRICS)
+        url = f"{self.config.dps_job}/{self.id}/{endpoints.DPS_JOB_METRICS}"
         response = requests_utils.make_dps_request(url, self.config)
         self.set_job_metrics_result(response)
         return self.metrics
@@ -102,7 +106,7 @@ class DPSJob:
         return self
 
     def cancel_job(self):
-        url = os.path.join(self.config.dps_job, endpoints.DPS_JOB_DISMISS, self.id)
+        url = f"{self.config.dps_job}/{endpoints.DPS_JOB_DISMISS}/{self.id}"
         response = requests_utils.make_dps_request(url, self.config, request_type=requests_utils.POST)
         return response
 
