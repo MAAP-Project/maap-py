@@ -24,7 +24,7 @@ def _get_config_url(maap_host):
     maap_api_config_endpoint = os.getenv("MAAP_API_CONFIG_ENDPOINT", "api/environment/config")
     supported_schemes = ("http", "https")
     if base_url.scheme and base_url.scheme not in supported_schemes:
-        raise ValueError(f"Unsupported scheme for MAAP API host: {base_url.scheme!r}. Must be one of: {', '.join(map(repr, allowed_schemes))}.")
+        raise ValueError(f"Unsupported scheme for MAAP API host: {base_url.scheme!r}. Must be one of: {', '.join(map(repr, supported_schemes))}.")
     # If the netloc is empty, that means that the url does not contain scheme:// and the url parser would put the
     # hostname in the path section. See https://docs.python.org/3.11/library/urllib.parse.html#urllib.parse.urlparse
     config_url = (
@@ -99,6 +99,7 @@ class MaapConfig:
         self.mapbox_token = os.environ.get("MAAP_MAPBOX_ACCESS_TOKEN", '')
 
     def _get_api_endpoint(self, config_key):
+        # Remove any prefix "/" for urljoin
         endpoint = str(self.__config.get("maap_endpoint").get(config_key)).strip("/")
         return urljoin(self.maap_api_root, endpoint)
 
