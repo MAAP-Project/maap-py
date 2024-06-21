@@ -3,6 +3,7 @@ from maap.config_reader import MaapConfig
 import logging
 import requests
 from enum import Enum
+from urllib.parse import urlsplit, from urllib.parse import urlsplit, SplitResult
 
 logger = logging.getLogger(__name__)
 
@@ -46,31 +47,24 @@ def check_response(dps_response):
 
 # TODO: Explore consolidating all requests from maap-py into this class
 def make_request(url, config: MaapConfig, content_type=None, request_type: HTTPMethod = HTTPMethod.GET,
-                 not_self_signed=True, **kwargs):
+                 self_signed=False, **kwargs):
     headers = generate_dps_headers(config, content_type)
     logger.debug(f"{request_type} request sent to {url}")
     logger.debug('headers:')
     logger.debug(headers)
-    if request_type == HTTPMethod.GET:
-        response = requests.get(
-            url=url,
-            verify=not_self_signed,
-            headers=headers
-        )
-        return response
-    elif request_type == HTTPMethod.POST:
-        response = requests.post(
-            url=url,
-            verify=not_self_signed,
-            headers=headers,
-            **kwargs
-        )
-        return response
-    else:
+    if request_type not in {POST, GET}:
         # TODO: Add support for request type DELETE
         raise NotImplementedError(f"Request type {request_type} not supported")
+    else:
+        return requests.request(
+            method=request_type.value,
+            url=url,
+            verify=not self_signed,
+            headers=headers,
+            ** kwargs
+        )
 
 
 def make_dps_request(url, config: MaapConfig, content_type=None, request_type: HTTPMethod = HTTPMethod.GET,
-                     not_self_signed=True, **kwargs):
-    return check_response(make_request(url, config, content_type, request_type, not_self_signed, **kwargs))
+                     self_signed=False, **kwargs):
+    return check_response(make_request(url, config, content_type, request_type, self_signed, **kwargs))
