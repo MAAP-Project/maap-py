@@ -256,17 +256,21 @@ class MAAP(object):
         job.id = jobid
         return job.cancel_job()
 
-    def listJobs(self, username=None):
+    def listJobs(self, username=None, page_size=None, offset=None):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
+
         url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+        params = {k: v for k, v in (("page_size", page_size), ("offset", offset)) if v}
+        
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
         response = requests.get(
             url=url,
-            headers=headers
+            headers=headers,
+            params=params,
         )
         return response
 
