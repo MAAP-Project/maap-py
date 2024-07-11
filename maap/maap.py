@@ -259,28 +259,18 @@ class MAAP(object):
     def listJobs(self, username=None, page_size=None, offset=None):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
+
+        url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+        params = {k: v for k, v in (("page_size", page_size), ("offset", offset)) if v}
         
-        query_params = []
-        if page_size is not None:
-            query_params.append(f"page_size={page_size}")
-        if offset is not None:
-            query_params.append(f"offset={offset}")
-
-        query_string = "&".join(query_params)
-
-        if query_string:
-            endpoint = endpoints.DPS_JOB_LIST + "?" + query_string
-            url = os.path.join(self.config.dps_job, username, endpoint)
-        else:
-            url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
-
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
         response = requests.get(
             url=url,
-            headers=headers
+            headers=headers,
+            params=params,
         )
         return response
 
