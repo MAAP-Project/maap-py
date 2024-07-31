@@ -129,22 +129,22 @@ jobs:
         continue-on-error: true
         run: |
           poetry run pytest --junitxml=build/reports/pytest.xml --cov=maap/ --cov-report=xml:build/reports/coverage.xml test/
-      - name: SonarCloud Scan
-        id: sonarcloud
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.organization=${{ github.repository_owner }}
-            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
-            -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
-            -Dsonar.sources=maap/
-            -Dsonar.tests=tests/
-            -Dsonar.projectName=${{ github.repository }}
-            -Dsonar.projectVersion=${{ env.software_version }}
-            -Dsonar.python.version=3.9,3.10
+#      - name: SonarCloud Scan
+#        id: sonarcloud
+#        uses: sonarsource/sonarcloud-github-action@master
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#        with:
+#          args: >
+#            -Dsonar.organization=${{ github.repository_owner }}
+#            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
+#            -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
+#            -Dsonar.sources=maap/
+#            -Dsonar.tests=tests/
+#            -Dsonar.projectName=${{ github.repository }}
+#            -Dsonar.projectVersion=${{ env.software_version }}
+#            -Dsonar.python.version=3.9,3.10
       - name: Build Python Artifact
         id: poetry-build
         run: |
