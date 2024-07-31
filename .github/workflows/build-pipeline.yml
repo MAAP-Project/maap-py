@@ -141,7 +141,7 @@ jobs:
             -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
             -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
             -Dsonar.sources=maap/
-            -Dsonar.tests=tests/
+            -Dsonar.tests=test/
             -Dsonar.projectName=${{ github.repository }}
             -Dsonar.projectVersion=${{ env.software_version }}
             -Dsonar.python.version=3.9,3.10
