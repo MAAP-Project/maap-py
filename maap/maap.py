@@ -281,7 +281,6 @@ class MAAP(object):
             headers=headers,
             params=params,
         )
-        print(response.url)
         return response
 
     def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
