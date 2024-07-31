@@ -261,11 +261,10 @@ class MAAP(object):
             username = self.profile.account_info()['username']
 
         url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+        valid_keys = ['algo_id', 'end_time', 'get_job_details', 'offset', 'page_size', 'priority', 'queue', 'start_time', 'status', 'tag', 'version']
 
-        valid_keys = ['algo_id', 'end_time', 'offset', 'page_size', 'priority', 'queue', 'start_time', 'status', 'tag', 'version']
-
-        params = {k: v for k, v in kwargs.items() if k in valid_keys and v}
-
+        params = {k: v for k, v in kwargs.items() if k in valid_keys and v is not None}
+        
         # DPS requests use 'job_type', which is a concatenation of 'algo_id' and 'version'
         if 'algo_id' in params and 'version' in params:
             params['job_type'] = params['algo_id'] + ':' + params['version']
@@ -282,6 +281,7 @@ class MAAP(object):
             headers=headers,
             params=params,
         )
+        print(response.url)
         return response
 
     def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
