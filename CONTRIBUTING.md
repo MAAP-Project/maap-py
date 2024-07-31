@@ -66,7 +66,7 @@ If any performance improvements are being made, include graphs and charts.
 
 - `develop` (protected)
     - Code actively being developed
-- `main` (protected)
+- `master` (protected)
     - Matches the version currently in prod
 - `release/#.#.#`
     - Release branch being considered for delivery to prod. 

@@ -24,8 +24,6 @@ concurrency:
 env:
   POETRY_VERSION: "1.8.3"
   PYTHON_VERSION: "3.10"
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
