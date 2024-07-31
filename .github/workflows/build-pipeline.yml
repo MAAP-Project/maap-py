@@ -131,7 +131,7 @@ jobs:
           poetry run pytest --junitxml=build/reports/pytest.xml --cov=maap/ --cov-report=xml:build/reports/coverage.xml test/
       - name: downcase REPO
         run: |
-          echo "REPOSITORY_OWNER_LOWER=${GITHUB_REPOSITORY_OWNER@L}" >> "${GITHUB_ENV}"
+          echo "repository_owner_lower=${GITHUB_REPOSITORY_OWNER@L}" >> "${GITHUB_ENV}"
       - name: SonarCloud Scan
         id: sonarcloud
         uses: sonarsource/sonarcloud-github-action@master
