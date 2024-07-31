@@ -27,7 +27,7 @@ env:
 
 jobs:
   build:
-    name: Build, Test, Verify, Publish
+    name: Build, Test, Verify
     runs-on: ubuntu-latest
     defaults:
       run:
