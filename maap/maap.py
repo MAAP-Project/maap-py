@@ -256,13 +256,23 @@ class MAAP(object):
         job.id = jobid
         return job.cancel_job()
 
-    def listJobs(self, username=None, page_size=None, offset=None):
+    def listJobs(self, username=None, **kwargs):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
 
         url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
-        params = {k: v for k, v in (("page_size", page_size), ("offset", offset)) if v}
-        
+
+        valid_keys = ['algo_id', 'end_time', 'offset', 'page_size', 'priority', 'queue', 'start_time', 'status', 'tag', 'version']
+
+        params = {k: v for k, v in kwargs.items() if k in valid_keys and v}
+
+        # DPS requests use 'job_type', which is a concatenation of 'algo_id' and 'version'
+        if 'algo_id' in params and 'version' in params:
+            params['job_type'] = params['algo_id'] + ':' + params['version']
+
+        params.pop('algo_id', None)
+        params.pop('version', None)
+
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
