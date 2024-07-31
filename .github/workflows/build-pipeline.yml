@@ -141,7 +141,7 @@ jobs:
         with:
           args: >
             -Dsonar.organization=${{ env.repository_owner_lower }}
-            -Dsonar.projectKey=${{ env.repository_owner_lower }}_${{ github.event.repository.name }}
+            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
             -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
             -Dsonar.sources=maap/
             -Dsonar.tests=test/
