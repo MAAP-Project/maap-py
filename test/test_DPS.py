@@ -17,13 +17,10 @@ class TestDPS(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.logger.debug("Initializing MAAP")
-        cls.maap = MAAP(config_file_path="/Users/shah/Desktop/Development/maap/maap-py/maap.cfg")
+        cls.maap = MAAP()
 
     def test_registerAlgorithm(self):
-        with open("dps_test_algo_config.yaml", 'r') as algo_yaml_file:
-            algo_config = yaml_load(algo_yaml_file, Loader=Loader)
-            self.maap.register_algorithm_from_yaml(algo_config)
-        pass
+        self.maap.register_algorithm_from_yaml_file("dps_test_algo_config.yaml")
 
     def test_deleteAlgorithm(self):
         pass
