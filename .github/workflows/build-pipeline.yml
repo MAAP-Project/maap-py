@@ -129,6 +129,9 @@ jobs:
         continue-on-error: true
         run: |
           poetry run pytest --junitxml=build/reports/pytest.xml --cov=maap/ --cov-report=xml:build/reports/coverage.xml test/
+      - name: downcase REPO
+        run: |
+          echo "REPOSITORY_OWNER_LOWER=${GITHUB_REPOSITORY_OWNER@L}" >> "${GITHUB_ENV}"
       - name: SonarCloud Scan
         id: sonarcloud
         uses: sonarsource/sonarcloud-github-action@master
@@ -137,8 +140,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.organization=${{ github.repository_owner }}
-            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
+            -Dsonar.organization=${{ env.repository_owner_lower }}
+            -Dsonar.projectKey=${{ env.repository_owner_lower }}_${{ github.event.repository.name }}
             -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
             -Dsonar.sources=maap/
             -Dsonar.tests=test/
