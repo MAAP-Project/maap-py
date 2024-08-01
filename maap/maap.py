@@ -269,11 +269,15 @@ class MAAP(object):
         params = {k: v for k, v in kwargs.items() if k in valid_keys and v is not None}
         
         # DPS requests use 'job_type', which is a concatenation of 'algo_id' and 'version'
-        if 'algo_id' in params and 'version' in params:
-            params['job_type'] = params['algo_id'] + ':' + params['version']
+        algo_id = params.pop('algo_id', None)
+        version = params.pop('version', None)
+        
+        if (not algo_id) != (not version):
+            # Either algo_id or version was supplied as a non-empty string, but not both.
+            # Either both must be non-empty strings or both must be None.
+            raise ValueError("Either supply non-empty strings for both algo_id and version, or supply neither.")
 
-        params.pop('algo_id', None)
-        params.pop('version', None)
+        params['job_type'] = f"{algo_id}:{version}"
 
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
