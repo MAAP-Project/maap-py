@@ -260,7 +260,10 @@ class MAAP(object):
         if username is None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
 
-        url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+        url = "/".join(
+            segment.strip("/")
+            for segment in (self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+        )
         valid_keys = ['algo_id', 'end_time', 'get_job_details', 'offset', 'page_size', 'priority', 'queue', 'start_time', 'status', 'tag', 'version']
 
         params = {k: v for k, v in kwargs.items() if k in valid_keys and v is not None}
