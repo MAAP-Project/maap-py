@@ -257,7 +257,7 @@ class MAAP(object):
         return job.cancel_job()
 
     def listJobs(self, username=None, **kwargs):
-        if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
+        if username is None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
 
         url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
