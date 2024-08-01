@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- [issues/95](https://github.com/MAAP-Project/maap-py/issues/95): Added github action workflow for publishing
 ### Changed
 ### Deprecated
 ### Removed
