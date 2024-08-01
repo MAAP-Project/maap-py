@@ -48,6 +48,7 @@ jobs:
         with:
           repository: ${{ github.repository }}
           token: ${{ steps.cicd-key.outputs.token }}
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
