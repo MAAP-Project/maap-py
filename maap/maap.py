@@ -256,7 +256,38 @@ class MAAP(object):
         job.id = jobid
         return job.cancel_job()
 
-    def listJobs(self, username=None, **kwargs):
+    def listJobs(self, username=None, 
+                       algo_id=None, 
+                       end_time=None, 
+                       get_job_details=True, 
+                       offset=None, 
+                       page_size=None, 
+                       priority=None, 
+                       queue=None,
+                       start_time=None,
+                       status=None,
+                       tag=None, 
+                       version=None):
+        """
+        Returns a list of jobs for a given user that matches query params provided.
+
+        Args:
+            username (str): Platform user.
+            algo_id (str): Algorithm type.
+            end_time (str, optional): Specifying this parameter will return all jobs that have completed from the provided end time to now. e.g. 2024-01-01 or 2024-01-01T00:00:00.000000Z.
+            get_job_details (bool, optional): Flag that determines whether to return a detailed job list or a compact list containing just the job ids and their associated job tags. Default is True.
+            offset (int, optional): Offset for pagination.
+            page_size (int, optional): Page size for pagination.
+            priority (int, optional): Job processing priority. Valid values are integers from 0-9.
+            queue (str, optional): Job processing resource.
+            start_time (str, optional): Specifying this parameter will return all jobs that have started from the provided start time to now. e.g. 2024-01-01 or 2024-01-01T00:00:00.000000Z.
+            status (str, optional): Job status e.g. job-completed, job-failed, job-started, job-queued.
+            tag (str, optional): User job tag.
+            version (str, optional): Algorithm version i.e. GitHub branch.
+
+        Returns:
+            list: List of jobs for a given user that matches query params provided.
+        """
         if username is None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
 
@@ -264,9 +295,25 @@ class MAAP(object):
             segment.strip("/")
             for segment in (self.config.dps_job, username, endpoints.DPS_JOB_LIST)
         )
-        valid_keys = ['algo_id', 'end_time', 'get_job_details', 'offset', 'page_size', 'priority', 'queue', 'start_time', 'status', 'tag', 'version']
-
-        params = {k: v for k, v in kwargs.items() if k in valid_keys and v is not None}
+        
+        params = {
+            k: v
+            for k, v in (
+                ("algo_id", algo_id),
+                ("end_time", end_time),
+                ("get_job_details", get_job_details),
+                ("offset", offset),
+                ("page_size", page_size),
+                ("priority", priority),
+                ("queue", queue),
+                ("start_time", start_time),
+                ("status", status),
+                ("tag", tag),
+                ("username", username),
+                ("version", version),
+            )
+            if v is not None
+        }
         
         # DPS requests use 'job_type', which is a concatenation of 'algo_id' and 'version'
         algo_id = params.pop('algo_id', None)
