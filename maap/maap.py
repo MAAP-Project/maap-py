@@ -19,7 +19,7 @@ from maap.Profile import Profile
 from maap.AWS import AWS
 from maap.dps.DpsHelper import DpsHelper
 from maap.utils import endpoints
-from maap.utils import JobUtils
+from maap.utils import job_utils
 
 logger = logging.getLogger(__name__)
 
@@ -286,12 +286,16 @@ class MAAP(object):
 
         Returns:
             list: List of jobs for a given user that matches query params provided.
+
+        Raises:
+            ValueError: If username is not provided and cannot be obtained from the user's profile.
+            ValueError: If either algo_id or version is provided, but not both.
         """
         if username is None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
 
         if username is None:
-            raise ValueError("Username must be supplied.")
+            raise ValueError("Unable to determine username from profile. Please provide a username.")
 
         url = "/".join(
             segment.strip("/")
@@ -329,7 +333,7 @@ class MAAP(object):
         version = params.pop('version', None)
 
         if status is not None:
-            params['status'] = JobUtils.validate_job_status(status)
+            params['status'] = job_utils.validate_job_status(status)
 
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))

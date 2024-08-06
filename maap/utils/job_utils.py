@@ -1,5 +1,5 @@
 # Valid job statuses (loosely based on OGC job status types)
-JOB_STATUSES = ['Accepted', 'Running', 'Succeeded', 'Failed', 'Dismissed', 'Deduped', 'Offline']
+JOB_STATUSES = {'Accepted', 'Running', 'Succeeded', 'Failed', 'Dismissed', 'Deduped', 'Offline'}
 
 def validate_job_status(status):
     '''
@@ -10,6 +10,9 @@ def validate_job_status(status):
 
     Returns:
         status (str): Returns unmodified job status if job status is valid.
+
+    Raises: 
+        ValueError: If invalid job status is provided.
     '''
     if status not in JOB_STATUSES:
         valid_statuses = ", ".join(str(status) for status in JOB_STATUSES)
