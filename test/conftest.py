@@ -3,7 +3,7 @@ from typing import Iterable
 
 import boto3
 import pytest
-from moto import mock_s3
+from moto import mock_aws
 from mypy_boto3_s3.client import S3Client
 
 from maap.AWS import AWS
@@ -15,7 +15,8 @@ def aws() -> AWS:
         "https://test_requester_pays_endpoint.com",
         "https://test_s3_signed_url_endpoint.com",
         "https://test_earthdata_s3_credentials_endpoint.com",
-        {},
+        "https://test_workspace_bucket_endpoint.com",
+        {}
     )
 
 
@@ -31,5 +32,5 @@ def aws_credentials() -> None:
 
 @pytest.fixture(scope="function")
 def s3(aws_credentials) -> Iterable[S3Client]:
-    with mock_s3():
+    with mock_aws():
         yield boto3.client("s3", region_name="us-east-1")
