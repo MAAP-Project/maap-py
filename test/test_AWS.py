@@ -34,4 +34,4 @@ def test_workspace_bucket_credentials(aws: AWS):
     responses.get(url=aws._workspace_bucket_endpoint, status=403)
 
     with pytest.raises(requests.exceptions.HTTPError, match="403"):
-        aws.workspace_bucket_credentials("")
+        aws.workspace_bucket_credentials()

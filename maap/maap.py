@@ -8,10 +8,10 @@ import sys
 
 import importlib_resources as resources
 import requests
-from .Result import Collection, Granule, Result
-from maap.config_reader import ConfigReader
+from maap.Result import Collection, Granule, Result
+from maap.config_reader import MaapConfig
 from maap.dps.dps_job import DPSJob
-from maap.utils.requests_utils import RequestsUtils
+from maap.utils import requests_utils
 from maap.utils.Presenter import Presenter
 from maap.utils.CMR import CMR
 from maap.utils import algorithm_utils
@@ -24,88 +24,31 @@ logger = logging.getLogger(__name__)
 
 s3_client = boto3.client('s3')
 
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser
-
 
 class MAAP(object):
 
-    def __init__(self, maap_host='', config_file_path=''):
-        self.config = ConfigParser()
+    def __init__(self, maap_host=os.getenv('MAAP_API_HOST', 'api.maap-project.org')):
+        self.config = MaapConfig(maap_host=maap_host)
 
-        # Adding this for newer capability imported frm SISTER, leaving the rest of config imports as is
-        self._singlelton_config = ConfigReader(maap_host=maap_host,config_file_path=config_file_path)
-
-        config_paths = list(map(self._get_config_path, [os.path.dirname(config_file_path), os.curdir, os.path.expanduser("~"), os.environ.get("MAAP_CONF") or '.']))
-
-        for loc in config_paths:
-            try:
-                with open(loc) as source:
-                    self.config.read_file(source)
-                    logger.debug("Loaded config file from source %s " % loc)
-                    break
-            except IOError:
-                pass
-
-        if not self.config.has_option('service', 'maap_host'):
-            raise IOError("No maap.cfg file found. Locations checked: " + '; '.join(config_paths))
-
-        self._MAAP_TOKEN = self.config.get("service", "maap_token")
-        self._PROXY_GRANTING_TICKET = os.environ.get("MAAP_PGT") or ''
-        self._PAGE_SIZE = self.config.getint("request", "page_size")
-        self._CONTENT_TYPE = self.config.get("request", "content_type")
-
-        # Take maap_host from constructor if provided, otherwise use the default config value
-        self._MAAP_HOST = maap_host if maap_host else self.config.get("service", "maap_host")
-        self._SEARCH_GRANULE_URL = self._get_api_endpoint("search_granule_url")
-        self._SEARCH_COLLECTION_URL = self._get_api_endpoint("search_collection_url")
-        self._ALGORITHM_REGISTER = self._get_api_endpoint("algorithm_register")
-        self._ALGORITHM_BUILD = self._get_api_endpoint("algorithm_build")
-        self._MAS_ALGO = self._get_api_endpoint("mas_algo")
-        self._DPS_JOB = self._get_api_endpoint("dps_job")
-        self._WMTS = self._get_api_endpoint("wmts")
-        self._MEMBER = self._get_api_endpoint("member")
-        self._MEMBER_DPS_TOKEN = self._get_api_endpoint("member_dps_token")
-        self._REQUESTER_PAYS = self._get_api_endpoint("requester_pays")
-        self._EDC_CREDENTIALS = self._get_api_endpoint("edc_credentials")
-        self._WORKSPACE_BUCKET_CREDENTIALS = self._get_api_endpoint("workspace_bucket_credentials")
-        self._S3_SIGNED_URL = self._get_api_endpoint("s3_signed_url")
-
-        self._TILER_ENDPOINT = self.config.get("service", "tiler_endpoint")
-        self._AWS_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID") or self.config.get("aws", "aws_access_key_id")
-        self._AWS_ACCESS_SECRET = os.environ.get("AWS_SECRET_ACCESS_KEY") or self.config.get("aws", "aws_secret_access_key")
-        self._S3_USER_UPLOAD_BUCKET = os.environ.get("S3_USER_UPLOAD_BUCKET") or self.config.get("aws", "user_upload_bucket")
-        self._S3_USER_UPLOAD_DIR = os.environ.get("S3_USER_UPLOAD_DIR") or self.config.get("aws", "user_upload_directory")
-        self._MAPBOX_TOKEN = os.environ.get("MAPBOX_ACCESS_TOKEN") or ''
-        self._INDEXED_ATTRIBUTES = json.loads(self.config.get("search", "indexed_attributes"))
-
-        self._CMR = CMR(self._INDEXED_ATTRIBUTES, self._PAGE_SIZE, self._get_api_header())
-        self._DPS = DpsHelper(self._get_api_header(), self._MEMBER_DPS_TOKEN)
-        self.profile = Profile(self._MEMBER, self._get_api_header())
+        self._CMR = CMR(self.config.indexed_attributes, self.config.page_size, self._get_api_header())
+        self._DPS = DpsHelper(self._get_api_header(), self.config.member_dps_token)
+        self.profile = Profile(self.config.member, self._get_api_header())
         self.aws = AWS(
-            self._REQUESTER_PAYS,
-            self._S3_SIGNED_URL,
-            self._EDC_CREDENTIALS,
-            self._WORKSPACE_BUCKET_CREDENTIALS,
+            self.config.requester_pays,
+            self.config.s3_signed_url,
+            self.config.edc_credentials,
+            self.config.workspace_bucket_credentials,
             self._get_api_header()
         )
 
-    def _get_api_endpoint(self, config_key):
-        return 'https://{}/api/{}'.format(self._MAAP_HOST, self.config.get("maap_endpoint", config_key))
-
     def _get_api_header(self, content_type=None):
 
-        api_header = {'Accept': content_type if content_type else self._CONTENT_TYPE, 'token': self._MAAP_TOKEN}
+        api_header = {'Accept': content_type if content_type else self.config.content_type, 'token': self.config.maap_token}
 
         if os.environ.get("MAAP_PGT"):
             api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
 
         return api_header
-
-    def _get_config_path(self, directory):
-        return os.path.join(directory, "maap.cfg")
 
     def _upload_s3(self, filename, bucket, objectKey):
         """
@@ -125,11 +68,11 @@ class MAAP(object):
             :param kwargs: search parameters
             :return: list of results (<Instance of Result>)
             """
-        results = self._CMR.get_search_results(url=self._SEARCH_GRANULE_URL, limit=limit, **kwargs)
+        results = self._CMR.get_search_results(url=self.config.search_granule_url, limit=limit, **kwargs)
         return [Granule(result,
-                        self._AWS_ACCESS_KEY,
-                        self._AWS_ACCESS_SECRET,
-                        self._SEARCH_GRANULE_URL,
+                        self.config.aws_access_key,
+                        self.config.aws_access_secret,
+                        self.config.search_granule_url,
                         self._get_api_header(),
                         self._DPS) for result in results][:limit]
 
@@ -149,7 +92,7 @@ class MAAP(object):
 
         proxy = Result({})
         proxy._dps = self._DPS
-        proxy._cmrFileUrl = self._SEARCH_GRANULE_URL
+        proxy._cmrFileUrl = self.config.search_granule_url
         proxy._apiHeader = self._get_api_header()
         # noinspection PyProtectedMember
         return proxy._getHttpData(online_access_url, overwrite, final_destination)
@@ -184,13 +127,13 @@ class MAAP(object):
         :param kwargs: search parameters
         :return: list of results (<Instance of Result>)
         """
-        results = self._CMR.get_search_results(url=self._SEARCH_COLLECTION_URL, limit=limit, **kwargs)
-        return [Collection(result, self._MAAP_HOST) for result in results][:limit]
+        results = self._CMR.get_search_results(url=self.config.search_collection_url, limit=limit, **kwargs)
+        return [Collection(result, self.config.maap_host) for result in results][:limit]
 
     def getQueues(self):
-        url = os.path.join(self._ALGORITHM_REGISTER, 'resource')
+        url = os.path.join(self.config.algorithm_register, 'resource')
         headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(self._ALGORITHM_REGISTER))
+        logger.debug('GET request sent to {}'.format(self.config.algorithm_register))
         logger.debug('headers:')
         logger.debug(headers)
         response = requests.get(
@@ -200,20 +143,14 @@ class MAAP(object):
         return response
 
     def registerAlgorithm(self, arg):
-        headers = RequestsUtils.generate_dps_headers()
-        headers['Content-Type'] = 'application/json'
-        logger.debug('headers:')
-        logger.debug(headers)
-        logger.debug('request is')
+        logger.debug('Registering algorithm with args ')
         if type(arg) is dict:
             arg = json.dumps(arg)
         logger.debug(arg)
-        response = requests.post(
-            url=self._ALGORITHM_REGISTER,
-            data=arg,
-            headers=headers
-        )
-        logger.debug('POST request sent to {}'.format(self._ALGORITHM_REGISTER))
+        response = requests_utils.make_request(url=self.config.algorithm_register, config=self.config,
+                                               content_type='application/json', request_type=requests_utils.POST,
+                                               data=arg)
+        logger.debug('POST request sent to {}'.format(self.config.algorithm_register))
         return response
 
     def register_algorithm_from_yaml_file(self, file_path):
@@ -241,7 +178,7 @@ class MAAP(object):
         return self.registerAlgorithm(json.dumps(output_config))
 
     def listAlgorithms(self):
-        url = self._MAS_ALGO
+        url = self.config.mas_algo
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
@@ -253,7 +190,7 @@ class MAAP(object):
         return response
 
     def describeAlgorithm(self, algoid):
-        url = os.path.join(self._MAS_ALGO, algoid)
+        url = os.path.join(self.config.mas_algo, algoid)
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
@@ -265,7 +202,7 @@ class MAAP(object):
         return response
 
     def publishAlgorithm(self, algoid):
-        url = self._MAS_ALGO.replace('algorithm','publish')
+        url = self.config.mas_algo.replace('algorithm', 'publish')
         headers = self._get_api_header()
         body = { "algo_id": algoid}
         logger.debug('POST request sent to {}'.format(url))
@@ -281,7 +218,7 @@ class MAAP(object):
         return response
 
     def deleteAlgorithm(self, algoid):
-        url = os.path.join(self._MAS_ALGO, algoid)
+        url = os.path.join(self.config.mas_algo, algoid)
         headers = self._get_api_header()
         logger.debug('DELETE request sent to {}'.format(url))
         logger.debug('headers:')
@@ -292,61 +229,55 @@ class MAAP(object):
         )
         return response
 
-    def getCapabilities(self):
-        url = self._DPS_JOB
-        headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
 
     def getJob(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         job.retrieve_attributes()
         return job
 
     def getJobStatus(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         return job.retrieve_status()
 
     def getJobResult(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         return job.retrieve_result()
 
     def getJobMetrics(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         return job.retrieve_metrics()
 
     def cancelJob(self, jobid):
-        job = DPSJob()
+        job = DPSJob(self.config)
         job.id = jobid
         return job.cancel_job()
 
-    def listJobs(self, username=None):
+    def listJobs(self, username=None, page_size=None, offset=None):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
-        url = os.path.join(self._DPS_JOB, username, endpoints.DPS_JOB_LIST)
+
+        url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+        params = {k: v for k, v in (("page_size", page_size), ("offset", offset)) if v}
+        
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
         response = requests.get(
             url=url,
-            headers=headers
+            headers=headers,
+            params=params,
         )
         return response
 
-    def submitJob(self, retrieve_attributes=False, **kwargs):
-        response = self._DPS.submit_job(request_url=self._DPS_JOB, **kwargs)
-        job = DPSJob()
+    def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
+        response = self._DPS.submit_job(request_url=self.config.dps_job,
+                                        identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
+        job = DPSJob(self.config)
         job.set_submitted_job_result(response)
         try:
             if retrieve_attributes:
@@ -362,8 +293,8 @@ class MAAP(object):
         :param filenames: List of one or more filenames to upload
         :return: String message including UUID of subdirectory of files
         """
-        bucket = self._S3_USER_UPLOAD_BUCKET
-        prefix = self._S3_USER_UPLOAD_DIR
+        bucket = self.config.s3_user_upload_bucket
+        prefix = self.config.s3_user_upload_dir
         uuid_dir = uuid.uuid4()
         # TODO(aimee): This should upload to a user-namespaced directory
         for filename in filenames:
@@ -373,7 +304,7 @@ class MAAP(object):
 
     def _get_browse(self, granule_ur):
         response = requests.get(
-            url='{}/GetTile'.format(self._WMTS),
+            url=f'{self.config.wmts}/GetTile',
             params=dict(granule_ur=granule_ur),
             headers=dict(Accept='application/json')
         )
@@ -381,7 +312,7 @@ class MAAP(object):
 
     def _get_capabilities(self, granule_ur):
         response = requests.get(
-            url='{}/GetCapabilities'.format(self._WMTS),
+            url=f'{self.config.wmts}/GetCapabilities',
             params=dict(granule_ur=granule_ur),
             headers=dict(Accept='application/json')
         )
@@ -396,12 +327,12 @@ class MAAP(object):
         presenter = Presenter(capabilities, display_config)
         query_params = dict(url=browse_file, **presenter.display_config)
         qs = urllib.parse.urlencode(query_params)
-        tiles_url = f"{self._TILER_ENDPOINT}/tiles/{{z}}/{{x}}/{{y}}.png?{qs}"
+        tiles_url = f"{self.config.tiler_endpoint}/tiles/{{z}}/{{x}}/{{y}}.png?{qs}"
         viz = RasterTilesViz(
             tiles_url,
             height='800px',
             zoom=10,
-            access_token=self._MAPBOX_TOKEN,
+            access_token=self.config.mapbox_token,
             tiles_size=256,
             tiles_bounds=presenter.bbox,
             center=(presenter.lng, presenter.lat),
