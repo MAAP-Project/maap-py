@@ -179,8 +179,8 @@ jobs:
         run: |
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git tag -a "${{ env.software_version }}" -m "Version ${{ env.software_version }}"
-          git push origin "${{ env.software_version }}"
+          git tag -a "v${{ env.software_version }}" -m "Version ${{ env.software_version }}"
+          git push origin "v${{ env.software_version }}"
       - name: Create GH release
         if: |
           steps.alpha.conclusion == 'success'   ||
@@ -189,9 +189,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           generateReleaseNotes: true
-          name: ${{ env.software_version }}
+          name: v${{ env.software_version }}
           prerelease: ${{ steps.alpha.conclusion == 'success' || steps.rc.conclusion == 'success'}}
-          tag: ${{ env.software_version }}
+          tag: v${{ env.software_version }}
 
   publish-pypi:
     needs: [ build ]
