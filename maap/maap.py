@@ -28,6 +28,8 @@ s3_client = boto3.client('s3')
 class MAAP(object):
 
     def __init__(self, maap_host=os.getenv('MAAP_API_HOST', 'api.maap-project.org')):
+        print("graceal1 maap host in init is")
+        print(maap_host)
         self.config = MaapConfig(maap_host=maap_host)
 
         self._CMR = CMR(self.config.indexed_attributes, self.config.page_size, self._get_api_header())
