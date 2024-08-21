@@ -261,6 +261,8 @@ class MAAP(object):
     def listJobs(self, username=None, page_size=None, offset=None):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
+        print("graceal1 username in listJobs in maap-py is ")
+        print(username)
 
         url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
         params = {k: v for k, v in (("page_size", page_size), ("offset", offset)) if v}
