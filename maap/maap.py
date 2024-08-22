@@ -28,8 +28,6 @@ s3_client = boto3.client('s3')
 class MAAP(object):
 
     def __init__(self, maap_host=os.getenv('MAAP_API_HOST', 'api.maap-project.org')):
-        print("graceal1 maap host in init is TEST")
-        print(maap_host)
         self.config = MaapConfig(maap_host=maap_host)
 
         self._CMR = CMR(self.config.indexed_attributes, self.config.page_size, self._get_api_header())
@@ -145,7 +143,6 @@ class MAAP(object):
         return response
 
     def registerAlgorithm(self, arg):
-        print("graceal1 in registerAlgorithm")
         logger.debug('Registering algorithm with args ')
         if type(arg) is dict:
             arg = json.dumps(arg)
@@ -153,13 +150,10 @@ class MAAP(object):
         response = requests_utils.make_request(url=self.config.algorithm_register, config=self.config,
                                                content_type='application/json', request_type=requests_utils.POST,
                                                data=arg)
-        print("graceal1 response of posting algorithm was ")
-        print(response)
         logger.debug('POST request sent to {}'.format(self.config.algorithm_register))
         return response
 
     def register_algorithm_from_yaml_file(self, file_path):
-        print("graceal1 in register_algorithm_from_yaml_file")
         algo_config = algorithm_utils.read_yaml_file(file_path)
         return self.registerAlgorithm(algo_config)
 
@@ -263,15 +257,8 @@ class MAAP(object):
         return job.cancel_job()
 
     def listJobs(self, username=None, page_size=None, offset=None):
-        print("graceal1 in listJobs")
-        print(username)
-        print(self.profile)
-        print(self.profile.account_info())
-        print(self.profile.account_info().keys())
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
-        print("graceal1 username in listJobs in maap-py is ")
-        print(username)
 
         url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
         params = {k: v for k, v in (("page_size", page_size), ("offset", offset)) if v}
@@ -280,10 +267,6 @@ class MAAP(object):
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
-        print("graceal1 making a request in listJobs to")
-        print(url)
-        print(headers)
-        print(params)
         response = requests.get(
             url=url,
             headers=headers,
@@ -292,19 +275,10 @@ class MAAP(object):
         return response
 
     def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
-        print("graceal1 in submitJob maap-py and kwargs is")
-        print(kwargs)
-        print(self.profile)
         if not 'username' in kwargs and self.profile is not None and 'username' in self.profile.account_info().keys():
-            print("graceal1 in submitJob and assigning username")
-            print(self.profile.account_info()['username'])
             kwargs['username'] = self.profile.account_info()['username']
-        print("graceal1 username in submitJob in maap-py outside if is ")
-        print(kwargs['username'])
         response = self._DPS.submit_job(request_url=self.config.dps_job,
                                         identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
-        print("graceal1 response from submitting job is")
-        print(response)
         job = DPSJob(self.config)
         job.set_submitted_job_result(response)
         try:

@@ -55,12 +55,6 @@ def make_request(url, config: MaapConfig, content_type=None, request_type: HTTPM
         # TODO: Add support for request type DELETE
         raise NotImplementedError(f"Request type {request_type} not supported")
     else:
-        print("graceal1 posting algorithm with ")
-        print(request_type.value)
-        print(url)
-        print(not self_signed)
-        print(headers)
-        print(kwargs)
         return requests.request(
             method=request_type.value,
             url=url,
