@@ -28,7 +28,7 @@ s3_client = boto3.client('s3')
 class MAAP(object):
 
     def __init__(self, maap_host=os.getenv('MAAP_API_HOST', 'api.maap-project.org')):
-        print("graceal1 maap host in init is")
+        print("graceal1 maap host in init is TEST")
         print(maap_host)
         self.config = MaapConfig(maap_host=maap_host)
 
@@ -259,6 +259,7 @@ class MAAP(object):
         return job.cancel_job()
 
     def listJobs(self, username=None, page_size=None, offset=None):
+        print("graceal1 in listJobs")
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
         print("graceal1 username in listJobs in maap-py is ")
