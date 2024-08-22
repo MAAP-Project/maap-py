@@ -77,6 +77,10 @@ class DpsHelper:
         # ==================================
         # Part 2: Build & Send Request
         # ==================================
+        print("graceal1 in submit_job with")
+        print(fields)
+        print(params)
+        print(inputs)
         req_xml = ''
         ins_xml = ''
 
@@ -102,6 +106,10 @@ class DpsHelper:
         # log request headers
         logging.debug('headers:')
         logging.debug(self._api_header)
+        print("graceal1 request and api header")
+        print(request_url)
+        print(req_xml)
+        print(self._api_header)
 
         # -------------------------------
         # Send Request
@@ -114,6 +122,8 @@ class DpsHelper:
             )
             logging.debug('status code {}'.format(r.status_code))
             logging.debug('response text\n{}'.format(r.text))
+            print("graceal1 response is ")
+            print(r)
 
             # ==================================
             # Part 3: Check & Parse Response

@@ -145,6 +145,7 @@ class MAAP(object):
         return response
 
     def registerAlgorithm(self, arg):
+        print("graceal1 in registerAlgorithm")
         logger.debug('Registering algorithm with args ')
         if type(arg) is dict:
             arg = json.dumps(arg)
@@ -156,6 +157,7 @@ class MAAP(object):
         return response
 
     def register_algorithm_from_yaml_file(self, file_path):
+        print("graceal1 in register_algorithm_from_yaml_file")
         algo_config = algorithm_utils.read_yaml_file(file_path)
         return self.registerAlgorithm(algo_config)
 
@@ -295,10 +297,12 @@ class MAAP(object):
             print("graceal1 in submitJob and assigning username")
             print(self.profile.account_info()['username'])
             kwargs['username'] = self.profile.account_info()['username']
-        print("graceal1 username in listJobs in maap-py outside if is ")
+        print("graceal1 username in submitJob in maap-py outside if is ")
         print(kwargs['username'])
         response = self._DPS.submit_job(request_url=self.config.dps_job,
                                         identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
+        print("graceal1 response from submitting job is")
+        print(response)
         job = DPSJob(self.config)
         job.set_submitted_job_result(response)
         try:
