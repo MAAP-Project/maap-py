@@ -20,6 +20,9 @@ class Profile:
             url=self._profile_endpoint,
             headers=self._api_header
         )
+        print("graceal1 in account info ")
+        print(self._profile_endpoint)
+        print(self._api_header)
 
         if response:
             return json.loads(response.text)
