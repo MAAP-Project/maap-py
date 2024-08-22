@@ -276,6 +276,10 @@ class MAAP(object):
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
+        print("graceal1 making a request in listJobs to")
+        print(url)
+        print(headers)
+        print(params)
         response = requests.get(
             url=url,
             headers=headers,
