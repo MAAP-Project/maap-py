@@ -279,6 +279,15 @@ class MAAP(object):
         return response
 
     def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
+        print("graceal1 in submitJob maap-py and kwargs is")
+        print(kwargs)
+        print(self.profile)
+        if not 'username' in kwargs and self.profile is not None and 'username' in self.profile.account_info().keys():
+            print("graceal1 in submitJob and assigning username")
+            print(self.profile.account_info()['username'])
+            kwargs['username'] = self.profile.account_info()['username']
+        print("graceal1 username in listJobs in maap-py outside if is ")
+        print(kwargs['username'])
         response = self._DPS.submit_job(request_url=self.config.dps_job,
                                         identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
         job = DPSJob(self.config)
