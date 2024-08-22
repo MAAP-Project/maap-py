@@ -23,8 +23,6 @@ class Profile:
         print("graceal1 in account info ")
         print(self._profile_endpoint)
         print(self._api_header)
-        # Graceal need to remove this
-        return {"username": "grallewellyn"}
 
         if response:
             return json.loads(response.text)

@@ -153,6 +153,8 @@ class MAAP(object):
         response = requests_utils.make_request(url=self.config.algorithm_register, config=self.config,
                                                content_type='application/json', request_type=requests_utils.POST,
                                                data=arg)
+        print("graceal1 response of posting algorithm was ")
+        print(response)
         logger.debug('POST request sent to {}'.format(self.config.algorithm_register))
         return response
 
