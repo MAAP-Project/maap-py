@@ -260,6 +260,10 @@ class MAAP(object):
 
     def listJobs(self, username=None, page_size=None, offset=None):
         print("graceal1 in listJobs")
+        print(username)
+        print(self.profile)
+        print(self.profile.account_info())
+        print(self.profile.account_info().keys())
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
         print("graceal1 username in listJobs in maap-py is ")
