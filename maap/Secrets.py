@@ -3,16 +3,16 @@ import logging
 import json
 from maap.utils import endpoints
 from maap.utils import requests_utils
+from maap.utils import endpoints
 
 
 class Secrets:
     """
-    Functions used for Member secrets API interfacing
+    Functions used for member secrets API interfacing
     """
-    def __init__(self, config, api_header):
+    def __init__(self, member_endpoint, api_header):
         self._api_header = api_header
-        # self._members_endpoint = members_endpoint
-        self._members_endpoint = "https://api.dit.maap-project.org/api/members/self"
+        self._members_endpoint = f"{member_endpoint}/{endpoints.MEMBERS_SECRETS}"
         self._logger = logging.getLogger(__name__)
 
 
@@ -25,7 +25,7 @@ class Secrets:
         """
         try:
             response = requests.get(
-                url = f"{self._members_endpoint}/{endpoints.MEMBERS_SECRETS}",
+                url = self._members_endpoint,
                 headers=self._api_header
             )
 
@@ -41,7 +41,6 @@ class Secrets:
 
         Args:
             secret_name (str, required): Secret name.
-            secret_value (str, optional): Secret value.
 
         Returns:
             dict: Secret name and value.
@@ -54,7 +53,7 @@ class Secrets:
                 raise ValueError("Failed to get secret value. Please provide secret name.")
 
             response = requests.get(
-                url = f"{self._members_endpoint}/{endpoints.MEMBERS_SECRETS}/{secret_name}",
+                url = f"{self._members_endpoint}/{secret_name}",
                 headers=self._api_header
             )
 
@@ -83,7 +82,7 @@ class Secrets:
                 raise ValueError("Failed to add secret. Please provide secret name.")
 
             response = requests.post(
-                url = f"{self._members_endpoint}/{endpoints.MEMBERS_SECRETS}",
+                url = self._members_endpoint,
                 headers=self._api_header,
                 data=json.dumps({"secret_name": secret_name, "secret_value": secret_value})
             )
@@ -113,7 +112,7 @@ class Secrets:
                 raise ValueError("Failed to delete secret. Please provide secret name.")
 
             response = requests.delete(
-                url = f"{self._members_endpoint}/{endpoints.MEMBERS_SECRETS}/{secret_name}",
+                url = f"{self._members_endpoint}/{secret_name}",
                 headers=self._api_header
             )
 

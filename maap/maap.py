@@ -41,7 +41,7 @@ class MAAP(object):
             self.config.workspace_bucket_credentials,
             self._get_api_header()
         )
-        self.secrets = Secrets(self.config, self._get_api_header(content_type="application/json"))
+        self.secrets = Secrets(self.config.member, self._get_api_header(content_type="application/json"))
 
     def _get_api_header(self, content_type=None):
 
