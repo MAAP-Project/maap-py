@@ -81,6 +81,7 @@ class MaapConfig:
         self.algorithm_build = self._get_api_endpoint("algorithm_build")
         self.mas_algo = self._get_api_endpoint("mas_algo")
         self.dps_job = self._get_api_endpoint("dps_job")
+        self.member_secrets = self._get_api_endpoint("member_secrets")
         self.member_dps_token = self._get_api_endpoint("member_dps_token")
         self.requester_pays = self._get_api_endpoint("requester_pays")
         self.edc_credentials = self._get_api_endpoint("edc_credentials")
