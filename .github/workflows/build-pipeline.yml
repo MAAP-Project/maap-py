@@ -75,6 +75,7 @@ jobs:
         if: |
           github.ref != 'refs/heads/develop' &&
           github.ref != 'refs/heads/main' &&
+          github.ref != 'refs/heads/master' &&
           !startsWith(github.ref, 'refs/heads/release/')
         run: |
           new_ver="${{ steps.get-version.outputs.current_version }}+$(git rev-parse --short ${GITHUB_SHA})"
@@ -105,7 +106,7 @@ jobs:
       - name: Release version
         # If triggered by push to the main branch
         if: |
-          startsWith(github.ref, 'refs/heads/main') &&
+          (startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')) &&
           github.event_name != 'workflow_dispatch'
         id: release
         env:
@@ -202,7 +203,8 @@ jobs:
     if: |
       github.ref == 'refs/heads/develop' ||
       startsWith(github.ref, 'refs/heads/release') ||
-      github.ref == 'refs/heads/main'
+      github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/master'
     steps:
       - name: Download python dist
         uses: actions/download-artifact@v4
@@ -219,6 +221,7 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
       - name: Publish to pypi.org
         if: |
-          github.ref == 'refs/heads/main'
+          github.ref == 'refs/heads/main' ||
+          github.ref == 'refs/heads/master'
         id: pypi-publish
         uses: pypa/gh-action-pypi-publish@release/v1
