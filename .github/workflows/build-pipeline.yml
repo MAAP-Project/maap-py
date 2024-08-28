@@ -1,0 +1,224 @@
+# This is the main build pipeline that verifies and publishes the software
+name: Build
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events
+  push:
+    branches: [ develop, release/**, main, feature/**, issue/**, issues/**, dependabot/** ]
+    tags-ignore:
+      - '*'
+    # Do not trigger build if pyproject.toml was the only thing changed
+    paths-ignore:
+      - 'pyproject.toml'
+      - 'poetry.lock'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Only allow 1 execution of this workflow to be running at any given time per-branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+env:
+  POETRY_VERSION: "1.8.3"
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  build:
+    name: Build, Test, Verify
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    outputs:
+      deploy_env: ${{ steps.poetry-build.outputs.deploy_env }}
+      version: ${{ steps.poetry-build.outputs.the_version }}
+      pyproject_name: ${{ steps.poetry-build.outputs.pyproject_name }}
+      python_dist: ${{ steps.poetry-build.outputs.pyproject_name }}-dist
+    steps:
+      - uses: getsentry/action-github-app-token@v3
+        name: cicd token
+        id: cicd-key
+        with:
+          app_id: ${{ secrets.CICD_APP }}
+          private_key: ${{ secrets.CICD_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ steps.cicd-key.outputs.token }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+      - name: Setup a local virtual environment
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+      - uses: actions/cache@v4
+        name: Define a cache for the virtual environment based on the dependencies lock file
+        with:
+          path: ./.venv
+          key: venv-${{ hashFiles('poetry.lock') }}
+      - name: Get pre-build version
+        id: get-version
+        run: |
+          echo "current_version=$(poetry version | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "pyproject_name=$(poetry version | awk '{print $1}')" >> $GITHUB_ENV
+      - name: Bump pre-alpha version
+        # If triggered by push to a non-tracked branch
+        if: |
+          github.ref != 'refs/heads/develop' &&
+          github.ref != 'refs/heads/main' &&
+          !startsWith(github.ref, 'refs/heads/release/')
+        run: |
+          new_ver="${{ steps.get-version.outputs.current_version }}+$(git rev-parse --short ${GITHUB_SHA})"
+          poetry version $new_ver
+      - name: Bump alpha version
+        # If triggered by push to the develop branch
+        if: |
+          github.ref == 'refs/heads/develop' &&
+          github.event_name != 'workflow_dispatch'
+        id: alpha
+        run: |
+          poetry version prerelease
+      - name: Bump rc version
+        # If triggered by push to a release branch
+        if: |
+          startsWith(github.ref, 'refs/heads/release/') &&
+          github.event_name != 'workflow_dispatch'
+        id: rc
+        env:
+          # True if the version already has a 'rc' pre-release identifier
+          BUMP_RC: ${{ contains(steps.get-version.outputs.current_version, 'rc') }}
+        run: |
+          if [ "$BUMP_RC" = true ]; then
+            poetry version prerelease
+          else
+            poetry version ${GITHUB_REF#refs/heads/release/}rc1
+          fi
+      - name: Release version
+        # If triggered by push to the main branch
+        if: |
+          startsWith(github.ref, 'refs/heads/main') &&
+          github.event_name != 'workflow_dispatch'
+        id: release
+        env:
+          CURRENT_VERSION: ${{ steps.get-version.outputs.current_version }}
+        # Remove rc* from end of version string
+        # The ${string%%substring} syntax below deletes the longest match of $substring from back of $string.
+        run: |
+          poetry version ${CURRENT_VERSION%%rc*}
+          echo "software_version=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
+      - name: Get install version
+        # Get the version of the software being installed and save it as an ENV var
+        run: |
+          echo "software_version=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
+      - name: Install software
+        run: poetry install
+      - name: Lint
+        continue-on-error: true
+        run: |
+          poetry run pylint maap
+          poetry run flake8 maap
+      - name: Test and coverage
+        continue-on-error: true
+        run: |
+          poetry run pytest --junitxml=build/reports/pytest.xml --cov=maap/ --cov-report=xml:build/reports/coverage.xml test/
+      - name: downcase REPO
+        run: |
+          echo "repository_owner_lower=${GITHUB_REPOSITORY_OWNER@L}" >> "${GITHUB_ENV}"
+      - name: SonarCloud Scan
+        id: sonarcloud
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ env.repository_owner_lower }}
+            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
+            -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
+            -Dsonar.sources=maap/
+            -Dsonar.tests=test/
+            -Dsonar.projectName=${{ github.repository }}
+            -Dsonar.projectVersion=${{ env.software_version }}
+            -Dsonar.python.version=3.9,3.10
+      - name: Build Python Artifact
+        id: poetry-build
+        run: |
+          poetry build
+          echo "the_version=$(poetry version | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "pyproject_name=$(poetry version | awk '{print $1}')" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        id: python-dist
+        with:
+          name: ${{ steps.poetry-build.outputs.pyproject_name }}-dist
+          path: dist/*
+      - name: Commit Version Bump
+        # If building an alpha, release candidate, or release then we commit the version bump back to the repo
+        if: |
+          steps.alpha.conclusion == 'success'   ||
+          steps.rc.conclusion == 'success'      ||
+          steps.release.conclusion == 'success'
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git commit -am "/version ${{ env.software_version }}"
+          git push
+      - name: Push Tag
+        if: |
+          steps.alpha.conclusion == 'success'   ||
+          steps.rc.conclusion == 'success'      ||
+          steps.release.conclusion == 'success'
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "v${{ env.software_version }}" -m "Version ${{ env.software_version }}"
+          git push origin "v${{ env.software_version }}"
+      - name: Create GH release
+        if: |
+          steps.alpha.conclusion == 'success'   ||
+          steps.rc.conclusion == 'success'      ||
+          steps.release.conclusion == 'success'
+        uses: ncipollo/release-action@v1
+        with:
+          generateReleaseNotes: true
+          name: v${{ env.software_version }}
+          prerelease: ${{ steps.alpha.conclusion == 'success' || steps.rc.conclusion == 'success'}}
+          tag: v${{ env.software_version }}
+
+  publish-pypi:
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    if: |
+      github.ref == 'refs/heads/develop' ||
+      startsWith(github.ref, 'refs/heads/release') ||
+      github.ref == 'refs/heads/main'
+    steps:
+      - name: Download python dist
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.python_dist }}
+          path: ${{ github.workspace }}/dist
+      - name: Publish to test.pypi.org
+        id: pypi-test-publish
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          startsWith(github.ref, 'refs/heads/release')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+      - name: Publish to pypi.org
+        if: |
+          github.ref == 'refs/heads/main'
+        id: pypi-publish
+        uses: pypa/gh-action-pypi-publish@release/v1

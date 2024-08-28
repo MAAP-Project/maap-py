@@ -5,10 +5,12 @@ from maap.maap import MAAP, MaapConfig
 from maap import config_reader
 import logging
 from yaml import load as yaml_load, dump as yaml_dump
+
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper
+
 
 class TestConfig(TestCase):
     logging.basicConfig(level=logging.DEBUG)
@@ -44,7 +46,6 @@ class TestConfig(TestCase):
         os.environ['MAAP_API_CONFIG_ENDPOINT'] = 'config'
         config_url = config_reader._get_config_url(maap_host)
         self.assertEqual("http://localhost:5000/config", config_url)
-
 
     def test_read_conf_hosted_api(self):
         maap = MAAP(maap_host="api.dit.maap-project.org")
