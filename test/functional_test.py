@@ -108,6 +108,30 @@ def cancel_job(maap: MAAP, job_id):
     assert resp is not None
     assert 'Accepted' in str(resp)
 
+@log_decorator
+def add_secret(maap: MAAP, secret_name=None, secret_value=None):
+    resp = maap.secrets.add_secret(secret_name, secret_value)
+    print(resp)
+    assert resp is not None
+
+@log_decorator
+def get_secrets(maap: MAAP):
+    resp = maap.secrets.get_secrets()
+    print(resp)
+    assert resp is not None
+
+@log_decorator
+def get_secret(maap: MAAP, secret_name=None):
+    resp = maap.secrets.get_secret(secret_name)
+    print(resp)
+    assert resp is not None
+
+@log_decorator
+def delete_secret(maap: MAAP, secret_name=None):
+    resp = maap.secrets.delete_secret(secret_name)
+    print(resp)
+    assert resp is not None
+
 
 def main():
     if os.environ.get('MAAP_PGT') is None:
@@ -118,8 +142,18 @@ def main():
     # list_algorithms(maap)
     job = submit_job(maap, queue="maap-dps-sandbox")
     cancel_job(maap, job.id)
+
+    # Test secrets management
+    secret_name = "test_secret"
+    secret_value = "test_value"
+    get_secrets(maap)
+    add_secret(maap, secret_name, secret_value)
+    get_secret(maap, secret_name)
+    delete_secret(maap, secret_name)
+
     # submit_job(maap, wait_for_completion=True)
     # delete_algorithm(maap, "maap_functional_test_algo:main")
+
 
 
 if __name__ == '__main__':
