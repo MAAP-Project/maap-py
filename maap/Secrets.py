@@ -43,7 +43,7 @@ class Secrets:
             secret_name (str, required): Secret name.
 
         Returns:
-            dict: Secret name and value.
+            string: Secret value.
 
         Raises:
             ValueError: If secret name is not provided.
@@ -56,6 +56,10 @@ class Secrets:
                 url = f"{self._members_endpoint}/{secret_name}",
                 headers=self._api_header
             )
+
+            if response.ok:
+                response = response.json()
+                return response["secret_value"]
 
             return json.loads(response.text)
 
