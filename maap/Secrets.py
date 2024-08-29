@@ -5,6 +5,7 @@ from maap.utils import endpoints
 from maap.utils import requests_utils
 from maap.utils import endpoints
 
+logger = logging.getLogger(__name__)
 
 class Secrets:
     """
@@ -13,7 +14,6 @@ class Secrets:
     def __init__(self, member_endpoint, api_header):
         self._api_header = api_header
         self._members_endpoint = f"{member_endpoint}/{endpoints.MEMBERS_SECRETS}"
-        self._logger = logging.getLogger(__name__)
 
 
     def get_secrets(self):
@@ -28,11 +28,11 @@ class Secrets:
                 url = self._members_endpoint,
                 headers=self._api_header
             )
-
+            logger.debug(response.text)
             return json.loads(response.text)
 
-        except Exception as ex:
-            raise(f"Error retrieving secrets: {ex}")
+        except Exception as e:
+            raise(f"Error retrieving secrets: {e}")
 
 
     def get_secret(self, secret_name=None):
@@ -48,10 +48,10 @@ class Secrets:
         Raises:
             ValueError: If secret name is not provided.
         """
-        try:
-            if secret_name is None:
-                raise ValueError("Failed to get secret value. Please provide secret name.")
+        if secret_name is None:
+            raise ValueError("Failed to get secret value. Please provide secret name.")
 
+        try:
             response = requests.get(
                 url = f"{self._members_endpoint}/{secret_name}",
                 headers=self._api_header
@@ -61,10 +61,11 @@ class Secrets:
                 response = response.json()
                 return response["secret_value"]
 
+            logger.debug(response.text)
             return json.loads(response.text)
 
-        except Exception as ex:
-            raise(f"Error retrieving secret: {ex}")
+        except Exception as e:
+            raise(f"Error retrieving secret: {e}")
 
 
     def add_secret(self, secret_name=None, secret_value=None):
@@ -79,23 +80,23 @@ class Secrets:
             dict: Containing name and value of secret that was just added.
 
         Raises:
-            ValueError: If secret name is not provided.
+            ValueError: If secret name or secret value is not provided.
         """
-        try:
-            if secret_name is None:
-                raise ValueError("Failed to add secret. Please provide secret name.")
+        if secret_name is None or secret_value is None:
+            raise ValueError("Failed to add secret. Secret name and secret value must not be 'None'.")
 
+        try:
             response = requests.post(
                 url = self._members_endpoint,
                 headers=self._api_header,
                 data=json.dumps({"secret_name": secret_name, "secret_value": secret_value})
             )
 
+            logger.debug(response.text)
             return json.loads(response.text)
 
-        except Exception as ex:
-            raise(f"Error adding secret: {ex}")
-
+        except Exception as e:
+            raise(f"Error adding secret: {e}")
 
 
     def delete_secret(self, secret_name=None):
@@ -111,19 +112,20 @@ class Secrets:
         Raises:
             ValueError: If secret name is not provided.
         """
-        try:
-            if secret_name is None:
-                raise ValueError("Failed to delete secret. Please provide secret name.")
+        if secret_name is None:
+            raise ValueError("Failed to delete secret. Please provide secret name.")
 
+        try:
             response = requests.delete(
                 url = f"{self._members_endpoint}/{secret_name}",
                 headers=self._api_header
             )
 
+            logger.debug(response.text)
             return json.loads(response.text)
 
-        except Exception as ex:
-            raise(f"Error deleting secret: {ex}")
+        except Exception as e:
+            raise(f"Error deleting secret: {e}")
     
 
 
