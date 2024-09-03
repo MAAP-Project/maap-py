@@ -19,7 +19,7 @@ from maap.Profile import Profile
 from maap.AWS import AWS
 from maap.dps.DpsHelper import DpsHelper
 from maap.utils import endpoints
-from maap.utils import job_utils
+from maap.utils import job
 
 logger = logging.getLogger(__name__)
 
@@ -333,7 +333,7 @@ class MAAP(object):
         version = params.pop('version', None)
 
         if status is not None:
-            params['status'] = job_utils.validate_job_status(status)
+            params['status'] = job.validate_job_status(status)
 
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
