@@ -121,10 +121,11 @@ def get_secrets(maap: MAAP):
     assert resp is not None
 
 @log_decorator
-def get_secret(maap: MAAP, secret_name=None):
+def get_secret(maap: MAAP, secret_name=None, secret_value=None):
     resp = maap.secrets.get_secret(secret_name)
     print(resp)
     assert resp is not None
+    assert resp == secret_value
 
 @log_decorator
 def delete_secret(maap: MAAP, secret_name=None):
@@ -148,7 +149,7 @@ def main():
     secret_value = "test_value"
     get_secrets(maap)
     add_secret(maap, secret_name, secret_value)
-    get_secret(maap, secret_name)
+    get_secret(maap, secret_name, secret_value)
     delete_secret(maap, secret_name)
 
     # submit_job(maap, wait_for_completion=True)

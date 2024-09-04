@@ -21,21 +21,20 @@ class Secrets:
         Returns a list of secrets for a given user.
 
         Returns:
-            list: Secret names for a given user.
+            list: Returns a list of dicts containing secret names e.g. [{'secret_name': 'secret1'}, {'secret_name': 'secret2'}].
         """
         try:
             response = requests.get(
                 url = self._members_endpoint,
                 headers=self._api_header
             )
-            logger.debug(response.text)
+            logger.debug(f"Response from get_secrets request: {response.text}")
             return json.loads(response.text)
-
         except Exception as e:
             raise(f"Error retrieving secrets: {e}")
 
 
-    def get_secret(self, secret_name=None):
+    def get_secret(self, secret_name):
         """
         Returns secret value for provided secret name.
 
@@ -49,7 +48,7 @@ class Secrets:
             ValueError: If secret name is not provided.
         """
         if secret_name is None:
-            raise ValueError("Failed to get secret value. Please provide secret name.")
+            raise ValueError("Secret name parameter cannot be None.")
 
         try:
             response = requests.get(
@@ -57,13 +56,13 @@ class Secrets:
                 headers=self._api_header
             )
 
+            # Return secret value directly for user ease-of-use
             if response.ok:
                 response = response.json()
                 return response["secret_value"]
 
-            logger.debug(response.text)
+            logger.debug(f"Response from get_secret request: {response.text}")
             return json.loads(response.text)
-
         except Exception as e:
             raise(f"Error retrieving secret: {e}")
 
@@ -92,9 +91,8 @@ class Secrets:
                 data=json.dumps({"secret_name": secret_name, "secret_value": secret_value})
             )
 
-            logger.debug(response.text)
+            logger.debug(f"Response from add_secret: {response.text}")
             return json.loads(response.text)
-
         except Exception as e:
             raise(f"Error adding secret: {e}")
 
@@ -121,9 +119,8 @@ class Secrets:
                 headers=self._api_header
             )
 
-            logger.debug(response.text)
+            logger.debug(f"Response from delete_secret: {response.text}")
             return json.loads(response.text)
-
         except Exception as e:
             raise(f"Error deleting secret: {e}")
     
