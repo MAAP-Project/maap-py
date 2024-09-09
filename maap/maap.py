@@ -17,6 +17,7 @@ from maap.utils.CMR import CMR
 from maap.utils import algorithm_utils
 from maap.Profile import Profile
 from maap.AWS import AWS
+from maap.Secrets import Secrets
 from maap.dps.DpsHelper import DpsHelper
 from maap.utils import endpoints
 from maap.utils import job
@@ -41,10 +42,11 @@ class MAAP(object):
             self.config.workspace_bucket_credentials,
             self._get_api_header()
         )
+        self.secrets = Secrets(self.config.member, self._get_api_header(content_type="application/json"))
 
     def _get_api_header(self, content_type=None):
 
-        api_header = {'Accept': content_type if content_type else self.config.content_type, 'token': self.config.maap_token}
+        api_header = {'Accept': content_type if content_type else self.config.content_type, 'token': self.config.maap_token, 'Content-Type': content_type if content_type else self.config.content_type}
 
         if os.environ.get("MAAP_PGT"):
             api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
