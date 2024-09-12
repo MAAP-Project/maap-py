@@ -17,8 +17,10 @@ from maap.utils.CMR import CMR
 from maap.utils import algorithm_utils
 from maap.Profile import Profile
 from maap.AWS import AWS
+from maap.Secrets import Secrets
 from maap.dps.DpsHelper import DpsHelper
 from maap.utils import endpoints
+from maap.utils import job
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +42,11 @@ class MAAP(object):
             self.config.workspace_bucket_credentials,
             self._get_api_header()
         )
+        self.secrets = Secrets(self.config.member, self._get_api_header(content_type="application/json"))
 
     def _get_api_header(self, content_type=None):
 
-        api_header = {'Accept': content_type if content_type else self.config.content_type, 'token': self.config.maap_token}
+        api_header = {'Accept': content_type if content_type else self.config.content_type, 'token': self.config.maap_token, 'Content-Type': content_type if content_type else self.config.content_type}
 
         if os.environ.get("MAAP_PGT"):
             api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
@@ -256,17 +259,92 @@ class MAAP(object):
         job.id = jobid
         return job.cancel_job()
 
-    def listJobs(self, username=None):
-        if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
+    def listJobs(self, username=None, *,
+                       algo_id=None, 
+                       end_time=None, 
+                       get_job_details=True, 
+                       offset=0, 
+                       page_size=10, 
+                       queue=None,
+                       start_time=None,
+                       status=None,
+                       tag=None, 
+                       version=None):
+        """
+        Returns a list of jobs for a given user that matches query params provided.
+
+        Args:
+            username (str, optional): Platform user. If no username is provided, the profile username will be used.
+            algo_id (str, optional): Algorithm type.
+            end_time (str, optional): Specifying this parameter will return all jobs that have completed from the provided end time to now. e.g. 2024-01-01 or 2024-01-01T00:00:00.000000Z.
+            get_job_details (bool, optional): Flag that determines whether to return a detailed job list or a compact list containing just the job ids and their associated job tags. Default is True.
+            offset (int, optional): Offset for pagination. Default is 0.
+            page_size (int, optional): Page size for pagination. Default is 10.
+            queue (str, optional): Job processing resource.
+            start_time (str, optional): Specifying this parameter will return all jobs that have started from the provided start time to now. e.g. 2024-01-01 or 2024-01-01T00:00:00.000000Z.
+            status (str, optional): Job status, e.g. job-completed, job-failed, job-started, job-queued.
+            tag (str, optional): User job tag/identifier.
+            version (str, optional): Algorithm version, e.g. GitHub branch or tag.
+
+        Returns:
+            list: List of jobs for a given user that matches query params provided.
+
+        Raises:
+            ValueError: If username is not provided and cannot be obtained from the user's profile.
+            ValueError: If either algo_id or version is provided, but not both.
+        """
+        if username is None and self.profile is not None and 'username' in self.profile.account_info().keys():
             username = self.profile.account_info()['username']
-        url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+
+        if username is None:
+            raise ValueError("Unable to determine username from profile. Please provide a username.")
+
+        url = "/".join(
+            segment.strip("/")
+            for segment in (self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+        )
+        
+        params = {
+            k: v
+            for k, v in (
+                ("algo_id", algo_id),
+                ("end_time", end_time),
+                ("get_job_details", get_job_details),
+                ("offset", offset),
+                ("page_size", page_size),
+                ("queue", queue),
+                ("start_time", start_time),
+                ("status", status),
+                ("tag", tag),
+                ("username", username),
+                ("version", version),
+            )
+            if v is not None
+        }
+        
+        if (not algo_id) != (not version):
+            # Either algo_id or version was supplied as a non-empty string, but not both.
+            # Either both must be non-empty strings or both must be None.
+            raise ValueError("Either supply non-empty strings for both algo_id and version, or supply neither.")
+
+        # DPS requests use 'job_type', which is a concatenation of 'algo_id' and 'version'
+        if algo_id and version:
+            params['job_type'] = f"{algo_id}:{version}"
+
+        algo_id = params.pop('algo_id', None)
+        version = params.pop('version', None)
+
+        if status is not None:
+            params['status'] = job.validate_job_status(status)
+
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         logger.debug('headers:')
         logger.debug(headers)
         response = requests.get(
             url=url,
-            headers=headers
+            headers=headers,
+            params=params,
         )
         return response
 
