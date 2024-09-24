@@ -6,16 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- [issues/95](https://github.com/MAAP-Project/maap-py/issues/95): Added github action workflow for publishing
 ### Changed
 ### Deprecated
 ### Removed
 ### Fixed
 ### Security
 
+## [4.0.1]
+### Added
+- [issues/95](https://github.com/MAAP-Project/maap-py/issues/95): Added github action workflow for publishing and switched to poetry for builds
+
 ## [4.0.0]
 ### Added
 - Started tracking changelog
 
-[Unreleased]: https://github.com/MAAP-Project/maap-py/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/MAAP-Project/maap-py/compare/v4.0.1...develop
+[4.0.1]: https://github.com/MAAP-Project/maap-py/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/MAAP-Project/maap-py/compare/1cd11b6e05781d757b8bad7e6e899855ce3e3682...v4.0.0

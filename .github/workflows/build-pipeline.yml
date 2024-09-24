@@ -4,7 +4,7 @@ name: Build
 on:
   # Triggers the workflow on push events
   push:
-    branches: [ develop, release/**, main, feature/**, issue/**, issues/**, dependabot/** ]
+    branches: [ develop, release/**, main, master, feature/**, issue/**, issues/**, dependabot/** ]
     tags-ignore:
       - '*'
     # Do not trigger build if pyproject.toml was the only thing changed
@@ -75,6 +75,7 @@ jobs:
         if: |
           github.ref != 'refs/heads/develop' &&
           github.ref != 'refs/heads/main' &&
+          github.ref != 'refs/heads/master' &&
           !startsWith(github.ref, 'refs/heads/release/')
         run: |
           new_ver="${{ steps.get-version.outputs.current_version }}+$(git rev-parse --short ${GITHUB_SHA})"
@@ -105,7 +106,7 @@ jobs:
       - name: Release version
         # If triggered by push to the main branch
         if: |
-          startsWith(github.ref, 'refs/heads/main') &&
+          (startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')) &&
           github.event_name != 'workflow_dispatch'
         id: release
         env:
@@ -179,8 +180,8 @@ jobs:
         run: |
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git tag -a "${{ env.software_version }}" -m "Version ${{ env.software_version }}"
-          git push origin "${{ env.software_version }}"
+          git tag -a "v${{ env.software_version }}" -m "Version ${{ env.software_version }}"
+          git push origin "v${{ env.software_version }}"
       - name: Create GH release
         if: |
           steps.alpha.conclusion == 'success'   ||
@@ -189,9 +190,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           generateReleaseNotes: true
-          name: ${{ env.software_version }}
+          name: v${{ env.software_version }}
           prerelease: ${{ steps.alpha.conclusion == 'success' || steps.rc.conclusion == 'success'}}
-          tag: ${{ env.software_version }}
+          tag: v${{ env.software_version }}
 
   publish-pypi:
     needs: [ build ]
@@ -202,7 +203,8 @@ jobs:
     if: |
       github.ref == 'refs/heads/develop' ||
       startsWith(github.ref, 'refs/heads/release') ||
-      github.ref == 'refs/heads/main'
+      github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/master'
     steps:
       - name: Download python dist
         uses: actions/download-artifact@v4
@@ -219,6 +221,7 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
       - name: Publish to pypi.org
         if: |
-          github.ref == 'refs/heads/main'
+          github.ref == 'refs/heads/main' ||
+          github.ref == 'refs/heads/master'
         id: pypi-publish
         uses: pypa/gh-action-pypi-publish@release/v1
