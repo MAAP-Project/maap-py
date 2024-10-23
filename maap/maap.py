@@ -258,6 +258,8 @@ class MAAP(object):
 
     def listJobs(self, username=None, page_size=None, offset=None):
         if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
+            print("graceal1 in listJobs and setting username to ")
+            print(self.profile.account_info()['username'])
             username = self.profile.account_info()['username']
 
         url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
@@ -276,6 +278,8 @@ class MAAP(object):
 
     def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
         if not 'username' in kwargs and self.profile is not None and 'username' in self.profile.account_info().keys():
+            print("graceal1 username was not defined and setting username to ")
+            print(self.profile.account_info()['username'])
             kwargs['username'] = self.profile.account_info()['username']
         response = self._DPS.submit_job(request_url=self.config.dps_job,
                                         identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
