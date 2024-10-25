@@ -256,13 +256,8 @@ class MAAP(object):
         job.id = jobid
         return job.cancel_job()
 
-    def listJobs(self, username=None, page_size=None, offset=None):
-        if username==None and self.profile is not None and 'username' in self.profile.account_info().keys():
-            print("graceal1 in listJobs and setting username to ")
-            print(self.profile.account_info()['username'])
-            username = self.profile.account_info()['username']
-
-        url = os.path.join(self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+    def listJobs(self, page_size=None, offset=None):
+        url = os.path.join(self.config.dps_job, endpoints.DPS_JOB_LIST)
         params = {k: v for k, v in (("page_size", page_size), ("offset", offset)) if v}
         
         headers = self._get_api_header()
@@ -277,9 +272,9 @@ class MAAP(object):
         return response
 
     def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
-        if not 'username' in kwargs and self.profile is not None and 'username' in self.profile.account_info().keys():
-            print("graceal1 username was not defined and setting username to ")
-            print(self.profile.account_info()['username'])
+        # Note that this is temporary and will be removed when we remove the API not requiring username to submit a job
+        # Also this now overrides passing someone else's username into submitJob since we don't want to allow that 
+        if self.profile is not None and self.profile.account_info() is not None and 'username' in self.profile.account_info().keys():
             kwargs['username'] = self.profile.account_info()['username']
         response = self._DPS.submit_job(request_url=self.config.dps_job,
                                         identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
