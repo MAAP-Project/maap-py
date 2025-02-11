@@ -12,13 +12,15 @@ class Profile:
         self._profile_endpoint = profile_endpoint
         self._logger = logging.getLogger(__name__)
 
-    def account_info(self):
+    def account_info(self, proxy_ticket = None):
         headers = self._api_header
         headers['Accept'] = 'application/json'
+        if 'proxy-ticket' not in headers and proxy_ticket:
+            headers['proxy-ticket'] = proxy_ticket
 
         response = requests.get(
             url=self._profile_endpoint,
-            headers=self._api_header
+            headers=headers
         )
 
         if response:
