@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [4.1.0]
+### Added
+- [feature/secrets](https://github.com/MAAP-Project/Community/issues/1048): Added support for user secrets management
+- [feature/jobs-list-query](https://github.com/MAAP-Project/maap-api-nasa/issues/130): Added query filter parameters to listJobs endpoint
+- [issues/95](https://github.com/MAAP-Project/maap-py/issues/95): Added CICD pipeline
+- [feature/pagination](https://github.com/MAAP-Project/Community/issues/1027): Added pagination support for listJobs endpoint
+
+### Changed
+- [community-909](https://github.com/MAAP-Project/Community/issues/909): Removed need to track maap.cfg
+
 ## [4.0.1]
 ### Added
 - [issues/95](https://github.com/MAAP-Project/maap-py/issues/95): Added github action workflow for publishing and switched to poetry for builds
