@@ -1,3 +1,5 @@
+
+
 import json
 import logging
 import boto3
@@ -259,7 +261,7 @@ class MAAP(object):
         job.id = jobid
         return job.cancel_job()
 
-    def listJobs(self, username=None, *,
+    def listJobs(self, *,
                        algo_id=None, 
                        end_time=None, 
                        get_job_details=True, 
@@ -274,7 +276,6 @@ class MAAP(object):
         Returns a list of jobs for a given user that matches query params provided.
 
         Args:
-            username (str, optional): Platform user. If no username is provided, the profile username will be used.
             algo_id (str, optional): Algorithm type.
             end_time (str, optional): Specifying this parameter will return all jobs that have completed from the provided end time to now. e.g. 2024-01-01 or 2024-01-01T00:00:00.000000Z.
             get_job_details (bool, optional): Flag that determines whether to return a detailed job list or a compact list containing just the job ids and their associated job tags. Default is True.
@@ -290,18 +291,11 @@ class MAAP(object):
             list: List of jobs for a given user that matches query params provided.
 
         Raises:
-            ValueError: If username is not provided and cannot be obtained from the user's profile.
             ValueError: If either algo_id or version is provided, but not both.
         """
-        if username is None and self.profile is not None and 'username' in self.profile.account_info().keys():
-            username = self.profile.account_info()['username']
-
-        if username is None:
-            raise ValueError("Unable to determine username from profile. Please provide a username.")
-
         url = "/".join(
             segment.strip("/")
-            for segment in (self.config.dps_job, username, endpoints.DPS_JOB_LIST)
+            for segment in (self.config.dps_job, endpoints.DPS_JOB_LIST)
         )
         
         params = {
@@ -316,7 +310,6 @@ class MAAP(object):
                 ("start_time", start_time),
                 ("status", status),
                 ("tag", tag),
-                ("username", username),
                 ("version", version),
             )
             if v is not None
@@ -349,6 +342,10 @@ class MAAP(object):
         return response
 
     def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
+        # Note that this is temporary and will be removed when we remove the API not requiring username to submit a job
+        # Also this now overrides passing someone else's username into submitJob since we don't want to allow that 
+        if self.profile is not None and self.profile.account_info() is not None and 'username' in self.profile.account_info().keys():
+            kwargs['username'] = self.profile.account_info()['username']
         response = self._DPS.submit_job(request_url=self.config.dps_job,
                                         identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
         job = DPSJob(self.config)
