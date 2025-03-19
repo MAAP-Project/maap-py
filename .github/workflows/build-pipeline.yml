@@ -136,7 +136,7 @@ jobs:
           echo "repository_owner_lower=${GITHUB_REPOSITORY_OWNER@L}" >> "${GITHUB_ENV}"
       - name: SonarCloud Scan
         id: sonarcloud
-        uses: sonarsource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
