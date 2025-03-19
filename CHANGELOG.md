@@ -5,7 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-(post 4.1.0 release)
+(post 4.2.0 release)
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## [4.2.0]
 ### Added
 ### Changed
 - listJobs no longer takes username as an argument, you can only list jobs for the current `MAAP_PGT` token user
