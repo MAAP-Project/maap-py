@@ -24,6 +24,7 @@ jobs:
           private_key: ${{ secrets.CICD_APP_PRIVATE_KEY }}
       - uses: actions/checkout@v4
         with:
+          ref: 'refs/heads/develop'
           repository: ${{ github.repository }}
           token: ${{ steps.cicd-key.outputs.token }}
       - uses: actions/setup-python@v5
