@@ -410,6 +410,241 @@ class MAAP(object):
         )
         viz.show()
 
+    # OGC-compliant endpoint functions
+    def search_processes_ogc(self):
+        """
+        Search all OGC processes
+        :return: Response object with all deployed processes
+        """
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(self.config.processes_ogc))
+        print('GET request sent to {}'.format(self.config.processes_ogc))
+
+        response = requests.get(
+            url=self.config.processes_ogc,
+            headers=headers
+        )
+        return response
+
+    def deploy_process_ogc(self, execution_unit_href):
+        """
+        Deploy a new OGC process
+        :param execution_unit_href: URL to the CWL file
+        :return: Response object with deployment information
+        """
+        headers = self._get_api_header(content_type='application/json')
+        data = {
+            "executionUnit": {
+                "href": execution_unit_href
+            }
+        }
+        logger.debug('POST request sent to {}'.format(self.config.processes_ogc))
+        response = requests.post(
+            url=self.config.processes_ogc,
+            headers=headers,
+            json=data
+        )
+        return response
+
+    def get_deployment_status_ogc(self, deployment_id):
+        """
+        Query the current status of an algorithm being deployed
+        :param deployment_id: The deployment job ID
+        :return: Response object with deployment status
+        """
+        url = os.path.join(self.config.deployment_jobs_ogc, deployment_id)
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def describe_process_ogc(self, process_id):
+        """
+        Get detailed information about a specific OGC process
+        :param process_id: The process ID to describe
+        :return: Response object with process details
+        """
+        url = os.path.join(self.config.processes_ogc, process_id)
+        headers = self._get_api_header()
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def update_process_ogc(self, process_id, execution_unit_href):
+        """
+        Replace an existing OGC process (must be the original deployer)
+        :param process_id: The process ID to update
+        :param execution_unit_href: URL to the new CWL file
+        :return: Response object with update information
+        """
+        url = os.path.join(self.config.processes_ogc, process_id)
+        headers = self._get_api_header(content_type='application/json')
+        data = {
+            "executionUnit": {
+                "href": execution_unit_href
+            }
+        }
+        logger.debug('PUT request sent to {}'.format(url))
+        response = requests.put(
+            url=url,
+            headers=headers,
+            json=data
+        )
+        return response
+
+    def delete_process_ogc(self, process_id):
+        """
+        Delete an existing OGC process (must be the original deployer)
+        :param process_id: The process ID to delete
+        :return: Response object with deletion confirmation
+        """
+        url = os.path.join(self.config.processes_ogc, process_id)
+        headers = self._get_api_header()
+        logger.debug('DELETE request sent to {}'.format(url))
+        response = requests.delete(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def get_process_package_ogc(self, process_id):
+        """
+        Access the formal description that can be used to deploy an OGC process
+        :param process_id: The process ID
+        :return: Response object with process package description
+        """
+        url = os.path.join(self.config.processes_ogc, process_id, 'package')
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def execute_process_ogc(self, process_id, inputs, queue, dedup=None, tag=None):
+        """
+        Execute an OGC process job
+        :param process_id: The process ID to execute
+        :param inputs: Dictionary of input parameters for the process
+        :param queue: Queue to run the job on
+        :param dedup: Optional deduplication flag
+        :param tag: Optional user-defined tag for the job
+        :return: Response object with job execution information
+        """
+        url = os.path.join(self.config.processes_ogc, process_id, 'execution')
+        headers = self._get_api_header(content_type='application/json')
+        data = {
+            "inputs": inputs,
+            "queue": queue
+        }
+        if dedup is not None:
+            data["dedup"] = dedup
+        if tag is not None:
+            data["tag"] = tag
+        
+        logger.debug('POST request sent to {}'.format(url))
+
+        response = requests.post(
+            url=url,
+            headers=headers,
+            json=data
+        )
+        return response
+
+    def get_job_status_ogc(self, job_id):
+        """
+        Get the status of an OGC job
+        :param job_id: The job ID to check status for
+        :return: Response object with job status
+        """
+        url = os.path.join(self.config.jobs_ogc, job_id)
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def cancel_job_ogc(self, job_id, wait_for_completion=False):
+        """
+        Cancel a running OGC job or delete a queued job
+        :param job_id: The job ID to cancel
+        :param wait_for_completion: Whether to wait for the cancellation to complete
+        :return: Response object with cancellation status
+        """
+        url = os.path.join(self.config.jobs_ogc, job_id)
+        params = {}
+        if wait_for_completion:
+            params['wait_for_completion'] = str(wait_for_completion).lower()
+        
+        headers = self._get_api_header()
+        logger.debug('DELETE request sent to {}'.format(url))
+
+        response = requests.delete(
+            url=url,
+            headers=headers,
+            params=params
+        )
+        return response
+
+    def get_job_results_ogc(self, job_id):
+        """
+        Get the results of a completed OGC job
+        :param job_id: The job ID to get results for
+        :return: Response object with job results
+        """
+        url = os.path.join(self.config.jobs_ogc, job_id, 'results')
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def list_jobs_ogc(self, **kwargs):
+        """
+        Get a list of OGC jobs with optional filtering
+        :param kwargs: Optional query parameters for filtering jobs
+        :return: Response object with list of jobs
+        """
+        url = os.path.join(self.config.jobs_ogc)
+        headers = self._get_api_header()
+        
+        # Filter out None values from kwargs
+        params = {k: v for k, v in kwargs.items() if v is not None}
+        
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers,
+            params=params
+        )
+        return response
+
+    def get_job_metrics_ogc(self, job_id):
+        """
+        Get metrics for an OGC job
+        :param job_id: The job ID to get metrics for
+        :return: Response object with job metrics
+        """
+        url = os.path.join(self.config.jobs_ogc, job_id, 'metrics')
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
 
 if __name__ == "__main__":
     print("initialized")
