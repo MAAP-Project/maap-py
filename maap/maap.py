@@ -411,7 +411,7 @@ class MAAP(object):
         viz.show()
 
     # OGC-compliant endpoint functions
-    def search_processes_ogc(self):
+    def list_processes_ogc(self):
         """
         Search all OGC processes
         :return: Response object with all deployed processes
@@ -452,7 +452,7 @@ class MAAP(object):
         :param deployment_id: The deployment job ID
         :return: Response object with deployment status
         """
-        url = os.path.join(self.config.deployment_jobs_ogc, deployment_id)
+        url = os.path.join(self.config.deployment_jobs_ogc, str(deployment_id))
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         response = requests.get(
@@ -467,7 +467,7 @@ class MAAP(object):
         :param process_id: The process ID to describe
         :return: Response object with process details
         """
-        url = os.path.join(self.config.processes_ogc, process_id)
+        url = os.path.join(self.config.processes_ogc, str(process_id))
         headers = self._get_api_header()
         response = requests.get(
             url=url,
@@ -482,7 +482,7 @@ class MAAP(object):
         :param execution_unit_href: URL to the new CWL file
         :return: Response object with update information
         """
-        url = os.path.join(self.config.processes_ogc, process_id)
+        url = os.path.join(self.config.processes_ogc, str(process_id))
         headers = self._get_api_header(content_type='application/json')
         data = {
             "executionUnit": {
@@ -503,7 +503,7 @@ class MAAP(object):
         :param process_id: The process ID to delete
         :return: Response object with deletion confirmation
         """
-        url = os.path.join(self.config.processes_ogc, process_id)
+        url = os.path.join(self.config.processes_ogc, str(process_id))
         headers = self._get_api_header()
         logger.debug('DELETE request sent to {}'.format(url))
         response = requests.delete(
@@ -518,7 +518,7 @@ class MAAP(object):
         :param process_id: The process ID
         :return: Response object with process package description
         """
-        url = os.path.join(self.config.processes_ogc, process_id, 'package')
+        url = os.path.join(self.config.processes_ogc, str(process_id), 'package')
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         response = requests.get(
@@ -537,7 +537,7 @@ class MAAP(object):
         :param tag: Optional user-defined tag for the job
         :return: Response object with job execution information
         """
-        url = os.path.join(self.config.processes_ogc, process_id, 'execution')
+        url = os.path.join(self.config.processes_ogc, str(process_id), 'execution')
         headers = self._get_api_header(content_type='application/json')
         data = {
             "inputs": inputs,
@@ -563,7 +563,7 @@ class MAAP(object):
         :param job_id: The job ID to check status for
         :return: Response object with job status
         """
-        url = os.path.join(self.config.jobs_ogc, job_id)
+        url = os.path.join(self.config.jobs_ogc, str(job_id))
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
 
@@ -580,7 +580,7 @@ class MAAP(object):
         :param wait_for_completion: Whether to wait for the cancellation to complete
         :return: Response object with cancellation status
         """
-        url = os.path.join(self.config.jobs_ogc, job_id)
+        url = os.path.join(self.config.jobs_ogc, str(job_id))
         params = {}
         if wait_for_completion:
             params['wait_for_completion'] = str(wait_for_completion).lower()
@@ -601,7 +601,7 @@ class MAAP(object):
         :param job_id: The job ID to get results for
         :return: Response object with job results
         """
-        url = os.path.join(self.config.jobs_ogc, job_id, 'results')
+        url = os.path.join(self.config.jobs_ogc, str(job_id), 'results')
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         response = requests.get(
@@ -636,7 +636,7 @@ class MAAP(object):
         :param job_id: The job ID to get metrics for
         :return: Response object with job metrics
         """
-        url = os.path.join(self.config.jobs_ogc, job_id, 'metrics')
+        url = os.path.join(self.config.jobs_ogc, str(job_id), 'metrics')
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(url))
         response = requests.get(

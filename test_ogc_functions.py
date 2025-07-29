@@ -17,7 +17,7 @@ def test_ogc_functions():
     
     # Test function existence and basic attributes
     ogc_functions = [
-        'search_processes_ogc',
+        'list_processes_ogc',
         'deploy_process_ogc', 
         'get_deployment_status_ogc',
         'describe_process_ogc',
@@ -44,10 +44,10 @@ def test_ogc_functions():
     # Test functions that don't require parameters
     try:
         # These should work without throwing signature errors (though may fail on network call)
-        search_func = getattr(maap, 'search_processes_ogc')
-        print(f"✓ search_processes_ogc has correct signature")
+        search_func = getattr(maap, 'list_processes_ogc')
+        print(f"✓ list_processes_ogc has correct signature")
     except Exception as e:
-        print(f"✗ search_processes_ogc signature error: {e}")
+        print(f"✗ list_processes_ogc signature error: {e}")
     
     # Test functions with required parameters 
     try:
