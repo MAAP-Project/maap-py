@@ -418,7 +418,6 @@ class MAAP(object):
         """
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(self.config.processes_ogc))
-        print('GET request sent to {}'.format(self.config.processes_ogc))
 
         response = requests.get(
             url=self.config.processes_ogc,
@@ -623,7 +622,6 @@ class MAAP(object):
         params = {k: v for k, v in kwargs.items() if v is not None}
         
         logger.debug('GET request sent to {}'.format(url))
-        print('GET request sent to {}'.format(url))
         response = requests.get(
             url=url,
             headers=headers,

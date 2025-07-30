@@ -76,5 +76,7 @@ lidarGranule = maap.searchGranule(instrument='lvis', site_name='lope')
 ## Test
 
 ```bash
-python setup.py test
+poetry install
+poetry run pytest --cov=maap
+poetry run pytest test/specific_test.py
 ```
