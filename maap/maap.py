@@ -623,6 +623,7 @@ class MAAP(object):
         params = {k: v for k, v in kwargs.items() if v is not None}
         
         logger.debug('GET request sent to {}'.format(url))
+        print('GET request sent to {}'.format(url))
         response = requests.get(
             url=url,
             headers=headers,

@@ -83,7 +83,7 @@ class MaapConfig:
         self.dps_job = self._get_api_endpoint("dps_job")
         self.processes_ogc = self._get_api_endpoint("processes_ogc")
         self.deployment_jobs_ogc = self._get_api_endpoint("deployment_jobs_ogc")
-        self.jobs_ogc = self._get_api_endpoint("jobs_org")
+        self.jobs_ogc = self._get_api_endpoint("jobs_ogc")
         self.member_dps_token = self._get_api_endpoint("member_dps_token")
         self.requester_pays = self._get_api_endpoint("requester_pays")
         self.edc_credentials = self._get_api_endpoint("edc_credentials")
