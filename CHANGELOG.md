@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 (post 4.2.0 release)
 ### Added
+- Support for new OGC endpoints
 ### Changed
 ### Deprecated
 ### Removed
