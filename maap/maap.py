@@ -63,7 +63,7 @@ class MAAP(object):
         """
         return s3_client.upload_file(filename, bucket, objectKey)
 
-    def searchGranule(self, limit=20, **kwargs):
+    def search_granule(self, limit=20, **kwargs):
         """
             Search the CMR granules
 
@@ -79,7 +79,7 @@ class MAAP(object):
                         self._get_api_header(),
                         self._DPS) for result in results][:limit]
 
-    def downloadGranule(self, online_access_url, destination_path=".", overwrite=False):
+    def download_granule(self, online_access_url, destination_path=".", overwrite=False):
         """
             Direct download of http Earthdata granule URL (protected or public).
 
@@ -100,7 +100,7 @@ class MAAP(object):
         # noinspection PyProtectedMember
         return proxy._getHttpData(online_access_url, overwrite, final_destination)
 
-    def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
+    def get_call_from_earthdata_query(self, query, variable_name='maap', limit=1000):
         """
             Generate a literal string to use for calling the MAAP API
 
@@ -111,7 +111,7 @@ class MAAP(object):
             """
         return self._CMR.generateGranuleCallFromEarthDataRequest(query, variable_name, limit)
 
-    def getCallFromCmrUri(self, search_url, variable_name='maap', limit=1000, search='granule'):
+    def get_call_from_cmr_uri(self, search_url, variable_name='maap', limit=1000, search='granule'):
         """
             Generate a literal string to use for calling the MAAP API
 
@@ -123,7 +123,7 @@ class MAAP(object):
             """
         return self._CMR.generateCallFromEarthDataQueryString(search_url, variable_name, limit, search)
 
-    def searchCollection(self, limit=100, **kwargs):
+    def search_collection(self, limit=100, **kwargs):
         """
         Search the CMR collections
         :param limit: limit of the number of results
@@ -133,7 +133,7 @@ class MAAP(object):
         results = self._CMR.get_search_results(url=self.config.search_collection_url, limit=limit, **kwargs)
         return [Collection(result, self.config.maap_host) for result in results][:limit]
 
-    def getQueues(self):
+    def get_queues(self):
         url = os.path.join(self.config.algorithm_register, 'resource')
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(self.config.algorithm_register))
@@ -145,20 +145,9 @@ class MAAP(object):
         )
         return response
 
-    def registerAlgorithm(self, arg):
-        logger.debug('Registering algorithm with args ')
-        if type(arg) is dict:
-            arg = json.dumps(arg)
-        logger.debug(arg)
-        response = requests_utils.make_request(url=self.config.algorithm_register, config=self.config,
-                                               content_type='application/json', request_type=requests_utils.POST,
-                                               data=arg)
-        logger.debug('POST request sent to {}'.format(self.config.algorithm_register))
-        return response
-
     def register_algorithm_from_yaml_file(self, file_path):
         algo_config = algorithm_utils.read_yaml_file(file_path)
-        return self.registerAlgorithm(algo_config)
+        return self.register_algorithm(algo_config)
 
     def register_algorithm_from_yaml_file_backwards_compatible(self, file_path):
         algo_yaml = algorithm_utils.read_yaml_file(file_path)
@@ -178,184 +167,15 @@ class MAAP(object):
             else:
                 output_config.update({key: value})
         logger.debug("Registering with config %s " % json.dumps(output_config))
-        return self.registerAlgorithm(json.dumps(output_config))
+        return self.register_algorithm(json.dumps(output_config))
 
-    def listAlgorithms(self):
-        url = self.config.mas_algo
-        headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
-
-    def describeAlgorithm(self, algoid):
-        url = os.path.join(self.config.mas_algo, algoid)
-        headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
-
-    def publishAlgorithm(self, algoid):
-        url = self.config.mas_algo.replace('algorithm', 'publish')
-        headers = self._get_api_header()
-        body = { "algo_id": algoid}
-        logger.debug('POST request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        logger.debug('body:')
-        logger.debug(body)
-        response = requests.post(
-            url=url,
-            headers=headers,
-            data=body
-        )
-        return response
-
-    def deleteAlgorithm(self, algoid):
-        url = os.path.join(self.config.mas_algo, algoid)
-        headers = self._get_api_header()
-        logger.debug('DELETE request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.delete(
-            url=url,
-            headers=headers
-        )
-        return response
-
-
-    def getJob(self, jobid):
+    def get_job(self, jobid):
         job = DPSJob(self.config)
         job.id = jobid
         job.retrieve_attributes()
         return job
 
-    def getJobStatus(self, jobid):
-        job = DPSJob(self.config)
-        job.id = jobid
-        return job.retrieve_status()
-
-    def getJobResult(self, jobid):
-        job = DPSJob(self.config)
-        job.id = jobid
-        return job.retrieve_result()
-
-    def getJobMetrics(self, jobid):
-        job = DPSJob(self.config)
-        job.id = jobid
-        return job.retrieve_metrics()
-
-    def cancelJob(self, jobid):
-        job = DPSJob(self.config)
-        job.id = jobid
-        return job.cancel_job()
-
-    def listJobs(self, *,
-                       algo_id=None, 
-                       end_time=None, 
-                       get_job_details=True, 
-                       offset=0, 
-                       page_size=10, 
-                       queue=None,
-                       start_time=None,
-                       status=None,
-                       tag=None, 
-                       version=None):
-        """
-        Returns a list of jobs for a given user that matches query params provided.
-
-        Args:
-            algo_id (str, optional): Algorithm type.
-            end_time (str, optional): Specifying this parameter will return all jobs that have completed from the provided end time to now. e.g. 2024-01-01 or 2024-01-01T00:00:00.000000Z.
-            get_job_details (bool, optional): Flag that determines whether to return a detailed job list or a compact list containing just the job ids and their associated job tags. Default is True.
-            offset (int, optional): Offset for pagination. Default is 0.
-            page_size (int, optional): Page size for pagination. Default is 10.
-            queue (str, optional): Job processing resource.
-            start_time (str, optional): Specifying this parameter will return all jobs that have started from the provided start time to now. e.g. 2024-01-01 or 2024-01-01T00:00:00.000000Z.
-            status (str, optional): Job status, e.g. job-completed, job-failed, job-started, job-queued.
-            tag (str, optional): User job tag/identifier.
-            version (str, optional): Algorithm version, e.g. GitHub branch or tag.
-
-        Returns:
-            list: List of jobs for a given user that matches query params provided.
-
-        Raises:
-            ValueError: If either algo_id or version is provided, but not both.
-        """
-        url = "/".join(
-            segment.strip("/")
-            for segment in (self.config.dps_job, endpoints.DPS_JOB_LIST)
-        )
-        
-        params = {
-            k: v
-            for k, v in (
-                ("algo_id", algo_id),
-                ("end_time", end_time),
-                ("get_job_details", get_job_details),
-                ("offset", offset),
-                ("page_size", page_size),
-                ("queue", queue),
-                ("start_time", start_time),
-                ("status", status),
-                ("tag", tag),
-                ("version", version),
-            )
-            if v is not None
-        }
-        
-        if (not algo_id) != (not version):
-            # Either algo_id or version was supplied as a non-empty string, but not both.
-            # Either both must be non-empty strings or both must be None.
-            raise ValueError("Either supply non-empty strings for both algo_id and version, or supply neither.")
-
-        # DPS requests use 'job_type', which is a concatenation of 'algo_id' and 'version'
-        if algo_id and version:
-            params['job_type'] = f"{algo_id}:{version}"
-
-        algo_id = params.pop('algo_id', None)
-        version = params.pop('version', None)
-
-        if status is not None:
-            params['status'] = job.validate_job_status(status)
-
-        headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers,
-            params=params,
-        )
-        return response
-
-    def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
-        # Note that this is temporary and will be removed when we remove the API not requiring username to submit a job
-        # Also this now overrides passing someone else's username into submitJob since we don't want to allow that 
-        if self.profile is not None and self.profile.account_info() is not None and 'username' in self.profile.account_info().keys():
-            kwargs['username'] = self.profile.account_info()['username']
-        response = self._DPS.submit_job(request_url=self.config.dps_job,
-                                        identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
-        job = DPSJob(self.config)
-        job.set_submitted_job_result(response)
-        try:
-            if retrieve_attributes:
-                job.retrieve_attributes()
-        except:
-            logger.debug(f"Unable to retrieve attributes for job: {job}")
-        return job
-
-    def uploadFiles(self, filenames):
+    def upload_files(self, filenames):
         """
         Uploads files to a user-added staging directory.
         Enables users of maap-py to potentially share files generated on the MAAP.
@@ -411,7 +231,7 @@ class MAAP(object):
         viz.show()
 
     # OGC-compliant endpoint functions
-    def list_processes_ogc(self):
+    def list_algorithms(self):
         """
         Search all OGC processes
         :return: Response object with all deployed processes
@@ -425,7 +245,7 @@ class MAAP(object):
         )
         return response
 
-    def deploy_process_ogc(self, execution_unit_href):
+    def register_algorithm(self, execution_unit_href):
         """
         Deploy a new OGC process
         :param execution_unit_href: URL to the CWL file
@@ -445,7 +265,7 @@ class MAAP(object):
         )
         return response
 
-    def get_deployment_status_ogc(self, deployment_id):
+    def get_deployment_status(self, deployment_id):
         """
         Query the current status of an algorithm being deployed
         :param deployment_id: The deployment job ID
@@ -460,7 +280,7 @@ class MAAP(object):
         )
         return response
 
-    def describe_process_ogc(self, process_id):
+    def describe_algorithm(self, process_id):
         """
         Get detailed information about a specific OGC process
         :param process_id: The process ID to describe
@@ -474,7 +294,7 @@ class MAAP(object):
         )
         return response
 
-    def update_process_ogc(self, process_id, execution_unit_href):
+    def update_algorithm(self, process_id, execution_unit_href):
         """
         Replace an existing OGC process (must be the original deployer)
         :param process_id: The process ID to update
@@ -496,7 +316,7 @@ class MAAP(object):
         )
         return response
 
-    def delete_process_ogc(self, process_id):
+    def delete_algorithm(self, process_id):
         """
         Delete an existing OGC process (must be the original deployer)
         :param process_id: The process ID to delete
@@ -511,7 +331,7 @@ class MAAP(object):
         )
         return response
 
-    def get_process_package_ogc(self, process_id):
+    def get_algorithm_package(self, process_id):
         """
         Access the formal description that can be used to deploy an OGC process
         :param process_id: The process ID
@@ -526,7 +346,7 @@ class MAAP(object):
         )
         return response
 
-    def execute_process_ogc(self, process_id, inputs, queue, dedup=None, tag=None):
+    def submit_job(self, process_id, inputs, queue, dedup=None, tag=None):
         """
         Execute an OGC process job
         :param process_id: The process ID to execute
@@ -556,7 +376,7 @@ class MAAP(object):
         )
         return response
 
-    def get_job_status_ogc(self, job_id):
+    def get_job_status(self, job_id):
         """
         Get the status of an OGC job
         :param job_id: The job ID to check status for
@@ -572,7 +392,7 @@ class MAAP(object):
         )
         return response
 
-    def cancel_job_ogc(self, job_id, wait_for_completion=False):
+    def cancel_job(self, job_id, wait_for_completion=False):
         """
         Cancel a running OGC job or delete a queued job
         :param job_id: The job ID to cancel
@@ -594,7 +414,7 @@ class MAAP(object):
         )
         return response
 
-    def get_job_results_ogc(self, job_id):
+    def get_job_result(self, job_id):
         """
         Get the results of a completed OGC job
         :param job_id: The job ID to get results for
@@ -609,17 +429,66 @@ class MAAP(object):
         )
         return response
 
-    def list_jobs_ogc(self, **kwargs):
+    def list_jobs(self, *,
+                       algorithm_id=None, 
+                       limit=None, 
+                       get_job_details=True, 
+                       offset=0, 
+                       page_size=10, 
+                       queue=None,
+                       status=None,
+                       tag=None, 
+                       min_duration=None, 
+                       max_duration=None,
+                       type=None,
+                       datetime=None,
+                       priority=None):
         """
-        Get a list of OGC jobs with optional filtering
-        :param kwargs: Optional query parameters for filtering jobs
-        :return: Response object with list of jobs
+        Returns a list of jobs for a given user that matches query params provided.
+
+        Args:
+            algorithm_id (str, optional): Algorithm ID to only show jobs submitted for this algorithm
+            limit (int, optional): Limit of jobs to send back
+            get_job_details (bool, optional): Flag that determines whether to return a detailed job list or a compact list containing just the job ids and their associated job tags. Default is True.
+            offset (int, optional): Offset for pagination. Default is 0.
+            page_size (int, optional): Page size for pagination. Default is 10.
+            queue (str, optional): Job processing resource.
+            status (str, optional): Job status, e.g. job-completed, job-failed, job-started, job-queued.
+            tag (str, optional): User job tag/identifier.
+            min_duration (int, optional): Minimum duration in seconds
+            max_duration (int, optional): Maximum duration in seconds
+            type (str, optional): Type, available values: process
+            datetime (str, optional): Either a date-time or an interval, half-bounded or bounded. Date and time expressions adhere to RFC 3339. Half-bounded intervals are expressed using double-dots.
+            priority (int, optional): Job priority, 0-9
+
+        Returns:
+            list: List of jobs for a given user that matches query params provided.
+
+        Raises:
+            ValueError: If either algo_id or version is provided, but not both.
         """
+        params = {
+            k: v
+            for k, v in (
+                ("processID", algorithm_id),
+                ("limit", limit),
+                ("getJobDetails", get_job_details),
+                ("offset", offset),
+                ("pageSize", page_size),
+                ("queue", queue),
+                ("status", status),
+                ("tag", tag),
+                ("minDuration", min_duration),
+                ("maxDuration", max_duration),
+                ("type", type),
+                ("datetime", datetime),
+                ("priority", priority),
+            )
+            if v is not None
+        }
+
         url = os.path.join(self.config.jobs_ogc)
         headers = self._get_api_header()
-        
-        # Filter out None values from kwargs
-        params = {k: v for k, v in kwargs.items() if v is not None}
         
         logger.debug('GET request sent to {}'.format(url))
         response = requests.get(
@@ -629,7 +498,7 @@ class MAAP(object):
         )
         return response
 
-    def get_job_metrics_ogc(self, job_id):
+    def get_job_metrics(self, job_id):
         """
         Get metrics for an OGC job
         :param job_id: The job ID to get metrics for
