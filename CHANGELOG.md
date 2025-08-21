@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Deprecated
 ### Removed
+- Removed functions calling old WPST endpoints
 ### Fixed
 ### Security
 
