@@ -145,29 +145,20 @@ class MAAP(object):
         )
         return response
 
-    def register_algorithm_from_yaml_file(self, file_path):
-        algo_config = algorithm_utils.read_yaml_file(file_path)
-        return self.register_algorithm(algo_config)
-
-    def register_algorithm_from_yaml_file_backwards_compatible(self, file_path):
-        algo_yaml = algorithm_utils.read_yaml_file(file_path)
-        key_map = {"algo_name": "algorithm_name", "version": "code_version", "environment": "environment_name",
-                   "description": "algorithm_description", "docker_url": "docker_container_url",
-                   "inputs": "algorithm_params", "run_command": "script_command", "repository_url": "repo_url"}
-        output_config = {}
-        for key, value in algo_yaml.items():
-            if key in key_map:
-                if key == "inputs":
-                    inputs = []
-                    for argument in value:
-                        inputs.append({"field": argument.get("name"), "download": argument.get("download")})
-                    output_config.update({"algorithm_params": inputs})
-                else:
-                    output_config.update({key_map.get(key): value})
-            else:
-                output_config.update({key: value})
-        logger.debug("Registering with config %s " % json.dumps(output_config))
-        return self.register_algorithm(json.dumps(output_config))
+    def register_algorithm_from_cwl_file(self, file_path):
+        """
+        Registers an algorithm from a CWL file
+        """
+        # Read cwl file returns a dict in the format to register an algorithm without a CWL
+        algo_config = algorithm_utils.read_cwl_file(file_path)
+        headers = self._get_api_header(content_type='application/json')
+        logger.debug('POST request sent to {}'.format(self.config.processes_ogc))
+        response = requests.post(
+            url=self.config.processes_ogc,
+            headers=headers,
+            json=algo_config
+        )
+        return response
 
     def get_job(self, jobid):
         job = DPSJob(self.config)
@@ -430,7 +421,7 @@ class MAAP(object):
         return response
 
     def list_jobs(self, *,
-                       algorithm_id=None, 
+                       process_id=None, 
                        limit=None, 
                        get_job_details=True, 
                        offset=0, 
@@ -447,7 +438,7 @@ class MAAP(object):
         Returns a list of jobs for a given user that matches query params provided.
 
         Args:
-            algorithm_id (str, optional): Algorithm ID to only show jobs submitted for this algorithm
+            process_id (id, optional): Algorithm ID to only show jobs submitted for this algorithm
             limit (int, optional): Limit of jobs to send back
             get_job_details (bool, optional): Flag that determines whether to return a detailed job list or a compact list containing just the job ids and their associated job tags. Default is True.
             offset (int, optional): Offset for pagination. Default is 0.
@@ -470,7 +461,7 @@ class MAAP(object):
         params = {
             k: v
             for k, v in (
-                ("processID", algorithm_id),
+                ("processID", process_id),
                 ("limit", limit),
                 ("getJobDetails", get_job_details),
                 ("offset", offset),
