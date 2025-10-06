@@ -145,20 +145,20 @@ class MAAP(object):
         )
         return response
 
-    def register_algorithm_from_cwl_file(self, file_path):
-        """
-        Registers an algorithm from a CWL file
-        """
-        # Read cwl file returns a dict in the format to register an algorithm without a CWL
-        algo_config = algorithm_utils.read_cwl_file(file_path)
-        headers = self._get_api_header(content_type='application/json')
-        logger.debug('POST request sent to {}'.format(self.config.processes_ogc))
-        response = requests.post(
-            url=self.config.processes_ogc,
-            headers=headers,
-            json=algo_config
-        )
-        return response
+    # def register_algorithm_from_cwl_file(self, file_path):
+    #     """
+    #     Registers an algorithm from a CWL file
+    #     """
+    #     # Read cwl file returns a dict in the format to register an algorithm without a CWL
+    #     algo_config = algorithm_utils.read_cwl_file(file_path)
+    #     headers = self._get_api_header(content_type='application/json')
+    #     logger.debug('POST request sent to {}'.format(self.config.processes_ogc))
+    #     response = requests.post(
+    #         url=self.config.processes_ogc,
+    #         headers=headers,
+    #         json=algo_config
+    #     )
+    #     return response
 
     def get_job(self, jobid):
         job = DPSJob(self.config)
