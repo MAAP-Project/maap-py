@@ -45,10 +45,13 @@ class MAAP(object):
         self.secrets = Secrets(self.config.member, self._get_api_header(content_type="application/json"))
 
     def _get_api_header(self, content_type=None):
+        print("graceal1 in _get_api_header")
+        print(os.environ.get("MAAP_PGT"))
 
         api_header = {'Accept': content_type if content_type else self.config.content_type, 'token': self.config.maap_token, 'Content-Type': content_type if content_type else self.config.content_type}
 
         if os.environ.get("MAAP_PGT"):
+            print("graceal1 attaching pgt to proxy-ticket for API header")
             api_header['proxy-ticket'] = os.environ.get("MAAP_PGT")
 
         return api_header
