@@ -160,11 +160,11 @@ class MAAP(object):
     #     )
     #     return response
 
-    def get_job(self, jobid):
-        job = DPSJob(self.config)
-        job.id = jobid
-        job.retrieve_attributes()
-        return job
+    # def get_job(self, jobid):
+    #     job = DPSJob(self.config)
+    #     job.id = jobid
+    #     job.retrieve_attributes()
+    #     return job
 
     def upload_files(self, filenames):
         """
