@@ -107,6 +107,10 @@ class DpsHelper:
         # Send Request
         # -------------------------------
         try:
+            print("graceal1 sending request to submit job")
+            print(request_url)
+            print(req_xml)
+            print(self._api_header)
             r = requests.post(
                 url=request_url,
                 data=req_xml,
