@@ -660,9 +660,11 @@ class MAAP(object):
             ...     'algorithm_description': 'Processes satellite data',
             ...     'docker_container_url': 'registry/image:tag',
             ...     'script_command': 'python run.py',
-            ...     'algorithm_params': [
-            ...         {'field': 'input_file', 'download': True}
-            ...     ],
+            ...     'inputs': {
+            ...         'file': [{'name': 'input_file'}],
+            ...         'config': [{'name': 'config_param'}],
+            ...         'positional': [{'name': 'pos_arg'}]
+            ...     },
             ...     'repo_url': 'https://github.com/org/repo'
             ... }
             >>> response = maap.registerAlgorithm(config)
@@ -724,9 +726,13 @@ class MAAP(object):
             algorithm_description: Process satellite data
             docker_container_url: registry/image:tag
             script_command: python run.py
-            algorithm_params:
-              - field: input_file
-                download: true
+            inputs:
+              file:
+                - name: input_file
+              config:
+                - name: config_param
+              positional:
+                - name: pos_arg
             repo_url: https://github.com/org/repo
 
         See Also
