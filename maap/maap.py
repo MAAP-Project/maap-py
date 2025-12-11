@@ -640,8 +640,9 @@ class MAAP(object):
                 URL of the Docker container image.
             script_command : str
                 Command to execute inside the container.
-            algorithm_params : list of dict
-                Input parameter definitions with ``field`` and ``download`` keys.
+            inputs : list of dict
+                Input parameter definitions with ``field`` and ``download`` keys. Format should be like 
+                {'file': [{'name': 'input_file'}],'config': [{'name': 'config_param'}],'positional': [{'name': 'pos_arg'}]}
             repo_url : str
                 Git repository URL for the algorithm source code.
 
