@@ -1,11 +1,6 @@
 # User Profile
 
 ```{eval-rst}
-.. automodule:: maap.Profile
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. autoclass:: maap.Profile.Profile
    :members:
    :special-members: __init__

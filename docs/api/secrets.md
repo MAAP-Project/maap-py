@@ -1,11 +1,6 @@
 # User Secrets
 
 ```{eval-rst}
-.. automodule:: maap.Secrets
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. autoclass:: maap.Secrets.Secrets
    :members:
    :special-members: __init__

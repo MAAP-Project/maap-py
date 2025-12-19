@@ -1,11 +1,6 @@
 # AWS Credentials
 
 ```{eval-rst}
-.. automodule:: maap.AWS
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. autoclass:: maap.AWS.AWS
    :members:
    :special-members: __init__

@@ -1,12 +1,5 @@
 # Result Classes
 
-```{eval-rst}
-.. automodule:: maap.Result
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
 The Result module provides classes for handling CMR search results.
 
 ## Classes

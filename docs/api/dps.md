@@ -5,11 +5,6 @@ The DPS module provides classes for submitting and managing processing jobs.
 ## DPSJob
 
 ```{eval-rst}
-.. automodule:: maap.dps.dps_job
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. autoclass:: maap.dps.dps_job.DPSJob
    :members:
    :special-members: __init__
@@ -18,10 +13,9 @@ The DPS module provides classes for submitting and managing processing jobs.
 ## DpsHelper
 
 ```{eval-rst}
-.. automodule:: maap.dps.DpsHelper
+.. autoclass:: maap.dps.DpsHelper.DpsHelper
    :members:
-   :undoc-members:
-   :show-inheritance:
+   :special-members: __init__
 ```
 
 ## Example Usage

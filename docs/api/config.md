@@ -1,11 +1,6 @@
 # Configuration
 
 ```{eval-rst}
-.. automodule:: maap.config_reader
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. autoclass:: maap.config_reader.MaapConfig
    :members:
    :special-members: __init__
