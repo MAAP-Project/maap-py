@@ -1,3 +1,49 @@
+"""
+MAAP Python Client
+==================
+
+This module provides the main entry point for interacting with the NASA MAAP
+(Multi-Mission Algorithm and Analysis Platform) API.
+
+The :class:`MAAP` class is the primary interface for all MAAP operations including:
+
+* Searching for granules and collections in CMR (Common Metadata Repository)
+* Registering, managing, and executing algorithms on the Data Processing System (DPS)
+* Managing user secrets and AWS credentials
+* Uploading and downloading files
+* Visualizing geospatial data
+
+Example
+-------
+Basic usage::
+
+    from maap.maap import MAAP
+
+    # Initialize the MAAP client
+    maap = MAAP()
+
+    # Search for granules
+    granules = maap.searchGranule(
+        short_name='GEDI02_A',
+        limit=10
+    )
+
+    # Download a granule
+    for granule in granules:
+        local_path = granule.getData()
+
+Note
+----
+The MAAP client automatically reads configuration from the MAAP API endpoint.
+Authentication is handled via environment variables or the MAAP platform.
+
+See Also
+--------
+:class:`maap.Result.Granule` : Class representing a CMR granule
+:class:`maap.Result.Collection` : Class representing a CMR collection
+:class:`maap.dps.dps_job.DPSJob` : Class representing a DPS job
+"""
+
 import json
 import logging
 import boto3
@@ -28,6 +74,85 @@ s3_client = boto3.client('s3')
 
 
 class MAAP(object):
+    """
+    Main client class for interacting with the MAAP API.
+
+    The MAAP class provides a unified interface for all MAAP platform operations,
+    including data discovery, algorithm management, job submission, and file operations.
+
+    Parameters
+    ----------
+    maap_host : str, optional
+        The hostname of the MAAP API server. Defaults to the value of the
+        ``MAAP_API_HOST`` environment variable, or ``'api.maap-project.org'``
+        if not set.
+
+    Attributes
+    ----------
+    config : MaapConfig
+        Configuration object containing API endpoints and settings.
+    profile : Profile
+        Interface for user profile operations.
+    aws : AWS
+        Interface for AWS credential operations.
+    secrets : Secrets
+        Interface for user secrets management.
+
+    Examples
+    --------
+    Initialize with default settings::
+
+        >>> from maap.maap import MAAP
+        >>> maap = MAAP()
+
+    Initialize with a custom host::
+
+        >>> maap = MAAP(maap_host='api.ops.maap-project.org')
+
+    Search for granules::
+
+        >>> granules = maap.searchGranule(
+        ...     short_name='GEDI02_A',
+        ...     bounding_box='-122.5,37.5,-121.5,38.5',
+        ...     limit=5
+        ... )
+        >>> for g in granules:
+        ...     print(g.getDescription())
+
+    Submit a job::
+
+        >>> job = maap.submitJob(
+        ...     identifier='my_analysis',
+        ...     algo_id='my_algorithm',
+        ...     version='main',
+        ...     queue='maap-dps-worker-8gb',
+        ...     input_file='s3://bucket/input.tif'
+        ... )
+        >>> print(f"Job submitted: {job.id}")
+
+    Notes
+    -----
+    The MAAP client requires proper authentication to access most features.
+    Authentication is typically handled automatically when running within
+    the MAAP Algorithm Development Environment (ADE).
+
+    Environment Variables
+    ---------------------
+    MAAP_API_HOST : str
+        Override the default MAAP API host.
+    MAAP_PGT : str
+        Proxy Granting Ticket for authentication.
+    MAAP_AWS_ACCESS_KEY_ID : str
+        AWS access key for S3 operations.
+    MAAP_AWS_SECRET_ACCESS_KEY : str
+        AWS secret key for S3 operations.
+
+    See Also
+    --------
+    :class:`maap.Profile.Profile` : User profile management
+    :class:`maap.AWS.AWS` : AWS credential management
+    :class:`maap.Secrets.Secrets` : User secrets management
+    """
 
     def __init__(self, maap_host=os.getenv('MAAP_API_HOST', 'api.maap-project.org')):
         self.config = MaapConfig(maap_host=maap_host)
@@ -45,7 +170,33 @@ class MAAP(object):
         self.secrets = Secrets(self.config.member, self._get_api_header(content_type="application/json"))
 
     def _get_api_header(self, content_type=None):
+        """
+        Generate HTTP headers for API requests.
 
+        Constructs the authorization and content-type headers required for
+        making authenticated requests to the MAAP API.
+
+        Parameters
+        ----------
+        content_type : str, optional
+            The content type for the request. If not specified, uses the
+            default content type from configuration.
+
+        Returns
+        -------
+        dict
+            Dictionary containing HTTP headers including:
+            - ``Accept``: The expected response content type
+            - ``Content-Type``: The request content type
+            - ``token``: The MAAP authentication token
+            - ``proxy-ticket``: The proxy granting ticket (if available)
+
+        Notes
+        -----
+        This is an internal method used by other MAAP methods to construct
+        proper API request headers. The proxy ticket is automatically included
+        if the ``MAAP_PGT`` environment variable is set.
+        """
         api_header = {'Accept': content_type if content_type else self.config.content_type, 'token': self.config.maap_token, 'Content-Type': content_type if content_type else self.config.content_type}
 
         if os.environ.get("MAAP_PGT"):
@@ -55,22 +206,120 @@ class MAAP(object):
 
     def _upload_s3(self, filename, bucket, objectKey):
         """
-        Upload file to S3, utility function useful for mocking in tests.
-        :param filename (string) - local filename (and path)
-        :param bucket (string) - S3 bucket to upload to
-        :param objectKey (string) - S3 directory and filename to upload the local file to
-        :return: S3 upload_file response
+        Upload a file to Amazon S3.
+
+        Internal utility method for uploading files to S3 storage.
+
+        Parameters
+        ----------
+        filename : str
+            Local path to the file to upload.
+        bucket : str
+            Name of the S3 bucket to upload to.
+        objectKey : str
+            The S3 object key (path) where the file will be stored.
+
+        Returns
+        -------
+        dict
+            S3 upload response containing upload metadata.
+
+        Notes
+        -----
+        This is an internal method primarily used by :meth:`uploadFiles`.
+        It uses the boto3 S3 client configured at module level.
         """
         return s3_client.upload_file(filename, bucket, objectKey)
 
     def search_granule(self, limit=20, **kwargs):
         """
-            Search the CMR granules
+        Search for granules in the CMR (Common Metadata Repository).
 
-            :param limit: limit of the number of results
-            :param kwargs: search parameters
-            :return: list of results (<Instance of Result>)
-            """
+        Queries the CMR database for granules matching the specified criteria.
+        Granules represent individual data files within a collection.
+
+        Parameters
+        ----------
+        limit : int, optional
+            Maximum number of results to return. Default is 20.
+        **kwargs : dict
+            Search parameters to filter results. Common parameters include:
+
+            short_name : str
+                Collection short name (e.g., 'GEDI02_A').
+            collection_concept_id : str
+                Unique CMR collection identifier.
+            bounding_box : str
+                Spatial filter as 'west,south,east,north' coordinates.
+            temporal : str
+                Temporal filter as 'start_date,end_date' in ISO format.
+            polygon : str
+                Polygon coordinates for spatial filtering.
+            readable_granule_name : str
+                Filter by granule name pattern. Supports wildcards.
+            instrument : str
+                Filter by instrument name (e.g., 'uavsar').
+            platform : str
+                Filter by platform name (e.g., 'GEDI').
+            site_name : str
+                Filter by site name for MAAP-indexed datasets.
+
+        Returns
+        -------
+        list of Granule
+            List of :class:`~maap.Result.Granule` objects matching the search
+            criteria. Each granule provides methods to access download URLs
+            and retrieve data.
+
+        Examples
+        --------
+        Search by collection name::
+
+            >>> granules = maap.searchGranule(
+            ...     short_name='GEDI02_A',
+            ...     limit=10
+            ... )
+
+        Search with spatial bounds::
+
+            >>> granules = maap.searchGranule(
+            ...     collection_concept_id='C1234567890-MAAP',
+            ...     bounding_box='-122.5,37.5,-121.5,38.5',
+            ...     limit=5
+            ... )
+
+        Search with temporal filter::
+
+            >>> granules = maap.searchGranule(
+            ...     short_name='AFLVIS2',
+            ...     temporal='2019-01-01T00:00:00Z,2019-12-31T23:59:59Z',
+            ...     limit=100
+            ... )
+
+        Search with pattern matching::
+
+            >>> granules = maap.searchGranule(
+            ...     readable_granule_name='*2019*',
+            ...     short_name='GEDI02_A'
+            ... )
+
+        Download results::
+
+            >>> for granule in granules:
+            ...     print(granule.getDescription())
+            ...     local_path = granule.getData(destpath='/tmp')
+
+        Notes
+        -----
+        - Multiple search parameters can be combined with pipe (``|``) delimiter.
+        - Wildcard characters (``*``, ``?``) are supported for pattern matching.
+        - Results are automatically paginated internally.
+
+        See Also
+        --------
+        :meth:`searchCollection` : Search for collections
+        :class:`~maap.Result.Granule` : Granule result class
+        """
         results = self._CMR.get_search_results(url=self.config.search_granule_url, limit=limit, **kwargs)
         return [Granule(result,
                         self.config.aws_access_key,
@@ -81,14 +330,62 @@ class MAAP(object):
 
     def download_granule(self, online_access_url, destination_path=".", overwrite=False):
         """
-            Direct download of http Earthdata granule URL (protected or public).
+        Download a granule directly from an HTTP URL.
 
-            :param online_access_url: the value of the granule's http OnlineAccessURL
-            :param destination_path: use the current directory as default
-            :param overwrite: don't download by default if the target file exists
-            :return: the file path of the download file
-            """
+        Downloads data from an Earthdata HTTP URL, handling both public and
+        protected (authenticated) resources automatically.
 
+        Parameters
+        ----------
+        online_access_url : str
+            The HTTP URL of the granule to download. This is typically obtained
+            from a granule's ``OnlineAccessURL`` field.
+        destination_path : str, optional
+            Directory path where the file will be saved. Default is the current
+            working directory (``'.'``).
+        overwrite : bool, optional
+            If ``True``, overwrite existing files. If ``False`` (default), skip
+            download if the file already exists.
+
+        Returns
+        -------
+        str
+            The local file path of the downloaded file.
+
+        Examples
+        --------
+        Download a granule by URL::
+
+            >>> local_file = maap.downloadGranule(
+            ...     'https://data.maap-project.org/file/data.h5',
+            ...     destination_path='/tmp/downloads'
+            ... )
+            >>> print(f"Downloaded to: {local_file}")
+
+        Force overwrite of existing files::
+
+            >>> local_file = maap.downloadGranule(
+            ...     url,
+            ...     destination_path='/tmp',
+            ...     overwrite=True
+            ... )
+
+        Notes
+        -----
+        This method handles authentication automatically:
+
+        - First attempts an unauthenticated request
+        - Falls back to EDL (Earthdata Login) federated authentication if needed
+        - Uses DPS machine tokens when running inside a DPS job
+
+        For most use cases, prefer using :meth:`Granule.getData()` instead,
+        which handles URL selection automatically.
+
+        See Also
+        --------
+        :meth:`searchGranule` : Search for granules
+        :meth:`~maap.Result.Granule.getData` : Download granule data
+        """
         filename = os.path.basename(urllib.parse.urlparse(online_access_url).path)
         destination_file = filename.replace("/", "")
         final_destination = os.path.join(destination_path, destination_file)
@@ -102,38 +399,213 @@ class MAAP(object):
 
     def get_call_from_earthdata_query(self, query, variable_name='maap', limit=1000):
         """
-            Generate a literal string to use for calling the MAAP API
+        Generate a MAAP API call string from an Earthdata search query.
 
-            :param query: a Json-formatted string from an Earthdata search-style query. See: https://github.com/MAAP-Project/earthdata-search/blob/master/app/controllers/collections_controller.rb
-            :param variable_name: the name of the MAAP variable to qualify the search call
-            :param limit: the max records to return
-            :return: string in the form of a MAAP API call
-            """
+        Converts a JSON-formatted Earthdata search query into a Python code
+        string that can be used to call the MAAP API.
+
+        Parameters
+        ----------
+        query : str
+            A JSON-formatted string representing an Earthdata search query.
+            This is the format used by the Earthdata Search application.
+        variable_name : str, optional
+            The variable name to use in the generated code for the MAAP
+            client instance. Default is ``'maap'``.
+        limit : int, optional
+            Maximum number of records to return. Default is 1000.
+
+        Returns
+        -------
+        str
+            A Python code string that can be executed to perform the
+            equivalent MAAP API search.
+
+        Examples
+        --------
+        Convert an Earthdata query::
+
+            >>> query = '{"instrument_h": ["GEDI"], "bounding_box": "-180,-90,180,90"}'
+            >>> code = maap.getCallFromEarthdataQuery(query)
+            >>> print(code)
+            maap.searchGranule(instrument="GEDI", bounding_box="-180,-90,180,90", limit=1000)
+
+        Notes
+        -----
+        This is useful for converting queries from the Earthdata Search
+        web interface to MAAP API calls. The generated string can be
+        executed using ``eval()`` or used as a reference.
+
+        See Also
+        --------
+        :meth:`getCallFromCmrUri` : Generate call from CMR URI
+        :meth:`searchGranule` : Execute a granule search
+        """
         return self._CMR.generateGranuleCallFromEarthDataRequest(query, variable_name, limit)
 
     def get_call_from_cmr_uri(self, search_url, variable_name='maap', limit=1000, search='granule'):
         """
-            Generate a literal string to use for calling the MAAP API
+        Generate a MAAP API call string from a CMR REST API URL.
 
-            :param search_url: a Json-formatted string from an Earthdata search-style query. See: https://github.com/MAAP-Project/earthdata-search/blob/master/app/controllers/collections_controller.rb
-            :param variable_name: the name of the MAAP variable to qualify the search call
-            :param limit: the max records to return
-            :param search: defaults to 'granule' search, otherwise can be a 'collection' search
-            :return: string in the form of a MAAP API call
-            """
+        Converts a CMR REST API query URL into a Python code string that can
+        be used to call the MAAP API.
+
+        Parameters
+        ----------
+        search_url : str
+            A CMR REST API search URL. This can be copied directly from
+            the CMR API or browser address bar.
+        variable_name : str, optional
+            The variable name to use in the generated code for the MAAP
+            client instance. Default is ``'maap'``.
+        limit : int, optional
+            Maximum number of records to return. Default is 1000.
+        search : str, optional
+            Type of search to perform. Either ``'granule'`` (default) or
+            ``'collection'``.
+
+        Returns
+        -------
+        str
+            A Python code string that can be executed to perform the
+            equivalent MAAP API search.
+
+        Examples
+        --------
+        Convert a CMR granule search URL::
+
+            >>> url = 'https://cmr.earthdata.nasa.gov/search/granules?short_name=GEDI02_A'
+            >>> code = maap.getCallFromCmrUri(url)
+            >>> print(code)
+            maap.searchGranule(short_name="GEDI02_A", limit=1000)
+
+        Convert a collection search::
+
+            >>> url = 'https://cmr.earthdata.nasa.gov/search/collections?provider=MAAP'
+            >>> code = maap.getCallFromCmrUri(url, search='collection')
+            >>> print(code)
+            maap.searchCollection(provider="MAAP", limit=1000)
+
+        Notes
+        -----
+        This is useful for converting existing CMR queries to MAAP API calls.
+        Duplicate query parameters are automatically converted to pipe-delimited
+        values.
+
+        See Also
+        --------
+        :meth:`getCallFromEarthdataQuery` : Generate call from Earthdata query
+        :meth:`searchGranule` : Execute a granule search
+        :meth:`searchCollection` : Execute a collection search
+        """
         return self._CMR.generateCallFromEarthDataQueryString(search_url, variable_name, limit, search)
 
     def search_collection(self, limit=100, **kwargs):
         """
-        Search the CMR collections
-        :param limit: limit of the number of results
-        :param kwargs: search parameters
-        :return: list of results (<Instance of Result>)
+        Search for collections in the CMR (Common Metadata Repository).
+
+        Queries the CMR database for collections (datasets) matching the
+        specified criteria. Collections represent groups of related data files.
+
+        Parameters
+        ----------
+        limit : int, optional
+            Maximum number of results to return. Default is 100.
+        **kwargs : dict
+            Search parameters to filter results. Common parameters include:
+
+            short_name : str
+                Collection short name (e.g., 'GEDI02_A').
+            concept_id : str
+                Unique CMR collection identifier.
+            provider : str
+                Data provider (e.g., 'MAAP', 'LPDAAC_ECS').
+            keyword : str
+                Keyword search across collection metadata.
+            instrument : str
+                Filter by instrument name.
+            platform : str
+                Filter by platform name.
+            project : str
+                Filter by project name.
+            processing_level_id : str
+                Filter by data processing level.
+
+        Returns
+        -------
+        list of Collection
+            List of :class:`~maap.Result.Collection` objects matching the
+            search criteria.
+
+        Examples
+        --------
+        Search by short name::
+
+            >>> collections = maap.searchCollection(short_name='GEDI02_A')
+            >>> for c in collections:
+            ...     print(c['Collection']['ShortName'])
+
+        Search by provider::
+
+            >>> collections = maap.searchCollection(
+            ...     provider='MAAP',
+            ...     limit=50
+            ... )
+
+        Search by keyword::
+
+            >>> collections = maap.searchCollection(
+            ...     keyword='biomass forest',
+            ...     limit=20
+            ... )
+
+        Notes
+        -----
+        Collections contain metadata about datasets but not the actual data
+        files. Use :meth:`searchGranule` to find individual data files within
+        a collection.
+
+        See Also
+        --------
+        :meth:`searchGranule` : Search for granules within collections
+        :class:`~maap.Result.Collection` : Collection result class
         """
         results = self._CMR.get_search_results(url=self.config.search_collection_url, limit=limit, **kwargs)
         return [Collection(result, self.config.maap_host) for result in results][:limit]
 
     def get_queues(self):
+        """
+        Get available DPS processing queues (resources).
+
+        Retrieves a list of available compute resources (queues) that can be
+        used for algorithm execution. Different queues provide different
+        amounts of memory and CPU.
+
+        Returns
+        -------
+        requests.Response
+            HTTP response containing JSON list of available queues. Each queue
+            entry includes resource specifications like memory and CPU limits.
+
+        Examples
+        --------
+        List available queues::
+
+            >>> response = maap.getQueues()
+            >>> queues = response.json()
+            >>> for queue in queues:
+            ...     print(f"{queue['name']}: {queue['memory']} RAM")
+
+        Notes
+        -----
+        Common queue names follow the pattern ``maap-dps-worker-{size}``
+        where size indicates memory (e.g., ``8gb``, ``16gb``, ``32gb``).
+
+        See Also
+        --------
+        :meth:`submitJob` : Submit a job to a queue
+        :meth:`registerAlgorithm` : Register an algorithm to run on queues
+        """
         url = os.path.join(self.config.algorithm_register, 'resource')
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(self.config.algorithm_register))
@@ -160,29 +632,70 @@ class MAAP(object):
     #     )
     #     return response
 
-    # def get_job(self, jobid):
-    #     job = DPSJob(self.config)
-    #     job.id = jobid
-    #     job.retrieve_attributes()
-    #     return job
-
     def upload_files(self, filenames):
         """
-        Uploads files to a user-added staging directory.
-        Enables users of maap-py to potentially share files generated on the MAAP.
-        :param filenames: List of one or more filenames to upload
-        :return: String message including UUID of subdirectory of files
+        Upload files to MAAP shared storage.
+
+        Uploads local files to an S3 staging directory where they can be
+        accessed by other MAAP users or used as inputs to DPS jobs.
+
+        Parameters
+        ----------
+        filenames : list of str
+            List of local file paths to upload.
+
+        Returns
+        -------
+        str
+            A message containing the UUID of the upload directory. This UUID
+            is needed to share the files with other users.
+
+        Examples
+        --------
+        Upload files to share::
+
+            >>> result = maap.uploadFiles(['data.csv', 'config.json'])
+            >>> print(result)
+            Upload file subdirectory: a1b2c3d4-e5f6-... (keep a record of...)
+
+        Upload a single file::
+
+            >>> result = maap.uploadFiles(['output.tif'])
+
+        Notes
+        -----
+        - Files are uploaded to a unique subdirectory identified by a UUID
+        - Save the UUID to share the upload location with collaborators
+        - The upload location can be used as input to DPS jobs
+
+        See Also
+        --------
+        :meth:`submitJob` : Use uploaded files as job inputs
         """
         bucket = self.config.s3_user_upload_bucket
         prefix = self.config.s3_user_upload_dir
         uuid_dir = uuid.uuid4()
-        # TODO(aimee): This should upload to a user-namespaced directory
         for filename in filenames:
             basename = os.path.basename(filename)
             response = self._upload_s3(filename, bucket, f"{prefix}/{uuid_dir}/{basename}")
         return f"Upload file subdirectory: {uuid_dir} (keep a record of this if you want to share these files with other users)"
 
     def _get_browse(self, granule_ur):
+        """
+        Get browse image metadata for a granule.
+
+        Internal method to retrieve browse image information for visualization.
+
+        Parameters
+        ----------
+        granule_ur : str
+            The Granule Universal Reference identifier.
+
+        Returns
+        -------
+        requests.Response
+            HTTP response containing browse image metadata.
+        """
         response = requests.get(
             url=f'{self.config.wmts}/GetTile',
             params=dict(granule_ur=granule_ur),
@@ -191,6 +704,22 @@ class MAAP(object):
         return response
 
     def _get_capabilities(self, granule_ur):
+        """
+        Get WMTS capabilities for a granule.
+
+        Internal method to retrieve Web Map Tile Service capabilities
+        for visualization.
+
+        Parameters
+        ----------
+        granule_ur : str
+            The Granule Universal Reference identifier.
+
+        Returns
+        -------
+        requests.Response
+            HTTP response containing WMTS capabilities XML.
+        """
         response = requests.get(
             url=f'{self.config.wmts}/GetCapabilities',
             params=dict(granule_ur=granule_ur),
@@ -199,6 +728,49 @@ class MAAP(object):
         return response
 
     def show(self, granule, display_config={}):
+        """
+        Display a granule on an interactive map.
+
+        Renders the granule data as a tile layer on an interactive Mapbox
+        map in a Jupyter notebook environment.
+
+        Parameters
+        ----------
+        granule : dict
+            A granule result dictionary, typically obtained from
+            :meth:`searchGranule`. Must contain ``Granule.GranuleUR``.
+        display_config : dict, optional
+            Configuration options for rendering. Common options include:
+
+            rescale : str
+                Value range for color scaling (e.g., ``'0,70'``).
+            color_map : str
+                Color palette name (e.g., ``'schwarzwald'``).
+
+        Examples
+        --------
+        Display a granule on a map::
+
+            >>> granules = maap.searchGranule(short_name='AFLVIS2', limit=1)
+            >>> maap.show(granules[0])
+
+        Display with custom rendering::
+
+            >>> maap.show(granule, display_config={
+            ...     'rescale': '0,100',
+            ...     'color_map': 'viridis'
+            ... })
+
+        Notes
+        -----
+        - Requires ``mapboxgl`` package and a Jupyter notebook environment
+        - Uses the MAAP tile server for rendering
+        - A Mapbox access token must be configured
+
+        See Also
+        --------
+        :meth:`searchGranule` : Search for granules to visualize
+        """
         from mapboxgl.viz import RasterTilesViz
 
         granule_ur = granule['Granule']['GranuleUR']
