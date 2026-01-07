@@ -1,3 +1,47 @@
+"""
+DPS Job Management
+==================
+
+This module provides the :class:`DPSJob` class for managing jobs submitted
+to the MAAP Data Processing System (DPS).
+
+The DPSJob class allows users to:
+
+* Track job status (queued, running, completed, failed)
+* Wait for job completion with automatic retry
+* Retrieve job outputs and metrics
+* Cancel running jobs
+
+Example
+-------
+Monitor a submitted job::
+
+    from maap.maap import MAAP
+
+    maap = MAAP()
+
+    # Submit a job
+    job = maap.submitJob(
+        identifier='my_analysis',
+        algo_id='my_algorithm',
+        version='main',
+        queue='maap-dps-worker-8gb'
+    )
+
+    # Wait for completion
+    job.wait_for_completion()
+
+    # Check results
+    if job.status == 'Succeeded':
+        print(f"Outputs: {job.outputs}")
+        print(f"Duration: {job.job_duration_seconds} seconds")
+
+See Also
+--------
+:meth:`maap.maap.MAAP.submitJob` : Submit a new job
+:meth:`maap.maap.MAAP.getJob` : Retrieve an existing job
+"""
+
 import json
 import logging
 import os
@@ -22,17 +66,103 @@ def _backoff_get_max_value(self):
 
 class DPSJob:
     """
-    Sample Usage:
+    Manage and monitor DPS job lifecycle.
 
-    job_id = 'f3780917-92c0-4440-8a84-9b28c2e64fa8'
-    job = DPSJob(True)
-    job.id = job_id
-    print(job.retrieve_status())
-    print(job.retrieve_metrics())
-    print(job.retrieve_result())
-    job.dismiss_job()
-    job.delete_job()
+    The DPSJob class represents a job submitted to the MAAP Data Processing
+    System. It provides methods to check status, retrieve results and metrics,
+    wait for completion, and cancel jobs.
+
+    Parameters
+    ----------
+    config : MaapConfig
+        Configuration object containing API endpoints and authentication.
+    not_self_signed : bool, optional
+        If ``True`` (default), verify SSL certificates. Set to ``False``
+        for self-signed certificates (development only).
+
+    Attributes
+    ----------
+    id : str
+        Unique job identifier (UUID).
+    status : str
+        Current job status: 'Accepted', 'Running', 'Succeeded', 'Failed',
+        'Dismissed', 'Deduped', or 'Offline'.
+    outputs : list of str
+        URLs to job output files (available after completion).
+    metrics : dict
+        Performance metrics (available after completion).
+    response_code : int
+        HTTP response code from job submission.
+    error_details : str
+        Error message if job failed.
+
+    Metric Attributes
+    -----------------
+    machine_type : str
+        EC2 instance type used for execution.
+    architecture : str
+        CPU architecture.
+    operating_system : str
+        Operating system used.
+    job_start_time : str
+        ISO timestamp when job started.
+    job_end_time : str
+        ISO timestamp when job completed.
+    job_duration_seconds : float
+        Total execution time in seconds.
+    cpu_usage : int
+        CPU time in nanoseconds.
+    mem_usage : int
+        Current memory usage in bytes.
+    max_mem_usage : int
+        Peak memory usage in bytes.
+    swap_usage : int
+        Swap memory usage in bytes.
+    cache_usage : int
+        Cache memory usage in bytes.
+    directory_size : int
+        Output directory size in bytes.
+    read_io_stats : int
+        Read I/O operations.
+    write_io_stats : int
+        Write I/O operations.
+
+    Examples
+    --------
+    Get job status::
+
+        >>> job = maap.getJob('f3780917-92c0-4440-8a84-9b28c2e64fa8')
+        >>> print(f"Status: {job.status}")
+
+    Wait for completion::
+
+        >>> job = maap.submitJob(...)
+        >>> job.wait_for_completion()
+        >>> print(f"Final status: {job.status}")
+
+    Access metrics after completion::
+
+        >>> if job.status == 'Succeeded':
+        ...     print(f"Duration: {job.job_duration_seconds}s")
+        ...     print(f"Max memory: {job.max_mem_usage} bytes")
+
+    Cancel a running job::
+
+        >>> job.cancel_job()
+
+    Notes
+    -----
+    - Jobs are executed asynchronously on the DPS infrastructure
+    - :meth:`wait_for_completion` uses exponential backoff (max 64s intervals)
+    - Metrics are only available for completed jobs
+    - The ``outputs`` list typically contains HTTP, S3, and console URLs
+
+    See Also
+    --------
+    :meth:`maap.maap.MAAP.submitJob` : Submit new jobs
+    :meth:`maap.maap.MAAP.listJobs` : List all jobs
     """
+
     def __init__(self, config: MaapConfig, not_self_signed=True):
         self.config = config
         self.__not_self_signed = not_self_signed
@@ -61,11 +191,36 @@ class DPSJob:
         self.__outputs = []
         self.__traceback = None
         self.__metrics = dict()
-        
+
     def retrieve_status(self):
-        # Not using os.path.join just to be safe as this can break if ever run on windows
-        # not using urljoin as that requires more preprocessing to avoid dropping api root while joining
-        # eg. urljoing("https://api.maap-project.org/api/dps", "id/status") will drop "api/dps" from the output
+        """
+        Retrieve the current status of the job.
+
+        Queries the DPS API to get the latest job status.
+
+        Returns
+        -------
+        str
+            The current job status. Possible values:
+
+            - ``'Accepted'``: Job is queued
+            - ``'Running'``: Job is executing
+            - ``'Succeeded'``: Job completed successfully
+            - ``'Failed'``: Job completed with errors
+            - ``'Dismissed'``: Job was cancelled
+
+        Examples
+        --------
+        ::
+
+            >>> status = job.retrieve_status()
+            >>> print(f"Current status: {status}")
+
+        See Also
+        --------
+        :meth:`wait_for_completion` : Block until job completes
+        :meth:`retrieve_attributes` : Get status plus results/metrics
+        """
         url = f"{self.config.dps_job}/{self.id}/{endpoints.DPS_JOB_STATUS}"
         response = requests_utils.make_dps_request(url, self.config)
         self.set_job_status_result(response)
@@ -73,6 +228,38 @@ class DPSJob:
 
     @backoff.on_exception(backoff.expo, Exception, max_value=64, max_time=172800)
     def wait_for_completion(self):
+        """
+        Wait for the job to complete.
+
+        Blocks execution until the job finishes (succeeds, fails, or is
+        cancelled). Uses exponential backoff to poll for status updates.
+
+        Returns
+        -------
+        DPSJob
+            Self, with updated status and attributes.
+
+        Examples
+        --------
+        ::
+
+            >>> job = maap.submitJob(...)
+            >>> job.wait_for_completion()
+            >>> if job.status == 'Succeeded':
+            ...     print("Job completed successfully!")
+            ...     print(f"Outputs: {job.outputs}")
+
+        Notes
+        -----
+        - Uses exponential backoff with max interval of 64 seconds
+        - Maximum wait time is 48 hours (172800 seconds)
+        - The job object is updated with final status upon completion
+
+        See Also
+        --------
+        :meth:`retrieve_status` : Check status without blocking
+        :meth:`cancel_job` : Cancel a running job
+        """
         self.retrieve_status()
         if self.status.lower() in ["accepted", "running"]:
             logger.debug('Current Status is {}. Backing off.'.format(self.status))
@@ -80,18 +267,113 @@ class DPSJob:
         return self
 
     def retrieve_result(self):
+        """
+        Retrieve output URLs from a completed job.
+
+        Gets the list of URLs pointing to job output files.
+
+        Returns
+        -------
+        list of str
+            URLs to output files. Typically includes:
+
+            - HTTP URL for web browser access
+            - S3 URL for programmatic access
+            - AWS Console URL for S3 bucket browsing
+
+        Examples
+        --------
+        ::
+
+            >>> outputs = job.retrieve_result()
+            >>> for url in outputs:
+            ...     print(url)
+
+        Notes
+        -----
+        Results are only available for completed jobs. For running jobs,
+        this will return an empty list.
+
+        See Also
+        --------
+        :meth:`retrieve_metrics` : Get performance metrics
+        :meth:`retrieve_attributes` : Get all job information
+        """
         url = f"{self.config.dps_job}/{self.id}"
         response = requests_utils.make_dps_request(url, self.config)
         self.set_job_results_result(response)
         return self.outputs
 
     def retrieve_metrics(self):
+        """
+        Retrieve performance metrics from a completed job.
+
+        Gets resource usage and timing information for the job.
+
+        Returns
+        -------
+        dict
+            Dictionary containing job metrics including execution time,
+            memory usage, CPU usage, and I/O statistics.
+
+        Examples
+        --------
+        ::
+
+            >>> metrics = job.retrieve_metrics()
+            >>> print(f"Machine: {metrics['machine_type']}")
+            >>> print(f"Duration: {metrics['job_duration_seconds']}s")
+            >>> print(f"Max memory: {metrics['max_mem_usage']} bytes")
+
+        Notes
+        -----
+        Metrics are only available for completed jobs. Some metrics may
+        be unavailable if the job failed early in execution.
+
+        See Also
+        --------
+        :meth:`retrieve_result` : Get output URLs
+        :meth:`retrieve_attributes` : Get all job information
+        """
         url = f"{self.config.dps_job}/{self.id}/{endpoints.DPS_JOB_METRICS}"
         response = requests_utils.make_dps_request(url, self.config)
         self.set_job_metrics_result(response)
         return self.metrics
 
     def retrieve_attributes(self):
+        """
+        Retrieve all available job attributes.
+
+        Fetches the job status, and if the job is complete, also retrieves
+        results and metrics.
+
+        Returns
+        -------
+        DPSJob
+            Self, with all available attributes populated.
+
+        Examples
+        --------
+        ::
+
+            >>> job.retrieve_attributes()
+            >>> print(f"Status: {job.status}")
+            >>> if job.status == 'Succeeded':
+            ...     print(f"Outputs: {job.outputs}")
+            ...     print(f"Duration: {job.job_duration_seconds}s")
+
+        Notes
+        -----
+        This is a convenience method that calls :meth:`retrieve_status`,
+        :meth:`retrieve_result`, and :meth:`retrieve_metrics` as appropriate.
+        Errors during result/metrics retrieval are silently ignored.
+
+        See Also
+        --------
+        :meth:`retrieve_status` : Get status only
+        :meth:`retrieve_result` : Get outputs only
+        :meth:`retrieve_metrics` : Get metrics only
+        """
         self.retrieve_status()
         if self.status.lower() in ["succeeded", "failed"]:
             try:
@@ -106,6 +388,38 @@ class DPSJob:
         return self
 
     def cancel_job(self):
+        """
+        Cancel a running or queued job.
+
+        Requests cancellation of this job. Jobs that are already complete
+        cannot be cancelled.
+
+        Returns
+        -------
+        str
+            Response from the DPS API indicating the result of the
+            cancellation request.
+
+        Examples
+        --------
+        ::
+
+            >>> result = job.cancel_job()
+            >>> print(result)
+            >>> # Check updated status
+            >>> job.retrieve_status()
+            >>> print(f"Status after cancel: {job.status}")
+
+        Notes
+        -----
+        - Cancellation may not be immediate; the job will transition to
+          ``'Dismissed'`` status
+        - Resources allocated to the job will be released
+
+        See Also
+        --------
+        :meth:`retrieve_status` : Check job status after cancellation
+        """
         url = f"{self.config.dps_job}/{endpoints.DPS_JOB_DISMISS}/{self.id}"
         response = requests_utils.make_dps_request(url, self.config, request_type=requests_utils.POST)
         return response
