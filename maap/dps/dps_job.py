@@ -21,7 +21,7 @@ Monitor a submitted job::
     maap = MAAP()
 
     # Submit a job
-    job = maap.submitJob(
+    job = maap.submit_job(
         identifier='my_analysis',
         algo_id='my_algorithm',
         version='main',
@@ -38,8 +38,8 @@ Monitor a submitted job::
 
 See Also
 --------
-:meth:`maap.maap.MAAP.submitJob` : Submit a new job
-:meth:`maap.maap.MAAP.getJob` : Retrieve an existing job
+:meth:`maap.maap.MAAP.submit_job` : Submit a new job
+:meth:`maap.maap.MAAP.get_job` : Retrieve an existing job
 """
 
 import json
@@ -131,12 +131,12 @@ class DPSJob:
     --------
     Get job status::
 
-        >>> job = maap.getJob('f3780917-92c0-4440-8a84-9b28c2e64fa8')
+        >>> job = maap.get_job('f3780917-92c0-4440-8a84-9b28c2e64fa8')
         >>> print(f"Status: {job.status}")
 
     Wait for completion::
 
-        >>> job = maap.submitJob(...)
+        >>> job = maap.submit_job(...)
         >>> job.wait_for_completion()
         >>> print(f"Final status: {job.status}")
 
@@ -159,7 +159,7 @@ class DPSJob:
 
     See Also
     --------
-    :meth:`maap.maap.MAAP.submitJob` : Submit new jobs
+    :meth:`maap.maap.MAAP.submit_job` : Submit new jobs
     :meth:`maap.maap.MAAP.listJobs` : List all jobs
     """
 
@@ -243,7 +243,7 @@ class DPSJob:
         --------
         ::
 
-            >>> job = maap.submitJob(...)
+            >>> job = maap.submit_job(...)
             >>> job.wait_for_completion()
             >>> if job.status == 'Succeeded':
             ...     print("Job completed successfully!")

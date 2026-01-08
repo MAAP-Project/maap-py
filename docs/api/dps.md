@@ -32,7 +32,7 @@ from maap.maap import MAAP
 maap = MAAP()
 
 # Submit a job
-job = maap.submitJob(
+job = maap.submit_job(
     identifier='my_analysis',
     algo_id='my_algorithm',
     version='main',

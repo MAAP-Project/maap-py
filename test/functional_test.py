@@ -79,7 +79,7 @@ def submit_job(maap: MAAP, wait_for_completion=False, queue="maap-dps-worker-8gb
         "output_filename": "output.tif",
         "outsize": "20"
     }
-    job = maap.submitJob(identifier="maap_functional_test",
+    job = maap.submit_job(identifier="maap_functional_test",
                          algo_id=algo_name,
                          version=algo_version,
                          queue=queue,

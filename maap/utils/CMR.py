@@ -129,7 +129,7 @@ class CMR:
 
         params.append("limit=" + str(limit))
 
-        result = variable_name + ".searchGranule(" + ", ".join(params) + ")"
+        result = variable_name + ".search_granule(" + ", ".join(params) + ")"
 
         return result
 
@@ -157,7 +157,7 @@ class CMR:
             # e.g.,
             #   granules?collection_concept_id[]=C1&collection_concept_id[]=C2
             # will be converted to
-            #   maap.searchGranule(collection_concept_id="C1|C2")
+            #   maap.search_granule(collection_concept_id="C1|C2")
             if any(x for x in params if x.startswith(p_key_assignment)):
                 params[i - 1] = params[i - 1].replace(p_key_assignment, p_key_assignment + p_val + "|")
             else:
@@ -167,8 +167,8 @@ class CMR:
         params.append("limit=" + str(limit))
 
         if search == 'granule':
-            result = variable_name + ".searchGranule(" + ", ".join(params) + ")"
+            result = variable_name + ".search_granule(" + ", ".join(params) + ")"
         else:
-            result = variable_name + ".searchCollection(" + ", ".join(params) + ")"
+            result = variable_name + ".search_collection(" + ", ".join(params) + ")"
 
         return result
