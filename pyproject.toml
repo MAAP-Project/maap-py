@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "maap-py"
-version = "4.3.0a1"
+version = "4.3.0a2"
 description = "Python client API for interacting with the NASA MAAP API"
 repository = "https://github.com/MAAP-Project/maap-py"
 authors = ["Jet Propulsion Laboratory <jpl@nasa.gov>"]
