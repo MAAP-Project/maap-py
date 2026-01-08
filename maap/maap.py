@@ -23,7 +23,7 @@ Basic usage::
     maap = MAAP()
 
     # Search for granules
-    granules = maap.searchGranule(
+    granules = maap.search_granule(
         short_name='GEDI02_A',
         limit=10
     )
@@ -111,7 +111,7 @@ class MAAP(object):
 
     Search for granules::
 
-        >>> granules = maap.searchGranule(
+        >>> granules = maap.search_granule(
         ...     short_name='GEDI02_A',
         ...     bounding_box='-122.5,37.5,-121.5,38.5',
         ...     limit=5
@@ -121,7 +121,7 @@ class MAAP(object):
 
     Submit a job::
 
-        >>> job = maap.submitJob(
+        >>> job = maap.submit_job(
         ...     identifier='my_analysis',
         ...     algo_id='my_algorithm',
         ...     version='main',
@@ -226,7 +226,7 @@ class MAAP(object):
 
         Notes
         -----
-        This is an internal method primarily used by :meth:`uploadFiles`.
+        This is an internal method primarily used by :meth:`upload_files`.
         It uses the boto3 S3 client configured at module level.
         """
         return s3_client.upload_file(filename, bucket, objectKey)
@@ -275,14 +275,14 @@ class MAAP(object):
         --------
         Search by collection name::
 
-            >>> granules = maap.searchGranule(
+            >>> granules = maap.search_granule(
             ...     short_name='GEDI02_A',
             ...     limit=10
             ... )
 
         Search with spatial bounds::
 
-            >>> granules = maap.searchGranule(
+            >>> granules = maap.search_granule(
             ...     collection_concept_id='C1234567890-MAAP',
             ...     bounding_box='-122.5,37.5,-121.5,38.5',
             ...     limit=5
@@ -290,7 +290,7 @@ class MAAP(object):
 
         Search with temporal filter::
 
-            >>> granules = maap.searchGranule(
+            >>> granules = maap.search_granule(
             ...     short_name='AFLVIS2',
             ...     temporal='2019-01-01T00:00:00Z,2019-12-31T23:59:59Z',
             ...     limit=100
@@ -298,7 +298,7 @@ class MAAP(object):
 
         Search with pattern matching::
 
-            >>> granules = maap.searchGranule(
+            >>> granules = maap.search_granule(
             ...     readable_granule_name='*2019*',
             ...     short_name='GEDI02_A'
             ... )
@@ -317,7 +317,7 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`searchCollection` : Search for collections
+        :meth:`search_collection` : Search for collections
         :class:`~maap.Result.Granule` : Granule result class
         """
         results = self._CMR.get_search_results(url=self.config.search_granule_url, limit=limit, **kwargs)
@@ -356,7 +356,7 @@ class MAAP(object):
         --------
         Download a granule by URL::
 
-            >>> local_file = maap.downloadGranule(
+            >>> local_file = maap.download_granule(
             ...     'https://data.maap-project.org/file/data.h5',
             ...     destination_path='/tmp/downloads'
             ... )
@@ -364,7 +364,7 @@ class MAAP(object):
 
         Force overwrite of existing files::
 
-            >>> local_file = maap.downloadGranule(
+            >>> local_file = maap.download_granule(
             ...     url,
             ...     destination_path='/tmp',
             ...     overwrite=True
@@ -383,7 +383,7 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`searchGranule` : Search for granules
+        :meth:`search_granule` : Search for granules
         :meth:`~maap.Result.Granule.getData` : Download granule data
         """
         filename = os.path.basename(urllib.parse.urlparse(online_access_url).path)
@@ -426,9 +426,9 @@ class MAAP(object):
         Convert an Earthdata query::
 
             >>> query = '{"instrument_h": ["GEDI"], "bounding_box": "-180,-90,180,90"}'
-            >>> code = maap.getCallFromEarthdataQuery(query)
+            >>> code = maap.get_call_from_earthdata_query(query)
             >>> print(code)
-            maap.searchGranule(instrument="GEDI", bounding_box="-180,-90,180,90", limit=1000)
+            maap.search_granule(instrument="GEDI", bounding_box="-180,-90,180,90", limit=1000)
 
         Notes
         -----
@@ -438,8 +438,8 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`getCallFromCmrUri` : Generate call from CMR URI
-        :meth:`searchGranule` : Execute a granule search
+        :meth:`get_call_from_cmr_uri` : Generate call from CMR URI
+        :meth:`search_granule` : Execute a granule search
         """
         return self._CMR.generateGranuleCallFromEarthDataRequest(query, variable_name, limit)
 
@@ -475,16 +475,16 @@ class MAAP(object):
         Convert a CMR granule search URL::
 
             >>> url = 'https://cmr.earthdata.nasa.gov/search/granules?short_name=GEDI02_A'
-            >>> code = maap.getCallFromCmrUri(url)
+            >>> code = maap.get_call_from_cmr_uri(url)
             >>> print(code)
-            maap.searchGranule(short_name="GEDI02_A", limit=1000)
+            maap.search_granule(short_name="GEDI02_A", limit=1000)
 
         Convert a collection search::
 
             >>> url = 'https://cmr.earthdata.nasa.gov/search/collections?provider=MAAP'
-            >>> code = maap.getCallFromCmrUri(url, search='collection')
+            >>> code = maap.get_call_from_cmr_uri(url, search='collection')
             >>> print(code)
-            maap.searchCollection(provider="MAAP", limit=1000)
+            maap.search_collection(provider="MAAP", limit=1000)
 
         Notes
         -----
@@ -494,9 +494,9 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`getCallFromEarthdataQuery` : Generate call from Earthdata query
-        :meth:`searchGranule` : Execute a granule search
-        :meth:`searchCollection` : Execute a collection search
+        :meth:`get_call_from_earthdata_query` : Generate call from Earthdata query
+        :meth:`search_granule` : Execute a granule search
+        :meth:`search_collection` : Execute a collection search
         """
         return self._CMR.generateCallFromEarthDataQueryString(search_url, variable_name, limit, search)
 
@@ -541,20 +541,20 @@ class MAAP(object):
         --------
         Search by short name::
 
-            >>> collections = maap.searchCollection(short_name='GEDI02_A')
+            >>> collections = maap.search_collection(short_name='GEDI02_A')
             >>> for c in collections:
             ...     print(c['Collection']['ShortName'])
 
         Search by provider::
 
-            >>> collections = maap.searchCollection(
+            >>> collections = maap.search_collection(
             ...     provider='MAAP',
             ...     limit=50
             ... )
 
         Search by keyword::
 
-            >>> collections = maap.searchCollection(
+            >>> collections = maap.search_collection(
             ...     keyword='biomass forest',
             ...     limit=20
             ... )
@@ -562,12 +562,12 @@ class MAAP(object):
         Notes
         -----
         Collections contain metadata about datasets but not the actual data
-        files. Use :meth:`searchGranule` to find individual data files within
+        files. Use :meth:`search_granule` to find individual data files within
         a collection.
 
         See Also
         --------
-        :meth:`searchGranule` : Search for granules within collections
+        :meth:`search_granule` : Search for granules within collections
         :class:`~maap.Result.Collection` : Collection result class
         """
         results = self._CMR.get_search_results(url=self.config.search_collection_url, limit=limit, **kwargs)
@@ -591,7 +591,7 @@ class MAAP(object):
         --------
         List available queues::
 
-            >>> response = maap.getQueues()
+            >>> response = maap.get_queues()
             >>> queues = response.json()
             >>> for queue in queues:
             ...     print(f"{queue['name']}: {queue['memory']} RAM")
@@ -603,8 +603,8 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`submitJob` : Submit a job to a queue
-        :meth:`registerAlgorithm` : Register an algorithm to run on queues
+        :meth:`submit_job` : Submit a job to a queue
+        :meth:`register_algorithm` : Register an algorithm to run on queues
         """
         url = os.path.join(self.config.algorithm_register, 'resource')
         headers = self._get_api_header()
@@ -654,13 +654,13 @@ class MAAP(object):
         --------
         Upload files to share::
 
-            >>> result = maap.uploadFiles(['data.csv', 'config.json'])
+            >>> result = maap.upload_files(['data.csv', 'config.json'])
             >>> print(result)
             Upload file subdirectory: a1b2c3d4-e5f6-... (keep a record of...)
 
         Upload a single file::
 
-            >>> result = maap.uploadFiles(['output.tif'])
+            >>> result = maap.upload_files(['output.tif'])
 
         Notes
         -----
@@ -670,7 +670,7 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`submitJob` : Use uploaded files as job inputs
+        :meth:`submit_job` : Use uploaded files as job inputs
         """
         bucket = self.config.s3_user_upload_bucket
         prefix = self.config.s3_user_upload_dir
@@ -738,7 +738,7 @@ class MAAP(object):
         ----------
         granule : dict
             A granule result dictionary, typically obtained from
-            :meth:`searchGranule`. Must contain ``Granule.GranuleUR``.
+            :meth:`search_granule`. Must contain ``Granule.GranuleUR``.
         display_config : dict, optional
             Configuration options for rendering. Common options include:
 
@@ -751,7 +751,7 @@ class MAAP(object):
         --------
         Display a granule on a map::
 
-            >>> granules = maap.searchGranule(short_name='AFLVIS2', limit=1)
+            >>> granules = maap.search_granule(short_name='AFLVIS2', limit=1)
             >>> maap.show(granules[0])
 
         Display with custom rendering::
@@ -769,7 +769,7 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`searchGranule` : Search for granules to visualize
+        :meth:`search_granule` : Search for granules to visualize
         """
         from mapboxgl.viz import RasterTilesViz
 

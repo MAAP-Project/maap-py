@@ -21,7 +21,7 @@ Search and download granules::
     from maap.maap import MAAP
 
     maap = MAAP()
-    granules = maap.searchGranule(short_name='GEDI02_A', limit=5)
+    granules = maap.search_granule(short_name='GEDI02_A', limit=5)
 
     for granule in granules:
         # Get download URLs
@@ -439,7 +439,7 @@ class Collection(Result):
     --------
     Search for collections::
 
-        >>> collections = maap.searchCollection(short_name='GEDI02_A')
+        >>> collections = maap.search_collection(short_name='GEDI02_A')
         >>> for c in collections:
         ...     print(c['Collection']['ShortName'])
         ...     print(c['Collection']['Description'])
@@ -458,7 +458,7 @@ class Collection(Result):
     See Also
     --------
     :class:`Granule` : Individual data file results
-    :meth:`maap.maap.MAAP.searchCollection` : Search for collections
+    :meth:`maap.maap.MAAP.search_collection` : Search for collections
     """
 
     def __init__(self, metaResult, maap_host):
@@ -512,7 +512,7 @@ class Granule(Result):
     --------
     Search and access granule metadata::
 
-        >>> granules = maap.searchGranule(short_name='GEDI02_A', limit=5)
+        >>> granules = maap.search_granule(short_name='GEDI02_A', limit=5)
         >>> granule = granules[0]
         >>> print(granule['Granule']['GranuleUR'])
 
@@ -540,7 +540,7 @@ class Granule(Result):
     See Also
     --------
     :class:`Collection` : Dataset metadata results
-    :meth:`maap.maap.MAAP.searchGranule` : Search for granules
+    :meth:`maap.maap.MAAP.search_granule` : Search for granules
     """
 
     def __init__(

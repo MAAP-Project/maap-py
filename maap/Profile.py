@@ -100,7 +100,7 @@ class Profile:
 
         Notes
         -----
-        This method is used internally by :meth:`~maap.maap.MAAP.submitJob`
+        This method is used internally by :meth:`~maap.maap.MAAP.submit_job`
         to automatically include the username with job submissions.
 
         See Also

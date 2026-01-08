@@ -27,7 +27,7 @@ $ python
 >>> from maap.maap import MAAP
 >>> maap = MAAP()
 
->>> granules = maap.searchGranule(sitename='lope', instrument='uavsar')
+>>> granules = maap.search_granule(sitename='lope', instrument='uavsar')
 >>> for res in granules:
     print(res.getDownloadUrl())
     res.download()
@@ -64,13 +64,13 @@ where:
 With named attribute parameters, this query:
 
  ```python
-lidarGranule = maap.searchGranule(instrument='lvis', attribute='string,Site Name,lope')
+lidarGranule = maap.search_granule(instrument='lvis', attribute='string,Site Name,lope')
 ```
 
 Simplifies to:
 
 ```python
-lidarGranule = maap.searchGranule(instrument='lvis', site_name='lope')
+lidarGranule = maap.search_granule(instrument='lvis', site_name='lope')
 ```
 
 ## Test

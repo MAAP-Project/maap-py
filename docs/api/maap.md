@@ -19,13 +19,13 @@ from maap.maap import MAAP
 maap = MAAP()
 
 # Search granules
-granules = maap.searchGranule(short_name='GEDI02_A', limit=10)
+granules = maap.search_granule(short_name='GEDI02_A', limit=10)
 
 # Search collections
-collections = maap.searchCollection(provider='MAAP')
+collections = maap.search_collection(provider='MAAP')
 
 # Submit a job
-job = maap.submitJob(
+job = maap.submit_job(
     identifier='analysis',
     algo_id='my_algo',
     version='main',

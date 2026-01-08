@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 ### Changed
 - listJobs no longer takes username as an argument, you can only list jobs for the current `MAAP_PGT` token user
-- submitJob gets the username from the `MAAP_PGT` token and not username being submitted as an argument 
+- submit_job gets the username from the `MAAP_PGT` token and not username being submitted as an argument 
 ### Deprecated
 ### Removed
 ### Fixed

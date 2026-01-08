@@ -336,7 +336,7 @@ class AWS:
         See Also
         --------
         :meth:`requester_pays_credentials` : For accessing external data
-        :meth:`maap.maap.MAAP.uploadFiles` : Upload files to shared storage
+        :meth:`maap.maap.MAAP.upload_files` : Upload files to shared storage
         """
         headers = self._api_header
         headers["Accept"] = "application/json"
