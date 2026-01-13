@@ -621,16 +621,20 @@ class MAAP(object):
         """
         Registers an algorithm from a CWL file
         """
-        # Read cwl file returns a dict in the format to register an algorithm without a CWL
-        process_config = algorithm_utils.read_cwl_file(file_path)
-        print("graceal1 returned JSON of metadata extracted from CWL:")
-        print(process_config)
+        # Read raw text from CWL file
+        with open(file_path, 'r') as f:
+            raw_text = f.read()
+        process = {
+            "cwlRawText": raw_text
+        }
+        print("graceal1 returned raw text from CWL:")
+        print(raw_text)
         headers = self._get_api_header(content_type='application/json')
         logger.debug('POST request sent to {}'.format(self.config.processes_ogc))
         response = requests.post(
             url=self.config.processes_ogc,
             headers=headers,
-            json=process_config
+            json=process
         )
         return response
 
