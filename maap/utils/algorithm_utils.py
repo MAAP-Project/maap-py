@@ -29,7 +29,7 @@ def read_cwl_file(algo_cwl):
     """
     try:
         with open(algo_cwl, 'r') as f:
-            cwl_text = yaml.safe_load(f)
+            cwl_text = f.read()
         try:
             cwl_obj = load_document_by_uri(algo_cwl, load_all=True)
         except Exception as e:
