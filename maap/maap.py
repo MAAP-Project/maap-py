@@ -627,8 +627,6 @@ class MAAP(object):
         process = {
             "cwlRawText": raw_text
         }
-        print("graceal1 returned raw text from CWL:")
-        print(raw_text)
         headers = self._get_api_header(content_type='application/json')
         logger.debug('POST request sent to {}'.format(self.config.processes_ogc))
         response = requests.post(
