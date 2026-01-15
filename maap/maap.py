@@ -635,6 +635,26 @@ class MAAP(object):
             json=process
         )
         return response
+    
+    def replace_algorithm_from_cwl_file(self, process_id, file_path):
+        """
+        Registers an algorithm from a CWL file
+        """
+        # Read raw text from CWL file
+        with open(file_path, 'r') as f:
+            raw_text = f.read()
+        process = {
+            "cwlRawText": raw_text
+        }
+        url = os.path.join(self.config.processes_ogc, str(process_id))
+        headers = self._get_api_header(content_type='application/json')
+        logger.debug('PUT request sent to {}'.format(url))
+        response = requests.put(
+            url=url,
+            headers=headers,
+            json=process
+        )
+        return response
 
     def upload_files(self, filenames):
         """
