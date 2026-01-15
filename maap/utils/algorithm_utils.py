@@ -7,10 +7,6 @@ try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper
-from cwl_utils.parser import load_document_by_uri, cwl_v1_2
-import re
-import urllib.parse
-import os 
 
 logger = logging.getLogger(__name__)
 
