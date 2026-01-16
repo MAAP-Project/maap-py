@@ -8,7 +8,6 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +16,6 @@ def read_yaml_file(algo_yaml):
     with open(algo_yaml, 'r') as fr:
         algo_config = yaml_load(fr, Loader=Loader)
     return validate_algorithm_config(algo_config)
-
 
 def validate_algorithm_config(algo_config):
     return algo_config

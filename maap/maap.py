@@ -23,7 +23,7 @@ Basic usage::
     maap = MAAP()
 
     # Search for granules
-    granules = maap.searchGranule(
+    granules = maap.search_granule(
         short_name='GEDI02_A',
         limit=10
     )
@@ -111,7 +111,7 @@ class MAAP(object):
 
     Search for granules::
 
-        >>> granules = maap.searchGranule(
+        >>> granules = maap.search_granule(
         ...     short_name='GEDI02_A',
         ...     bounding_box='-122.5,37.5,-121.5,38.5',
         ...     limit=5
@@ -121,7 +121,7 @@ class MAAP(object):
 
     Submit a job::
 
-        >>> job = maap.submitJob(
+        >>> job = maap.submit_job(
         ...     identifier='my_analysis',
         ...     algo_id='my_algorithm',
         ...     version='main',
@@ -226,12 +226,12 @@ class MAAP(object):
 
         Notes
         -----
-        This is an internal method primarily used by :meth:`uploadFiles`.
+        This is an internal method primarily used by :meth:`upload_files`.
         It uses the boto3 S3 client configured at module level.
         """
         return s3_client.upload_file(filename, bucket, objectKey)
 
-    def searchGranule(self, limit=20, **kwargs):
+    def search_granule(self, limit=20, **kwargs):
         """
         Search for granules in the CMR (Common Metadata Repository).
 
@@ -275,14 +275,14 @@ class MAAP(object):
         --------
         Search by collection name::
 
-            >>> granules = maap.searchGranule(
+            >>> granules = maap.search_granule(
             ...     short_name='GEDI02_A',
             ...     limit=10
             ... )
 
         Search with spatial bounds::
 
-            >>> granules = maap.searchGranule(
+            >>> granules = maap.search_granule(
             ...     collection_concept_id='C1234567890-MAAP',
             ...     bounding_box='-122.5,37.5,-121.5,38.5',
             ...     limit=5
@@ -290,7 +290,7 @@ class MAAP(object):
 
         Search with temporal filter::
 
-            >>> granules = maap.searchGranule(
+            >>> granules = maap.search_granule(
             ...     short_name='AFLVIS2',
             ...     temporal='2019-01-01T00:00:00Z,2019-12-31T23:59:59Z',
             ...     limit=100
@@ -298,7 +298,7 @@ class MAAP(object):
 
         Search with pattern matching::
 
-            >>> granules = maap.searchGranule(
+            >>> granules = maap.search_granule(
             ...     readable_granule_name='*2019*',
             ...     short_name='GEDI02_A'
             ... )
@@ -317,7 +317,7 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`searchCollection` : Search for collections
+        :meth:`search_collection` : Search for collections
         :class:`~maap.Result.Granule` : Granule result class
         """
         results = self._CMR.get_search_results(url=self.config.search_granule_url, limit=limit, **kwargs)
@@ -328,7 +328,7 @@ class MAAP(object):
                         self._get_api_header(),
                         self._DPS) for result in results][:limit]
 
-    def downloadGranule(self, online_access_url, destination_path=".", overwrite=False):
+    def download_granule(self, online_access_url, destination_path=".", overwrite=False):
         """
         Download a granule directly from an HTTP URL.
 
@@ -356,7 +356,7 @@ class MAAP(object):
         --------
         Download a granule by URL::
 
-            >>> local_file = maap.downloadGranule(
+            >>> local_file = maap.download_granule(
             ...     'https://data.maap-project.org/file/data.h5',
             ...     destination_path='/tmp/downloads'
             ... )
@@ -364,7 +364,7 @@ class MAAP(object):
 
         Force overwrite of existing files::
 
-            >>> local_file = maap.downloadGranule(
+            >>> local_file = maap.download_granule(
             ...     url,
             ...     destination_path='/tmp',
             ...     overwrite=True
@@ -383,7 +383,7 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`searchGranule` : Search for granules
+        :meth:`search_granule` : Search for granules
         :meth:`~maap.Result.Granule.getData` : Download granule data
         """
         filename = os.path.basename(urllib.parse.urlparse(online_access_url).path)
@@ -397,7 +397,7 @@ class MAAP(object):
         # noinspection PyProtectedMember
         return proxy._getHttpData(online_access_url, overwrite, final_destination)
 
-    def getCallFromEarthdataQuery(self, query, variable_name='maap', limit=1000):
+    def get_call_from_earthdata_query(self, query, variable_name='maap', limit=1000):
         """
         Generate a MAAP API call string from an Earthdata search query.
 
@@ -426,9 +426,9 @@ class MAAP(object):
         Convert an Earthdata query::
 
             >>> query = '{"instrument_h": ["GEDI"], "bounding_box": "-180,-90,180,90"}'
-            >>> code = maap.getCallFromEarthdataQuery(query)
+            >>> code = maap.get_call_from_earthdata_query(query)
             >>> print(code)
-            maap.searchGranule(instrument="GEDI", bounding_box="-180,-90,180,90", limit=1000)
+            maap.search_granule(instrument="GEDI", bounding_box="-180,-90,180,90", limit=1000)
 
         Notes
         -----
@@ -438,12 +438,12 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`getCallFromCmrUri` : Generate call from CMR URI
-        :meth:`searchGranule` : Execute a granule search
+        :meth:`get_call_from_cmr_uri` : Generate call from CMR URI
+        :meth:`search_granule` : Execute a granule search
         """
         return self._CMR.generateGranuleCallFromEarthDataRequest(query, variable_name, limit)
 
-    def getCallFromCmrUri(self, search_url, variable_name='maap', limit=1000, search='granule'):
+    def get_call_from_cmr_uri(self, search_url, variable_name='maap', limit=1000, search='granule'):
         """
         Generate a MAAP API call string from a CMR REST API URL.
 
@@ -475,16 +475,16 @@ class MAAP(object):
         Convert a CMR granule search URL::
 
             >>> url = 'https://cmr.earthdata.nasa.gov/search/granules?short_name=GEDI02_A'
-            >>> code = maap.getCallFromCmrUri(url)
+            >>> code = maap.get_call_from_cmr_uri(url)
             >>> print(code)
-            maap.searchGranule(short_name="GEDI02_A", limit=1000)
+            maap.search_granule(short_name="GEDI02_A", limit=1000)
 
         Convert a collection search::
 
             >>> url = 'https://cmr.earthdata.nasa.gov/search/collections?provider=MAAP'
-            >>> code = maap.getCallFromCmrUri(url, search='collection')
+            >>> code = maap.get_call_from_cmr_uri(url, search='collection')
             >>> print(code)
-            maap.searchCollection(provider="MAAP", limit=1000)
+            maap.search_collection(provider="MAAP", limit=1000)
 
         Notes
         -----
@@ -494,13 +494,13 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`getCallFromEarthdataQuery` : Generate call from Earthdata query
-        :meth:`searchGranule` : Execute a granule search
-        :meth:`searchCollection` : Execute a collection search
+        :meth:`get_call_from_earthdata_query` : Generate call from Earthdata query
+        :meth:`search_granule` : Execute a granule search
+        :meth:`search_collection` : Execute a collection search
         """
         return self._CMR.generateCallFromEarthDataQueryString(search_url, variable_name, limit, search)
 
-    def searchCollection(self, limit=100, **kwargs):
+    def search_collection(self, limit=100, **kwargs):
         """
         Search for collections in the CMR (Common Metadata Repository).
 
@@ -541,20 +541,20 @@ class MAAP(object):
         --------
         Search by short name::
 
-            >>> collections = maap.searchCollection(short_name='GEDI02_A')
+            >>> collections = maap.search_collection(short_name='GEDI02_A')
             >>> for c in collections:
             ...     print(c['Collection']['ShortName'])
 
         Search by provider::
 
-            >>> collections = maap.searchCollection(
+            >>> collections = maap.search_collection(
             ...     provider='MAAP',
             ...     limit=50
             ... )
 
         Search by keyword::
 
-            >>> collections = maap.searchCollection(
+            >>> collections = maap.search_collection(
             ...     keyword='biomass forest',
             ...     limit=20
             ... )
@@ -562,18 +562,18 @@ class MAAP(object):
         Notes
         -----
         Collections contain metadata about datasets but not the actual data
-        files. Use :meth:`searchGranule` to find individual data files within
+        files. Use :meth:`search_granule` to find individual data files within
         a collection.
 
         See Also
         --------
-        :meth:`searchGranule` : Search for granules within collections
+        :meth:`search_granule` : Search for granules within collections
         :class:`~maap.Result.Collection` : Collection result class
         """
         results = self._CMR.get_search_results(url=self.config.search_collection_url, limit=limit, **kwargs)
         return [Collection(result, self.config.maap_host) for result in results][:limit]
 
-    def getQueues(self):
+    def get_queues(self):
         """
         Get available DPS processing queues (resources).
 
@@ -591,7 +591,7 @@ class MAAP(object):
         --------
         List available queues::
 
-            >>> response = maap.getQueues()
+            >>> response = maap.get_queues()
             >>> queues = response.json()
             >>> for queue in queues:
             ...     print(f"{queue['name']}: {queue['memory']} RAM")
@@ -603,8 +603,8 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`submitJob` : Submit a job to a queue
-        :meth:`registerAlgorithm` : Register an algorithm to run on queues
+        :meth:`submit_job` : Submit a job to a queue
+        :meth:`register_algorithm` : Register an algorithm to run on queues
         """
         url = os.path.join(self.config.algorithm_register, 'resource')
         headers = self._get_api_header()
@@ -617,813 +617,46 @@ class MAAP(object):
         )
         return response
 
-    def registerAlgorithm(self, arg):
+    def register_algorithm_from_cwl_file(self, file_path):
         """
-        Register an algorithm with the MAAP DPS.
-
-        Registers a new algorithm configuration that can be executed on the
-        MAAP Data Processing System (DPS).
-
-        Parameters
-        ----------
-        arg : dict or str
-            Algorithm configuration as a dictionary or JSON string. Required
-            fields include:
-
-            algorithm_name : str
-                Unique name for the algorithm.
-            code_version : str
-                Version identifier (e.g., Git branch or tag).
-            algorithm_description : str
-                Human-readable description.
-            docker_container_url : str
-                URL of the Docker container image.
-            script_command : str
-                Command to execute inside the container.
-            inputs : list of dict
-                Input parameter definitions with ``field`` and ``download`` keys. Format should be like 
-                {'file': [{'name': 'input_file'}],'config': [{'name': 'config_param'}],'positional': [{'name': 'pos_arg'}]}
-            repo_url : str
-                Git repository URL for the algorithm source code.
-
-        Returns
-        -------
-        requests.Response
-            HTTP response indicating success or failure of registration.
-
-        Examples
-        --------
-        Register using a dictionary::
-
-            >>> config = {
-            ...     'algorithm_name': 'my_algorithm',
-            ...     'code_version': 'main',
-            ...     'algorithm_description': 'Processes satellite data',
-            ...     'docker_container_url': 'registry/image:tag',
-            ...     'script_command': 'python run.py',
-            ...     'inputs': {
-            ...         'file': [{'name': 'input_file'}],
-            ...         'config': [{'name': 'config_param'}],
-            ...         'positional': [{'name': 'pos_arg'}]
-            ...     },
-            ...     'repo_url': 'https://github.com/org/repo'
-            ... }
-            >>> response = maap.registerAlgorithm(config)
-
-        Register using a JSON string::
-
-            >>> import json
-            >>> response = maap.registerAlgorithm(json.dumps(config))
-
-        Notes
-        -----
-        After registration, algorithms need to be built before they can be
-        executed. The build process creates the Docker image on the DPS
-        infrastructure.
-
-        See Also
-        --------
-        :meth:`register_algorithm_from_yaml_file` : Register from YAML file
-        :meth:`listAlgorithms` : List registered algorithms
-        :meth:`deleteAlgorithm` : Delete an algorithm
+        Registers an algorithm from a CWL file
         """
-        logger.debug('Registering algorithm with args ')
-        if type(arg) is dict:
-            arg = json.dumps(arg)
-        logger.debug(arg)
-        response = requests_utils.make_request(url=self.config.algorithm_register, config=self.config,
-                                               content_type='application/json', request_type=requests_utils.POST,
-                                               data=arg)
-        logger.debug('POST request sent to {}'.format(self.config.algorithm_register))
-        return response
-
-    def register_algorithm_from_yaml_file(self, file_path):
-        """
-        Register an algorithm from a YAML configuration file.
-
-        Reads algorithm configuration from a YAML file and registers it with
-        the MAAP DPS.
-
-        Parameters
-        ----------
-        file_path : str
-            Path to the YAML configuration file.
-
-        Returns
-        -------
-        requests.Response
-            HTTP response indicating success or failure of registration.
-
-        Examples
-        --------
-        Register from a YAML file::
-
-            >>> response = maap.register_algorithm_from_yaml_file('algorithm.yaml')
-
-        Example YAML file structure::
-
-            algorithm_name: my_algorithm
-            code_version: main
-            algorithm_description: Process satellite data
-            docker_container_url: registry/image:tag
-            script_command: python run.py
-            inputs:
-              file:
-                - name: input_file
-              config:
-                - name: config_param
-              positional:
-                - name: pos_arg
-            repo_url: https://github.com/org/repo
-
-        See Also
-        --------
-        :meth:`registerAlgorithm` : Register from dict or JSON
-        :meth:`register_algorithm_from_yaml_file_backwards_compatible` : Legacy format
-        """
-        algo_config = algorithm_utils.read_yaml_file(file_path)
-        return self.registerAlgorithm(algo_config)
-
-    def register_algorithm_from_yaml_file_backwards_compatible(self, file_path):
-        """
-        Register an algorithm from a legacy YAML configuration file.
-
-        Reads algorithm configuration from an older YAML format and converts
-        it to the current format before registration.
-
-        Parameters
-        ----------
-        file_path : str
-            Path to the legacy YAML configuration file.
-
-        Returns
-        -------
-        requests.Response
-            HTTP response indicating success or failure of registration.
-
-        Notes
-        -----
-        This method supports the legacy YAML format with different field names:
-
-        - ``algo_name`` -> ``algorithm_name``
-        - ``version`` -> ``code_version``
-        - ``environment`` -> ``environment_name``
-        - ``description`` -> ``algorithm_description``
-        - ``docker_url`` -> ``docker_container_url``
-        - ``inputs`` -> ``algorithm_params``
-        - ``run_command`` -> ``script_command``
-        - ``repository_url`` -> ``repo_url``
-
-        See Also
-        --------
-        :meth:`register_algorithm_from_yaml_file` : Current format
-        :meth:`registerAlgorithm` : Register from dict
-        """
-        algo_yaml = algorithm_utils.read_yaml_file(file_path)
-        key_map = {"algo_name": "algorithm_name", "version": "code_version", "environment": "environment_name",
-                   "description": "algorithm_description", "docker_url": "docker_container_url",
-                   "inputs": "algorithm_params", "run_command": "script_command", "repository_url": "repo_url"}
-        output_config = {}
-        for key, value in algo_yaml.items():
-            if key in key_map:
-                if key == "inputs":
-                    inputs = []
-                    for argument in value:
-                        inputs.append({"field": argument.get("name"), "download": argument.get("download")})
-                    output_config.update({"algorithm_params": inputs})
-                else:
-                    output_config.update({key_map.get(key): value})
-            else:
-                output_config.update({key: value})
-        logger.debug("Registering with config %s " % json.dumps(output_config))
-        return self.registerAlgorithm(json.dumps(output_config))
-
-    def listAlgorithms(self):
-        """
-        List all registered algorithms.
-
-        Retrieves a list of all algorithms registered by the current user
-        on the MAAP DPS.
-
-        Returns
-        -------
-        requests.Response
-            HTTP response containing JSON list of algorithms. Each algorithm
-            entry includes name, version, description, and status information.
-
-        Examples
-        --------
-        List all algorithms::
-
-            >>> response = maap.listAlgorithms()
-            >>> algorithms = response.json()
-            >>> for algo in algorithms:
-            ...     print(f"{algo['algorithm_name']}:{algo['code_version']}")
-
-        See Also
-        --------
-        :meth:`describeAlgorithm` : Get details for specific algorithm
-        :meth:`registerAlgorithm` : Register a new algorithm
-        :meth:`deleteAlgorithm` : Delete an algorithm
-        """
-        url = self.config.mas_algo
-        headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
-
-    def describeAlgorithm(self, algoid):
-        """
-        Get detailed information about a registered algorithm.
-
-        Retrieves the full configuration and status of a specific algorithm.
-
-        Parameters
-        ----------
-        algoid : str
-            The algorithm identifier, typically in the format
-            ``algorithm_name:code_version``.
-
-        Returns
-        -------
-        requests.Response
-            HTTP response containing JSON with algorithm details including
-            configuration, build status, and parameter definitions.
-
-        Examples
-        --------
-        Get algorithm details::
-
-            >>> response = maap.describeAlgorithm('my_algorithm:main')
-            >>> details = response.json()
-            >>> print(f"Description: {details['algorithm_description']}")
-            >>> print(f"Docker: {details['docker_container_url']}")
-
-        See Also
-        --------
-        :meth:`listAlgorithms` : List all algorithms
-        :meth:`publishAlgorithm` : Publish an algorithm
-        """
-        url = os.path.join(self.config.mas_algo, algoid)
-        headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
-        return response
-
-    def publishAlgorithm(self, algoid):
-        """
-        Publish an algorithm for public use.
-
-        Makes a registered algorithm available for other MAAP users to
-        discover and execute.
-
-        Parameters
-        ----------
-        algoid : str
-            The algorithm identifier to publish, typically in the format
-            ``algorithm_name:code_version``.
-
-        Returns
-        -------
-        requests.Response
-            HTTP response indicating success or failure of publication.
-
-        Examples
-        --------
-        Publish an algorithm::
-
-            >>> response = maap.publishAlgorithm('my_algorithm:v1.0')
-            >>> if response.ok:
-            ...     print("Algorithm published successfully")
-
-        Notes
-        -----
-        Published algorithms are visible to all MAAP users and can be
-        executed by anyone with DPS access.
-
-        See Also
-        --------
-        :meth:`registerAlgorithm` : Register an algorithm
-        :meth:`deleteAlgorithm` : Delete an algorithm
-        """
-        url = self.config.mas_algo.replace('algorithm', 'publish')
-        headers = self._get_api_header()
-        body = { "algo_id": algoid}
-        logger.debug('POST request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        logger.debug('body:')
-        logger.debug(body)
-        response = requests.post(
-            url=url,
-            headers=headers,
-            data=body
-        )
-        return response
-
-    def deleteAlgorithm(self, algoid):
-        """
-        Delete a registered algorithm.
-
-        Removes an algorithm registration from the MAAP DPS. This does not
-        affect any completed jobs that used the algorithm.
-
-        Parameters
-        ----------
-        algoid : str
-            The algorithm identifier to delete, typically in the format
-            ``algorithm_name:code_version``.
-
-        Returns
-        -------
-        requests.Response
-            HTTP response indicating success or failure of deletion.
-
-        Examples
-        --------
-        Delete an algorithm::
-
-            >>> response = maap.deleteAlgorithm('my_algorithm:main')
-            >>> if response.ok:
-            ...     print("Algorithm deleted")
-
-        Warnings
-        --------
-        This action cannot be undone. The algorithm configuration will be
-        permanently removed.
-
-        See Also
-        --------
-        :meth:`registerAlgorithm` : Register an algorithm
-        :meth:`listAlgorithms` : List algorithms
-        """
-        url = os.path.join(self.config.mas_algo, algoid)
-        headers = self._get_api_header()
-        logger.debug('DELETE request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.delete(
-            url=url,
-            headers=headers
-        )
-        return response
-
-
-    def getJob(self, jobid):
-        """
-        Get a DPS job with all available attributes.
-
-        Retrieves a job object with its current status, results (if available),
-        and metrics (if available).
-
-        Parameters
-        ----------
-        jobid : str
-            The unique job identifier (UUID).
-
-        Returns
-        -------
-        DPSJob
-            A :class:`~maap.dps.dps_job.DPSJob` object with populated attributes
-            including status, outputs, and metrics.
-
-        Examples
-        --------
-        Get a job and inspect its status::
-
-            >>> job = maap.getJob('f3780917-92c0-4440-8a84-9b28c2e64fa8')
-            >>> print(f"Status: {job.status}")
-            >>> print(f"Outputs: {job.outputs}")
-            >>> print(f"Duration: {job.job_duration_seconds} seconds")
-
-        See Also
-        --------
-        :meth:`getJobStatus` : Get status only
-        :meth:`getJobResult` : Get results only
-        :meth:`getJobMetrics` : Get metrics only
-        :meth:`submitJob` : Submit a new job
-        """
-        job = DPSJob(self.config)
-        job.id = jobid
-        job.retrieve_attributes()
-        return job
-
-    def getJobStatus(self, jobid):
-        """
-        Get the current status of a DPS job.
-
-        Parameters
-        ----------
-        jobid : str
-            The unique job identifier (UUID).
-
-        Returns
-        -------
-        str
-            The job status. Possible values are:
-
-            - ``'Accepted'``: Job is queued
-            - ``'Running'``: Job is executing
-            - ``'Succeeded'``: Job completed successfully
-            - ``'Failed'``: Job failed
-            - ``'Dismissed'``: Job was cancelled
-
-        Examples
-        --------
-        Check job status::
-
-            >>> status = maap.getJobStatus('f3780917-92c0-4440-8a84-9b28c2e64fa8')
-            >>> print(f"Job status: {status}")
-
-        See Also
-        --------
-        :meth:`getJob` : Get full job object
-        :meth:`cancelJob` : Cancel a running job
-        """
-        job = DPSJob(self.config)
-        job.id = jobid
-        return job.retrieve_status()
-
-    def getJobResult(self, jobid):
-        """
-        Get the output URLs from a completed DPS job.
-
-        Parameters
-        ----------
-        jobid : str
-            The unique job identifier (UUID).
-
-        Returns
-        -------
-        list of str
-            List of URLs pointing to job output files. Typically includes
-            HTTP, S3, and console URLs for the output directory.
-
-        Examples
-        --------
-        Get job outputs::
-
-            >>> outputs = maap.getJobResult('f3780917-92c0-4440-8a84-9b28c2e64fa8')
-            >>> for url in outputs:
-            ...     print(url)
-
-        Notes
-        -----
-        This method only returns results for jobs that have completed
-        (succeeded or failed). For running jobs, the output list will be empty.
-
-        See Also
-        --------
-        :meth:`getJob` : Get full job object
-        :meth:`getJobMetrics` : Get job performance metrics
-        """
-        job = DPSJob(self.config)
-        job.id = jobid
-        return job.retrieve_result()
-
-    def getJobMetrics(self, jobid):
-        """
-        Get performance metrics from a completed DPS job.
-
-        Retrieves resource usage and timing information for a job.
-
-        Parameters
-        ----------
-        jobid : str
-            The unique job identifier (UUID).
-
-        Returns
-        -------
-        dict
-            Dictionary containing job metrics including:
-
-            - ``machine_type``: EC2 instance type used
-            - ``job_start_time``: ISO timestamp of job start
-            - ``job_end_time``: ISO timestamp of job end
-            - ``job_duration_seconds``: Total execution time
-            - ``cpu_usage``: CPU time in nanoseconds
-            - ``mem_usage``: Memory usage in bytes
-            - ``max_mem_usage``: Peak memory usage in bytes
-            - ``directory_size``: Output directory size in bytes
-
-        Examples
-        --------
-        Get job metrics::
-
-            >>> metrics = maap.getJobMetrics('f3780917-92c0-4440-8a84-9b28c2e64fa8')
-            >>> print(f"Duration: {metrics['job_duration_seconds']} seconds")
-            >>> print(f"Max memory: {metrics['max_mem_usage']} bytes")
-
-        See Also
-        --------
-        :meth:`getJob` : Get full job object
-        :meth:`getJobResult` : Get job outputs
-        """
-        job = DPSJob(self.config)
-        job.id = jobid
-        return job.retrieve_metrics()
-
-    def cancelJob(self, jobid):
-        """
-        Cancel a running or queued DPS job.
-
-        Attempts to stop execution of a job that is currently running or
-        waiting in the queue.
-
-        Parameters
-        ----------
-        jobid : str
-            The unique job identifier (UUID) to cancel.
-
-        Returns
-        -------
-        str
-            Response from the DPS indicating the cancellation result.
-
-        Examples
-        --------
-        Cancel a job::
-
-            >>> result = maap.cancelJob('f3780917-92c0-4440-8a84-9b28c2e64fa8')
-            >>> print(result)
-
-        Notes
-        -----
-        Jobs that are already completed (Succeeded or Failed) cannot be
-        cancelled. The job status will be set to ``'Dismissed'`` upon
-        successful cancellation.
-
-        See Also
-        --------
-        :meth:`submitJob` : Submit a job
-        :meth:`getJobStatus` : Check job status
-        """
-        job = DPSJob(self.config)
-        job.id = jobid
-        return job.cancel_job()
-
-    def listJobs(self, *,
-                       algo_id=None,
-                       end_time=None,
-                       get_job_details=True,
-                       offset=0,
-                       page_size=10,
-                       queue=None,
-                       start_time=None,
-                       status=None,
-                       tag=None,
-                       version=None):
-        """
-        List jobs submitted by the current user.
-
-        Retrieves a paginated list of DPS jobs matching the specified filter
-        criteria.
-
-        Parameters
-        ----------
-        algo_id : str, optional
-            Filter by algorithm name. Must be provided together with ``version``.
-        end_time : str, optional
-            Filter for jobs completed before this time. Format: ISO 8601
-            (e.g., ``'2024-01-01'`` or ``'2024-01-01T00:00:00.000000Z'``).
-        get_job_details : bool, optional
-            If ``True`` (default), return detailed job information. If ``False``,
-            return only job IDs and tags for faster response.
-        offset : int, optional
-            Number of jobs to skip for pagination. Default is 0.
-        page_size : int, optional
-            Number of jobs to return per page. Default is 10.
-        queue : str, optional
-            Filter by processing queue name.
-        start_time : str, optional
-            Filter for jobs started after this time. Format: ISO 8601.
-        status : str, optional
-            Filter by job status. Valid values:
-
-            - ``'Accepted'``: Queued jobs
-            - ``'Running'``: Currently executing
-            - ``'Succeeded'``: Completed successfully
-            - ``'Failed'``: Completed with errors
-            - ``'Dismissed'``: Cancelled jobs
-
-        tag : str, optional
-            Filter by user-defined job tag/identifier.
-        version : str, optional
-            Filter by algorithm version. Must be provided together with ``algo_id``.
-
-        Returns
-        -------
-        requests.Response
-            HTTP response containing JSON list of jobs matching the criteria.
-
-        Raises
-        ------
-        ValueError
-            If only one of ``algo_id`` or ``version`` is provided. Both must
-            be provided together or neither should be provided.
-
-        Examples
-        --------
-        List recent jobs::
-
-            >>> response = maap.listJobs(page_size=20)
-            >>> jobs = response.json()
-            >>> for job in jobs:
-            ...     print(f"{job['job_id']}: {job['status']}")
-
-        Filter by algorithm and version::
-
-            >>> response = maap.listJobs(
-            ...     algo_id='my_algorithm',
-            ...     version='main',
-            ...     status='Succeeded'
-            ... )
-
-        Paginate through results::
-
-            >>> response = maap.listJobs(offset=0, page_size=10)
-            >>> # Get next page
-            >>> response = maap.listJobs(offset=10, page_size=10)
-
-        Filter by time range::
-
-            >>> response = maap.listJobs(
-            ...     start_time='2024-01-01',
-            ...     end_time='2024-01-31'
-            ... )
-
-        See Also
-        --------
-        :meth:`getJob` : Get details of a specific job
-        :meth:`submitJob` : Submit a new job
-        """
-        url = "/".join(
-            segment.strip("/")
-            for segment in (self.config.dps_job, endpoints.DPS_JOB_LIST)
-        )
-        
-        params = {
-            k: v
-            for k, v in (
-                ("algo_id", algo_id),
-                ("end_time", end_time),
-                ("get_job_details", get_job_details),
-                ("offset", offset),
-                ("page_size", page_size),
-                ("queue", queue),
-                ("start_time", start_time),
-                ("status", status),
-                ("tag", tag),
-                ("version", version),
-            )
-            if v is not None
+        # Read raw text from CWL file
+        with open(file_path, 'r') as f:
+            raw_text = f.read()
+        process = {
+            "cwlRawText": raw_text
         }
-        
-        if (not algo_id) != (not version):
-            # Either algo_id or version was supplied as a non-empty string, but not both.
-            # Either both must be non-empty strings or both must be None.
-            raise ValueError("Either supply non-empty strings for both algo_id and version, or supply neither.")
-
-        # DPS requests use 'job_type', which is a concatenation of 'algo_id' and 'version'
-        if algo_id and version:
-            params['job_type'] = f"{algo_id}:{version}"
-
-        algo_id = params.pop('algo_id', None)
-        version = params.pop('version', None)
-
-        if status is not None:
-            params['status'] = job.validate_job_status(status)
-
-        headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(url))
-        logger.debug('headers:')
-        logger.debug(headers)
-        response = requests.get(
+        headers = self._get_api_header(content_type='application/json')
+        logger.debug('POST request sent to {}'.format(self.config.processes_ogc))
+        response = requests.post(
+            url=self.config.processes_ogc,
+            headers=headers,
+            json=process
+        )
+        return response
+    
+    def replace_algorithm_from_cwl_file(self, process_id, file_path):
+        """
+        Registers an algorithm from a CWL file
+        """
+        # Read raw text from CWL file
+        with open(file_path, 'r') as f:
+            raw_text = f.read()
+        process = {
+            "cwlRawText": raw_text
+        }
+        url = os.path.join(self.config.processes_ogc, str(process_id))
+        headers = self._get_api_header(content_type='application/json')
+        logger.debug('PUT request sent to {}'.format(url))
+        response = requests.put(
             url=url,
             headers=headers,
-            params=params,
+            json=process
         )
         return response
 
-    def submitJob(self, identifier, algo_id, version, queue, retrieve_attributes=False, **kwargs):
-        """
-        Submit a job to the MAAP Data Processing System (DPS).
-
-        Submits an algorithm for execution on the DPS infrastructure with the
-        specified parameters and compute resources.
-
-        Parameters
-        ----------
-        identifier : str
-            A user-defined tag or identifier for the job. Used for tracking
-            and organizing jobs.
-        algo_id : str
-            The algorithm name to execute.
-        version : str
-            The algorithm version (e.g., Git branch or tag).
-        queue : str
-            The compute queue/resource to use (e.g., ``'maap-dps-worker-8gb'``).
-            Use :meth:`getQueues` to list available queues.
-        retrieve_attributes : bool, optional
-            If ``True``, immediately retrieve job status after submission.
-            Default is ``False``.
-        **kwargs : dict
-            Algorithm input parameters. Parameter names must match those
-            defined in the algorithm registration.
-
-        Returns
-        -------
-        DPSJob
-            A :class:`~maap.dps.dps_job.DPSJob` object representing the
-            submitted job. Use the job's methods to monitor status and
-            retrieve results.
-
-        Examples
-        --------
-        Submit a basic job::
-
-            >>> job = maap.submitJob(
-            ...     identifier='my_analysis_run',
-            ...     algo_id='my_algorithm',
-            ...     version='main',
-            ...     queue='maap-dps-worker-8gb',
-            ...     input_file='s3://bucket/input.tif'
-            ... )
-            >>> print(f"Job ID: {job.id}")
-
-        Submit with multiple parameters::
-
-            >>> job = maap.submitJob(
-            ...     identifier='batch_processing',
-            ...     algo_id='processor',
-            ...     version='v2.0',
-            ...     queue='maap-dps-worker-32gb',
-            ...     input_granule='s3://bucket/data.h5',
-            ...     output_format='geotiff',
-            ...     resolution=30
-            ... )
-
-        Submit and immediately get status::
-
-            >>> job = maap.submitJob(
-            ...     identifier='urgent_job',
-            ...     algo_id='my_algorithm',
-            ...     version='main',
-            ...     queue='maap-dps-worker-8gb',
-            ...     retrieve_attributes=True
-            ... )
-            >>> print(f"Status: {job.status}")
-
-        Monitor job completion::
-
-            >>> job = maap.submitJob(...)
-            >>> job.wait_for_completion()
-            >>> print(f"Final status: {job.status}")
-            >>> print(f"Outputs: {job.outputs}")
-
-        Notes
-        -----
-        - The job executes asynchronously; this method returns immediately
-          after submission.
-        - Use :meth:`~maap.dps.dps_job.DPSJob.wait_for_completion` to block
-          until the job finishes.
-        - Input parameters with ``download=True`` in the algorithm config
-          will be downloaded to the job's working directory.
-
-        See Also
-        --------
-        :meth:`getJob` : Retrieve job information
-        :meth:`listJobs` : List submitted jobs
-        :meth:`cancelJob` : Cancel a running job
-        :meth:`getQueues` : List available queues
-        :class:`~maap.dps.dps_job.DPSJob` : Job management class
-        """
-        # Note that this is temporary and will be removed when we remove the API not requiring username to submit a job
-        # Also this now overrides passing someone else's username into submitJob since we don't want to allow that
-        if self.profile is not None and self.profile.account_info() is not None and 'username' in self.profile.account_info().keys():
-            kwargs['username'] = self.profile.account_info()['username']
-        response = self._DPS.submit_job(request_url=self.config.dps_job,
-                                        identifier=identifier, algo_id=algo_id, version=version, queue=queue, **kwargs)
-        job = DPSJob(self.config)
-        job.set_submitted_job_result(response)
-        try:
-            if retrieve_attributes:
-                job.retrieve_attributes()
-        except:
-            logger.debug(f"Unable to retrieve attributes for job: {job}")
-        return job
-
-    def uploadFiles(self, filenames):
+    def upload_files(self, filenames):
         """
         Upload files to MAAP shared storage.
 
@@ -1445,13 +678,13 @@ class MAAP(object):
         --------
         Upload files to share::
 
-            >>> result = maap.uploadFiles(['data.csv', 'config.json'])
+            >>> result = maap.upload_files(['data.csv', 'config.json'])
             >>> print(result)
             Upload file subdirectory: a1b2c3d4-e5f6-... (keep a record of...)
 
         Upload a single file::
 
-            >>> result = maap.uploadFiles(['output.tif'])
+            >>> result = maap.upload_files(['output.tif'])
 
         Notes
         -----
@@ -1461,7 +694,7 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`submitJob` : Use uploaded files as job inputs
+        :meth:`submit_job` : Use uploaded files as job inputs
         """
         bucket = self.config.s3_user_upload_bucket
         prefix = self.config.s3_user_upload_dir
@@ -1529,7 +762,7 @@ class MAAP(object):
         ----------
         granule : dict
             A granule result dictionary, typically obtained from
-            :meth:`searchGranule`. Must contain ``Granule.GranuleUR``.
+            :meth:`search_granule`. Must contain ``Granule.GranuleUR``.
         display_config : dict, optional
             Configuration options for rendering. Common options include:
 
@@ -1542,7 +775,7 @@ class MAAP(object):
         --------
         Display a granule on a map::
 
-            >>> granules = maap.searchGranule(short_name='AFLVIS2', limit=1)
+            >>> granules = maap.search_granule(short_name='AFLVIS2', limit=1)
             >>> maap.show(granules[0])
 
         Display with custom rendering::
@@ -1560,7 +793,7 @@ class MAAP(object):
 
         See Also
         --------
-        :meth:`searchGranule` : Search for granules to visualize
+        :meth:`search_granule` : Search for granules to visualize
         """
         from mapboxgl.viz import RasterTilesViz
 
@@ -1583,6 +816,289 @@ class MAAP(object):
             tiles_maxzoom=presenter.maxzoom,
         )
         viz.show()
+
+    # OGC-compliant endpoint functions
+    def list_algorithms(self):
+        """
+        Search all OGC processes
+        :return: Response object with all deployed processes
+        """
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(self.config.processes_ogc))
+
+        response = requests.get(
+            url=self.config.processes_ogc,
+            headers=headers
+        )
+        return response
+
+    def register_algorithm(self, execution_unit_href):
+        """
+        Deploy a new OGC process
+        :param execution_unit_href: URL to the CWL file
+        :return: Response object with deployment information
+        """
+        headers = self._get_api_header(content_type='application/json')
+        data = {
+            "executionUnit": {
+                "href": execution_unit_href
+            }
+        }
+        logger.debug('POST request sent to {}'.format(self.config.processes_ogc))
+        response = requests.post(
+            url=self.config.processes_ogc,
+            headers=headers,
+            json=data
+        )
+        return response
+
+    def get_deployment_status(self, deployment_id):
+        """
+        Query the current status of an algorithm being deployed
+        :param deployment_id: The deployment job ID
+        :return: Response object with deployment status
+        """
+        url = os.path.join(self.config.deployment_jobs_ogc, str(deployment_id))
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def describe_algorithm(self, process_id):
+        """
+        Get detailed information about a specific OGC process
+        :param process_id: The process ID to describe
+        :return: Response object with process details
+        """
+        url = os.path.join(self.config.processes_ogc, str(process_id))
+        headers = self._get_api_header()
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def update_algorithm(self, process_id, execution_unit_href):
+        """
+        Replace an existing OGC process (must be the original deployer)
+        :param process_id: The process ID to update
+        :param execution_unit_href: URL to the new CWL file
+        :return: Response object with update information
+        """
+        url = os.path.join(self.config.processes_ogc, str(process_id))
+        headers = self._get_api_header(content_type='application/json')
+        data = {
+            "executionUnit": {
+                "href": execution_unit_href
+            }
+        }
+        logger.debug('PUT request sent to {}'.format(url))
+        response = requests.put(
+            url=url,
+            headers=headers,
+            json=data
+        )
+        return response
+
+    def delete_algorithm(self, process_id):
+        """
+        Delete an existing OGC process (must be the original deployer)
+        :param process_id: The process ID to delete
+        :return: Response object with deletion confirmation
+        """
+        url = os.path.join(self.config.processes_ogc, str(process_id))
+        headers = self._get_api_header()
+        logger.debug('DELETE request sent to {}'.format(url))
+        response = requests.delete(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def get_algorithm_package(self, process_id):
+        """
+        Access the formal description that can be used to deploy an OGC process
+        :param process_id: The process ID
+        :return: Response object with process package description
+        """
+        url = os.path.join(self.config.processes_ogc, str(process_id), 'package')
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def submit_job(self, process_id, inputs, queue, dedup=None, tag=None):
+        """
+        Execute an OGC process job
+        :param process_id: The process ID to execute
+        :param inputs: Dictionary of input parameters for the process
+        :param queue: Queue to run the job on
+        :param dedup: Optional deduplication flag
+        :param tag: Optional user-defined tag for the job
+        :return: Response object with job execution information
+        """
+        url = os.path.join(self.config.processes_ogc, str(process_id), 'execution')
+        headers = self._get_api_header(content_type='application/json')
+        data = {
+            "inputs": inputs,
+            "queue": queue
+        }
+        if dedup is not None:
+            data["dedup"] = dedup
+        if tag is not None:
+            data["tag"] = tag
+        
+        logger.debug('POST request sent to {}'.format(url))
+
+        response = requests.post(
+            url=url,
+            headers=headers,
+            json=data
+        )
+        return response
+
+    def get_job_status(self, job_id):
+        """
+        Get the status of an OGC job
+        :param job_id: The job ID to check status for
+        :return: Response object with job status
+        """
+        url = os.path.join(self.config.jobs_ogc, str(job_id))
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def cancel_job(self, job_id, wait_for_completion=False):
+        """
+        Cancel a running OGC job or delete a queued job
+        :param job_id: The job ID to cancel
+        :param wait_for_completion: Whether to wait for the cancellation to complete
+        :return: Response object with cancellation status
+        """
+        url = os.path.join(self.config.jobs_ogc, str(job_id))
+        params = {}
+        if wait_for_completion:
+            params['wait_for_completion'] = str(wait_for_completion).lower()
+        
+        headers = self._get_api_header()
+        logger.debug('DELETE request sent to {}'.format(url))
+
+        response = requests.delete(
+            url=url,
+            headers=headers,
+            params=params
+        )
+        return response
+
+    def get_job_result(self, job_id):
+        """
+        Get the results of a completed OGC job
+        :param job_id: The job ID to get results for
+        :return: Response object with job results
+        """
+        url = os.path.join(self.config.jobs_ogc, str(job_id), 'results')
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
+
+    def list_jobs(self, *,
+                       process_id=None, 
+                       limit=None, 
+                       get_job_details=True, 
+                       offset=0, 
+                       page_size=10, 
+                       queue=None,
+                       status=None,
+                       tag=None, 
+                       min_duration=None, 
+                       max_duration=None,
+                       type=None,
+                       datetime=None,
+                       priority=None):
+        """
+        Returns a list of jobs for a given user that matches query params provided.
+
+        Args:
+            process_id (id, optional): Algorithm ID to only show jobs submitted for this algorithm
+            limit (int, optional): Limit of jobs to send back
+            get_job_details (bool, optional): Flag that determines whether to return a detailed job list or a compact list containing just the job ids and their associated job tags. Default is True.
+            offset (int, optional): Offset for pagination. Default is 0.
+            page_size (int, optional): Page size for pagination. Default is 10.
+            queue (str, optional): Job processing resource.
+            status (str, optional): Job status, e.g. job-completed, job-failed, job-started, job-queued.
+            tag (str, optional): User job tag/identifier.
+            min_duration (int, optional): Minimum duration in seconds
+            max_duration (int, optional): Maximum duration in seconds
+            type (str, optional): Type, available values: process
+            datetime (str, optional): Either a date-time or an interval, half-bounded or bounded. Date and time expressions adhere to RFC 3339. Half-bounded intervals are expressed using double-dots.
+            priority (int, optional): Job priority, 0-9
+
+        Returns:
+            list: List of jobs for a given user that matches query params provided.
+
+        Raises:
+            ValueError: If either algo_id or version is provided, but not both.
+        """
+        params = {
+            k: v
+            for k, v in (
+                ("processID", process_id),
+                ("limit", limit),
+                ("getJobDetails", get_job_details),
+                ("offset", offset),
+                ("pageSize", page_size),
+                ("queue", queue),
+                ("status", status),
+                ("tag", tag),
+                ("minDuration", min_duration),
+                ("maxDuration", max_duration),
+                ("type", type),
+                ("datetime", datetime),
+                ("priority", priority),
+            )
+            if v is not None
+        }
+
+        url = os.path.join(self.config.jobs_ogc)
+        headers = self._get_api_header()
+        
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers,
+            params=params
+        )
+        return response
+
+    def get_job_metrics(self, job_id):
+        """
+        Get metrics for an OGC job
+        :param job_id: The job ID to get metrics for
+        :return: Response object with job metrics
+        """
+        url = os.path.join(self.config.jobs_ogc, str(job_id), 'metrics')
+        headers = self._get_api_header()
+        logger.debug('GET request sent to {}'.format(url))
+        response = requests.get(
+            url=url,
+            headers=headers
+        )
+        return response
 
 
 if __name__ == "__main__":

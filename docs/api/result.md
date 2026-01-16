@@ -49,7 +49,7 @@ from maap.maap import MAAP
 maap = MAAP()
 
 # Search granules
-granules = maap.searchGranule(short_name='GEDI02_A', limit=5)
+granules = maap.search_granule(short_name='GEDI02_A', limit=5)
 
 for granule in granules:
     # Get URLs

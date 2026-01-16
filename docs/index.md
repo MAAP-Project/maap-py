@@ -30,7 +30,7 @@ from maap.maap import MAAP
 maap = MAAP()
 
 # Search for granules
-granules = maap.searchGranule(
+granules = maap.search_granule(
     short_name='GEDI02_A',
     bounding_box='-122.5,37.5,-121.5,38.5',
     limit=10
@@ -42,7 +42,7 @@ for granule in granules:
     print(f"Downloaded: {local_path}")
 
 # Submit a job
-job = maap.submitJob(
+job = maap.submit_job(
     identifier='my_analysis',
     algo_id='my_algorithm',
     version='main',
