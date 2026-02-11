@@ -604,11 +604,11 @@ class MAAP(object):
         See Also
         --------
         :meth:`submit_job` : Submit a job to a queue
-        :meth:`register_algorithm` : Register an algorithm to run on queues
+        :meth:`algorithm_deploy` : Deploy an algorithm to run on queues
         """
-        url = os.path.join(self.config.algorithm_register, 'resource')
+        url = os.path.join(self.config.algorithm_deploy, 'resource')
         headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(self.config.algorithm_register))
+        logger.debug('GET request sent to {}'.format(self.config.algorithm_deploy))
         logger.debug('headers:')
         logger.debug(headers)
         response = requests.get(
@@ -617,9 +617,9 @@ class MAAP(object):
         )
         return response
 
-    def register_algorithm_from_cwl_file(self, file_path):
+    def deploy_algorithm_from_cwl_file(self, file_path):
         """
-        Registers an algorithm from a CWL file
+        Deploys an algorithm from a CWL file
         """
         # Read raw text from CWL file
         with open(file_path, 'r') as f:
@@ -638,7 +638,7 @@ class MAAP(object):
     
     def replace_algorithm_from_cwl_file(self, process_id, file_path):
         """
-        Registers an algorithm from a CWL file
+        Deploys an algorithm from a CWL file
         """
         # Read raw text from CWL file
         with open(file_path, 'r') as f:
@@ -832,7 +832,7 @@ class MAAP(object):
         )
         return response
 
-    def register_algorithm(self, execution_unit_href):
+    def deploy_algorithm(self, execution_unit_href):
         """
         Deploy a new OGC process
         :param execution_unit_href: URL to the CWL file
