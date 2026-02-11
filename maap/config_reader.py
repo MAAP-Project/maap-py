@@ -174,7 +174,7 @@ class MaapConfig:
 
     Endpoint Attributes
     -------------------
-    algorithm_deploy : str
+    algorithm_register : str
         Endpoint for algorithm registration.
     algorithm_build : str
         Endpoint for algorithm builds.
@@ -257,7 +257,7 @@ class MaapConfig:
         self.page_size = os.environ.get("MAAP_CMR_PAGE_SIZE", 20)
         self._PROXY_GRANTING_TICKET = os.environ.get("MAAP_PGT", '')
         self.content_type = os.environ.get("MAAP_CMR_CONTENT_TYPE", "application/echo10+xml")
-        self.algorithm_deploy = self._get_api_endpoint("algorithm_deploy")
+        self.algorithm_register = self._get_api_endpoint("algorithm_register")
         self.algorithm_build = self._get_api_endpoint("algorithm_build")
         self.mas_algo = self._get_api_endpoint("mas_algo")
         self.dps_job = self._get_api_endpoint("dps_job")

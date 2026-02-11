@@ -604,11 +604,11 @@ class MAAP(object):
         See Also
         --------
         :meth:`submit_job` : Submit a job to a queue
-        :meth:`algorithm_deploy` : Deploy an algorithm to run on queues
+        :meth:`algorithm_register` : Deploy an algorithm to run on queues
         """
-        url = os.path.join(self.config.algorithm_deploy, 'resource')
+        url = os.path.join(self.config.algorithm_register, 'resource')
         headers = self._get_api_header()
-        logger.debug('GET request sent to {}'.format(self.config.algorithm_deploy))
+        logger.debug('GET request sent to {}'.format(self.config.algorithm_register))
         logger.debug('headers:')
         logger.debug(headers)
         response = requests.get(
