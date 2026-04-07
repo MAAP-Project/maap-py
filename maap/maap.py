@@ -818,7 +818,7 @@ class MAAP(object):
         viz.show()
 
     # OGC-compliant endpoint functions
-    def list_algorithms(self):
+    def list_algorithms(self, username=None, process_name=None, process_version=None):
         """
         Search all OGC processes
         :return: Response object with all deployed processes
@@ -826,8 +826,19 @@ class MAAP(object):
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(self.config.processes_ogc))
 
+        params = {
+            k: v
+            for k, v in (
+                ("username", username),
+                ("processName", process_name),
+                ("processVersion", process_version),
+            )
+            if v is not None
+        }
+
         response = requests.get(
             url=self.config.processes_ogc,
+            params=params,
             headers=headers
         )
         return response
