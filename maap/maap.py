@@ -818,7 +818,7 @@ class MAAP(object):
         viz.show()
 
     # OGC-compliant endpoint functions
-    def list_algorithms(self, username=None, process_name=None, process_version=None):
+    def list_algorithms(self, deployer=None, algorithm_name=None, algorithm_version=None):
         """
         Search all OGC processes
         :return: Response object with all deployed processes
@@ -829,9 +829,9 @@ class MAAP(object):
         params = {
             k: v
             for k, v in (
-                ("username", username),
-                ("processName", process_name),
-                ("processVersion", process_version),
+                ("deployer", deployer),
+                ("algorithmName", algorithm_name),
+                ("algorithmVersion", algorithm_version),
             )
             if v is not None
         }
