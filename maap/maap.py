@@ -820,8 +820,8 @@ class MAAP(object):
     # OGC-compliant endpoint functions
     def list_algorithms(self, deployer=None, algorithm_name=None, algorithm_version=None):
         """
-        Search all OGC processes
-        :return: Response object with all deployed processes
+        Search all OGC processes, can filter by the deployer, algorithm name, and algorithm version 
+        :return: Response json with all deployed processes (filtered if requested)
         """
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(self.config.processes_ogc))
