@@ -230,6 +230,32 @@ class MAAP(object):
         It uses the boto3 S3 client configured at module level.
         """
         return s3_client.upload_file(filename, bucket, objectKey)
+    
+    def searchGranule(self):
+        """
+        Search for granules in the CMR (Common Metadata Repository).
+
+        Queries the CMR database for granules matching the specified criteria.
+        Granules represent individual data files within a collection.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        search_granule(limit=20, **kwargs)
+
+        limit : int, optional
+            Maximum number of results to return. Default is 20.
+        **kwargs : dict
+            Search parameters to filter results. Common parameters include:
+
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "searchGranule() is no longer supported. Use search_granule(limit=20, **kwargs) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    
 
     def search_granule(self, limit=20, **kwargs):
         """
@@ -327,6 +353,37 @@ class MAAP(object):
                         self.config.search_granule_url,
                         self._get_api_header(),
                         self._DPS) for result in results][:limit]
+    
+    
+    def downloadGranule(self):
+        """
+        Download a granule directly from an HTTP URL.
+
+        Downloads data from an Earthdata HTTP URL, handling both public and
+        protected (authenticated) resources automatically.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        download_granule(online_access_url, destination_path=".", overwrite=False)
+
+        online_access_url : str
+            The HTTP URL of the granule to download. This is typically obtained
+            from a granule's ``OnlineAccessURL`` field.
+        destination_path : str, optional
+            Directory path where the file will be saved. Default is the current
+            working directory (``'.'``).
+        overwrite : bool, optional
+            If ``True``, overwrite existing files. If ``False`` (default), skip
+            download if the file already exists.
+
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "downloadGranule() is no longer supported. Use download_granule(online_access_url, destination_path=\".\", overwrite=False) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
     def download_granule(self, online_access_url, destination_path=".", overwrite=False):
         """
@@ -396,6 +453,36 @@ class MAAP(object):
         proxy._apiHeader = self._get_api_header()
         # noinspection PyProtectedMember
         return proxy._getHttpData(online_access_url, overwrite, final_destination)
+    
+
+    def getCallFromEarthdataQuery(self):
+        """
+        Generate a MAAP API call string from an Earthdata search query.
+
+        Converts a JSON-formatted Earthdata search query into a Python code
+        string that can be used to call the MAAP API.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        get_call_from_earthdata_query(query, variable_name='maap', limit=1000)
+
+        query : str
+            A JSON-formatted string representing an Earthdata search query.
+            This is the format used by the Earthdata Search application.
+        variable_name : str, optional
+            The variable name to use in the generated code for the MAAP
+            client instance. Default is ``'maap'``.
+        limit : int, optional
+            Maximum number of records to return. Default is 1000.
+
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "getCallFromEarthdataQuery() is no longer supported. Use get_call_from_earthdata_query(query, variable_name='maap', limit=1000) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
     def get_call_from_earthdata_query(self, query, variable_name='maap', limit=1000):
         """
@@ -442,6 +529,34 @@ class MAAP(object):
         :meth:`search_granule` : Execute a granule search
         """
         return self._CMR.generateGranuleCallFromEarthDataRequest(query, variable_name, limit)
+
+    def getCallFromCmrUri(self):
+        """
+        Generate a MAAP API call string from a CMR REST API URL.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        get_call_from_cmr_uri(search_url, variable_name='maap', limit=1000, search='granule')
+        
+        search_url : str
+            A CMR REST API search URL. This can be copied directly from
+            the CMR API or browser address bar.
+        variable_name : str, optional
+            The variable name to use in the generated code for the MAAP
+            client instance. Default is ``'maap'``.
+        limit : int, optional
+            Maximum number of records to return. Default is 1000.
+        search : str, optional
+            Type of search to perform. Either ``'granule'`` (default) or
+            ``'collection'``.
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "getCallFromCmrUri() is no longer supported. Use get_call_from_cmr_uri(search_url, variable_name='maap', limit=1000, search='granule') instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
     def get_call_from_cmr_uri(self, search_url, variable_name='maap', limit=1000, search='granule'):
         """
@@ -499,6 +614,44 @@ class MAAP(object):
         :meth:`search_collection` : Execute a collection search
         """
         return self._CMR.generateCallFromEarthDataQueryString(search_url, variable_name, limit, search)
+
+    def searchCollection(self):
+        """
+        Search for collections in the CMR (Common Metadata Repository).
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        search_collection(limit=100, **kwargs)
+
+        limit : int, optional
+            Maximum number of results to return. Default is 100.
+        **kwargs : dict
+            Search parameters to filter results. Common parameters include:
+
+            short_name : str
+                Collection short name (e.g., 'GEDI02_A').
+            concept_id : str
+                Unique CMR collection identifier.
+            provider : str
+                Data provider (e.g., 'MAAP', 'LPDAAC_ECS').
+            keyword : str
+                Keyword search across collection metadata.
+            instrument : str
+                Filter by instrument name.
+            platform : str
+                Filter by platform name.
+            project : str
+                Filter by project name.
+            processing_level_id : str
+                Filter by data processing level.
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "searchCollection() is no longer supported. Use search_collection(limit=100, **kwargs) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
     def search_collection(self, limit=100, **kwargs):
         """
@@ -572,6 +725,26 @@ class MAAP(object):
         """
         results = self._CMR.get_search_results(url=self.config.search_collection_url, limit=limit, **kwargs)
         return [Collection(result, self.config.maap_host) for result in results][:limit]
+    
+    def getQueues(self):
+        """
+        Get available DPS processing queues (resources).
+
+        Retrieves a list of available compute resources (queues) that can be
+        used for algorithm execution. Different queues provide different
+        amounts of memory and CPU.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        get_queues()
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "getQueues() is no longer supported. Use get_queues() instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
     def get_queues(self):
         """
@@ -635,7 +808,7 @@ class MAAP(object):
             json=process
         )
         return response
-    
+
     def replace_algorithm_from_cwl_file(self, process_id, file_path):
         """
         Deploys an algorithm from a CWL file
@@ -654,6 +827,25 @@ class MAAP(object):
             headers=headers,
             json=process
         )
+        return response
+
+    def uploadFiles(self):
+        """
+        Upload files to MAAP shared storage.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        upload_files(filenames)
+
+        filenames : list of str
+            List of local file paths to upload.
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "uploadFiles() is no longer supported. Use upload_files(filenames) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
         return response
 
     def upload_files(self, filenames):
@@ -818,6 +1010,22 @@ class MAAP(object):
         viz.show()
 
     # OGC-compliant endpoint functions
+    def listAlgorithms(self):
+        """
+        Search all OGC processes.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        list_algorithms()
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "listAlgorithms() is no longer supported. Use list_algorithms() instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
     def list_algorithms(self):
         """
         Search all OGC processes
@@ -867,6 +1075,24 @@ class MAAP(object):
         )
         return response
 
+    def describeAlgorithm(self):
+        """
+        Get detailed information about a specific OGC process.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        describe_algorithm(process_id)
+
+        process_id: The process ID to describe
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "describeAlgorithm() is no longer supported. Use describe_algorithm(process_id) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
     def describe_algorithm(self, process_id):
         """
         Get detailed information about a specific OGC process
@@ -903,6 +1129,24 @@ class MAAP(object):
         )
         return response
 
+    def deleteAlgorithm(self):
+        """
+        Delete an existing OGC process (must be the original deployer).
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        delete_algorithm(process_id)
+
+        process_id: The process ID to delete
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "deleteAlgorithm() is no longer supported. Use delete_algorithm(process_id) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
     def delete_algorithm(self, process_id):
         """
         Delete an existing OGC process (must be the original deployer)
@@ -932,6 +1176,28 @@ class MAAP(object):
             headers=headers
         )
         return response
+    
+    def submitJob(self):
+        """
+        Submit a job to the MAAP Data Processing System (DPS).
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        submit_job(process_id, inputs, queue)
+
+        process_id: The process ID to execute
+        inputs: Dictionary of input parameters for the process
+        queue: Queue to run the job on
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "submitJob() is no longer supported. Use submit_job(process_id, inputs, queue) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+
 
     def submit_job(self, process_id, inputs, queue, dedup=None, tag=None):
         """
@@ -963,6 +1229,24 @@ class MAAP(object):
         )
         return response
 
+    def getJobStatus(self):
+        """
+        Get the status of an OGC job.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        get_job_status(job_id)
+
+        job_id: The job ID to check status for
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "getJobStatus() is no longer supported. Use get_job_status(job_id) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
     def get_job_status(self, job_id):
         """
         Get the status of an OGC job
@@ -977,6 +1261,25 @@ class MAAP(object):
             url=url,
             headers=headers
         )
+        return response
+
+    def cancelJob(self):
+        """
+        Cancel a running OGC job or delete a queued job.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        cancel_job(job_id, wait_for_completion=False)
+
+        job_id: The job ID to cancel
+        wait_for_completion: Whether to wait for the cancellation to complete
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "cancelJob() is no longer supported. Use cancel_job(job_id, wait_for_completion=False) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
         return response
 
     def cancel_job(self, job_id, wait_for_completion=False):
@@ -1001,6 +1304,24 @@ class MAAP(object):
         )
         return response
 
+    def getJobResult(self):
+        """
+        Get the results of a completed OGC job.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        get_job_result(job_id)
+
+        job_id: The job ID to get results for
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "getJobResult() is no longer supported. Use get_job_result(job_id) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
     def get_job_result(self, job_id):
         """
         Get the results of a completed OGC job
@@ -1014,6 +1335,36 @@ class MAAP(object):
             url=url,
             headers=headers
         )
+        return response
+
+    def listJobs(self):
+        """
+        Returns a list of jobs for a given user that matches query params provided.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        list_jobs(*, process_id=None, limit=None, get_job_details=True, offset=0, page_size=10, queue=None, status=None, tag=None, min_duration=None, max_duration=None, type=None, datetime=None, priority=None)
+        
+        process_id (id, optional): Algorithm ID to only show jobs submitted for this algorithm
+        limit (int, optional): Limit of jobs to send back
+        get_job_details (bool, optional): Flag that determines whether to return a detailed job list or a compact list containing just the job ids and their associated job tags. Default is True.
+        offset (int, optional): Offset for pagination. Default is 0.
+        page_size (int, optional): Page size for pagination. Default is 10.
+        queue (str, optional): Job processing resource.
+        status (str, optional): Job status, e.g. job-completed, job-failed, job-started, job-queued.
+        tag (str, optional): User job tag/identifier.
+        min_duration (int, optional): Minimum duration in seconds
+        max_duration (int, optional): Maximum duration in seconds
+        type (str, optional): Type, available values: process
+        datetime (str, optional): Either a date-time or an interval, half-bounded or bounded. Date and time expressions adhere to RFC 3339. Half-bounded intervals are expressed using double-dots.
+        priority (int, optional): Job priority, 0-9
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "listJobs() is no longer supported. Use list_jobs() with appropriate keyword arguments instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
         return response
 
     def list_jobs(self, *,
@@ -1083,6 +1434,24 @@ class MAAP(object):
             headers=headers,
             params=params
         )
+        return response
+
+    def getJobMetrics(self):
+        """
+        Get metrics for an OGC job.
+
+        DEPRECATION NOTICE: This method is no longer supported. Use the following instead:
+
+        get_job_metrics(job_id)
+
+        job_id: The job ID to get metrics for
+        """
+        response = requests.Response()
+        response.status_code = 410
+        response._content = json.dumps({
+            "message": "getJobMetrics() is no longer supported. Use get_job_metrics(job_id) instead."
+        }).encode('utf-8')
+        response.headers['Content-Type'] = 'application/json'
         return response
 
     def get_job_metrics(self, job_id):
