@@ -248,13 +248,7 @@ class MAAP(object):
             Search parameters to filter results. Common parameters include:
 
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "searchGranule() is no longer supported. Use search_granule(limit=20, **kwargs) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("searchGranule() is no longer supported. Use search_granule(limit=20, **kwargs) instead.")
     
 
     def search_granule(self, limit=20, **kwargs):
@@ -377,13 +371,7 @@ class MAAP(object):
             download if the file already exists.
 
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "downloadGranule() is no longer supported. Use download_granule(online_access_url, destination_path=\".\", overwrite=False) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("downloadGranule() is no longer supported. Use download_granule(online_access_url, destination_path=\".\", overwrite=False) instead.")
 
     def download_granule(self, online_access_url, destination_path=".", overwrite=False):
         """
@@ -476,13 +464,7 @@ class MAAP(object):
             Maximum number of records to return. Default is 1000.
 
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "getCallFromEarthdataQuery() is no longer supported. Use get_call_from_earthdata_query(query, variable_name='maap', limit=1000) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("getCallFromEarthdataQuery() is no longer supported. Use get_call_from_earthdata_query(query, variable_name='maap', limit=1000) instead.")
 
     def get_call_from_earthdata_query(self, query, variable_name='maap', limit=1000):
         """
@@ -550,13 +532,7 @@ class MAAP(object):
             Type of search to perform. Either ``'granule'`` (default) or
             ``'collection'``.
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "getCallFromCmrUri() is no longer supported. Use get_call_from_cmr_uri(search_url, variable_name='maap', limit=1000, search='granule') instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("getCallFromCmrUri() is no longer supported. Use get_call_from_cmr_uri(search_url, variable_name='maap', limit=1000, search='granule') instead.")
 
     def get_call_from_cmr_uri(self, search_url, variable_name='maap', limit=1000, search='granule'):
         """
@@ -645,13 +621,7 @@ class MAAP(object):
             processing_level_id : str
                 Filter by data processing level.
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "searchCollection() is no longer supported. Use search_collection(limit=100, **kwargs) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("searchCollection() is no longer supported. Use search_collection(limit=100, **kwargs) instead.")
 
     def search_collection(self, limit=100, **kwargs):
         """
@@ -738,13 +708,7 @@ class MAAP(object):
 
         get_queues()
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "getQueues() is no longer supported. Use get_queues() instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("getQueues() is no longer supported. Use get_queues() instead.")
 
     def get_queues(self):
         """
@@ -840,13 +804,7 @@ class MAAP(object):
         filenames : list of str
             List of local file paths to upload.
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "uploadFiles() is no longer supported. Use upload_files(filenames) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("uploadFiles() is no longer supported. Use upload_files(filenames) instead.")
 
     def upload_files(self, filenames):
         """
@@ -1018,13 +976,7 @@ class MAAP(object):
 
         list_algorithms()
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "listAlgorithms() is no longer supported. Use list_algorithms() instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("listAlgorithms() is no longer supported. Use list_algorithms() instead.")
 
     def list_algorithms(self):
         """
@@ -1085,13 +1037,7 @@ class MAAP(object):
 
         process_id: The process ID to describe
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "describeAlgorithm() is no longer supported. Use describe_algorithm(process_id) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("describeAlgorithm() is no longer supported. Use describe_algorithm(process_id) instead.")
 
     def describe_algorithm(self, process_id):
         """
@@ -1139,13 +1085,7 @@ class MAAP(object):
 
         process_id: The process ID to delete
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "deleteAlgorithm() is no longer supported. Use delete_algorithm(process_id) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("deleteAlgorithm() is no longer supported. Use delete_algorithm(process_id) instead.")
 
     def delete_algorithm(self, process_id):
         """
@@ -1189,13 +1129,7 @@ class MAAP(object):
         inputs: Dictionary of input parameters for the process
         queue: Queue to run the job on
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "submitJob() is no longer supported. Use submit_job(process_id, inputs, queue) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("submitJob() is no longer supported. Use submit_job(process_id, inputs, queue) instead.")
 
 
 
@@ -1239,13 +1173,7 @@ class MAAP(object):
 
         job_id: The job ID to check status for
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "getJobStatus() is no longer supported. Use get_job_status(job_id) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("getJobStatus() is no longer supported. Use get_job_status(job_id) instead.")
 
     def get_job_status(self, job_id):
         """
@@ -1274,13 +1202,7 @@ class MAAP(object):
         job_id: The job ID to cancel
         wait_for_completion: Whether to wait for the cancellation to complete
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "cancelJob() is no longer supported. Use cancel_job(job_id, wait_for_completion=False) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("cancelJob() is no longer supported. Use cancel_job(job_id, wait_for_completion=False) instead.")
 
     def cancel_job(self, job_id, wait_for_completion=False):
         """
@@ -1314,13 +1236,7 @@ class MAAP(object):
 
         job_id: The job ID to get results for
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "getJobResult() is no longer supported. Use get_job_result(job_id) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("getJobResult() is no longer supported. Use get_job_result(job_id) instead.")
 
     def get_job_result(self, job_id):
         """
@@ -1359,13 +1275,7 @@ class MAAP(object):
         datetime (str, optional): Either a date-time or an interval, half-bounded or bounded. Date and time expressions adhere to RFC 3339. Half-bounded intervals are expressed using double-dots.
         priority (int, optional): Job priority, 0-9
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "listJobs() is no longer supported. Use list_jobs() with appropriate keyword arguments instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("listJobs() is no longer supported. Use list_jobs() with appropriate keyword arguments instead.")
 
     def list_jobs(self, *,
                        process_id=None, 
@@ -1446,13 +1356,7 @@ class MAAP(object):
 
         job_id: The job ID to get metrics for
         """
-        response = requests.Response()
-        response.status_code = 410
-        response._content = json.dumps({
-            "message": "getJobMetrics() is no longer supported. Use get_job_metrics(job_id) instead."
-        }).encode('utf-8')
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        raise Exception("getJobMetrics() is no longer supported. Use get_job_metrics(job_id) instead.")
 
     def get_job_metrics(self, job_id):
         """
