@@ -1,0 +1,62 @@
+name: Git-Flow PR Validation
+
+# Triggered on every PR, validates that source→target branch combinations
+# follow GitFlow conventions. Adapted from:
+# https://github.com/MAAP-Project/maap-ci-templates/blob/v1.0.3/.github/workflows/gitflow-validation.yml
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR source and target branches
+        run: |
+          SOURCE="${{ github.event.pull_request.head.ref }}"
+          TARGET="${{ github.event.pull_request.base.ref }}"
+          echo "Validating PR: $SOURCE -> $TARGET"
+
+          if [[ "$SOURCE" == feature/* && "$TARGET" == "develop" ]]; then
+            echo "Feature branch merging into develop - OK"
+            exit 0
+          elif [[ "$SOURCE" == bugfix/* && "$TARGET" == "develop" ]]; then
+            echo "Bugfix branch merging into develop - OK"
+            exit 0
+          elif [[ "$SOURCE" == bugfix/* && "$TARGET" == release/* ]]; then
+            echo "Bugfix branch merging into release - OK"
+            exit 0
+          elif [[ "$SOURCE" == "develop" && "$TARGET" == release/* ]]; then
+            echo "Develop merging into release - OK"
+            exit 0
+          elif [[ "$SOURCE" == release/* && "$TARGET" == "master" ]]; then
+            echo "Release merging into master - OK"
+            exit 0
+          elif [[ "$SOURCE" == release/* && "$TARGET" == "develop" ]]; then
+            echo "Release merging back into develop - OK"
+            exit 0
+          elif [[ "$SOURCE" == hotfix/* && "$TARGET" == "master" ]]; then
+            echo "Hotfix merging into master - OK"
+            exit 0
+          elif [[ "$SOURCE" == hotfix/* && "$TARGET" == "develop" ]]; then
+            echo "Hotfix merging back into develop - OK"
+            exit 0
+          elif [[ "$SOURCE" == "master" && "$TARGET" == "develop" ]]; then
+            echo "Master merging back into develop - OK"
+            exit 0
+          else
+            echo "Invalid Git-Flow PR direction: $SOURCE -> $TARGET"
+            echo ""
+            echo "Allowed combinations:"
+            echo "  feature/*  -> develop"
+            echo "  bugfix/*   -> develop"
+            echo "  bugfix/*   -> release/*"
+            echo "  develop    -> release/*"
+            echo "  release/*  -> master"
+            echo "  release/*  -> develop"
+            echo "  hotfix/*   -> master"
+            echo "  hotfix/*   -> develop"
+            echo "  master     -> develop"
+            exit 1
+          fi
