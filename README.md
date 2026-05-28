@@ -2,18 +2,24 @@
 
 Python client library that abstracts [MAAP API](https://github.com/MAAP-Project/maap-api) calls including CMR querying, algorithm change management, and HySDS job execution. CMR components in this library are largely derived from the [pyCMR](https://github.com/nasa/pyCMR) library.
 
-## Setup
+## Installation
 
-Run:
+### From PyPI (recommended)
 
 ```bash
-python setup.py install
+pip install maap-py
 ```
 
-Or
+### For development
 
 ```bash
 pip install -e .
+```
+
+### Legacy
+
+```bash
+python setup.py install
 ```
 
 ## Usage
