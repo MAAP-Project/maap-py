@@ -54,18 +54,18 @@ class TestMAAP(TestCase):
         """
 
         var_name = 'maapVar'
-        testResult = self.maap.getCallFromEarthdataQuery(query=input, variable_name=var_name)
+        testResult = self.maap.get_call_from_earthdata_query(query=input, variable_name=var_name)
         self.assertTrue(
-            testResult == var_name + '.searchGranule('\
+            testResult == var_name + '.search_granule('\
                 'processing_level_id="1A|1B|2|4", '\
                 'instrument="LVIS|UAVSAR", '\
                 'platform="AIRCRAFT|B-200|COMPUTERS", '\
                 'data_center="MAAP Data Management Team", '\
                 'bounding_box="-35.4375,-55.6875,-80.4375,37.6875")')
 
-    def test_uploadFiles(self):
+    def test_upload_files(self):
         self.maap._upload_s3 = MagicMock(return_value=None)
-        result = self.maap.uploadFiles(['test/s3-upload-testfile1.txt', 'test/s3-upload-testfile2.txt'])
+        result = self.maap.upload_files(['test/s3-upload-testfile1.txt', 'test/s3-upload-testfile2.txt'])
         upload_msg_regex = re.compile('Upload file subdirectory: .+ \\(keep a record of this if you want to share these files with other users\\)')
         self.assertTrue(re.match(upload_msg_regex, result))
 

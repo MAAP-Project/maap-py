@@ -24,7 +24,7 @@ Basic usage::
     maap = MAAP()
 
     # Search for granules
-    granules = maap.searchGranule(
+    granules = maap.search_granule(
         short_name='GEDI02_A',
         limit=10
     )
@@ -34,7 +34,7 @@ Basic usage::
         local_path = granule.getData(destpath='/tmp')
 
     # Submit a job
-    job = maap.submitJob(
+    job = maap.submit_job(
         identifier='my_job',
         algo_id='my_algorithm',
         version='main',
