@@ -967,7 +967,6 @@ class MAAP(object):
         )
         viz.show()
 
-    # OGC-compliant endpoint functions
     def listAlgorithms(self):
         """
         Search all OGC processes.
@@ -978,16 +977,28 @@ class MAAP(object):
         """
         raise Exception("listAlgorithms() is no longer supported. Use list_algorithms() instead.")
 
-    def list_algorithms(self):
+    # OGC-compliant endpoint functions
+    def list_algorithms(self, deployer=None, algorithm_name=None, algorithm_version=None):
         """
-        Search all OGC processes
-        :return: Response object with all deployed processes
+        Search all OGC processes, can filter by the deployer, algorithm name, and algorithm version 
+        :return: Response json with all deployed processes (filtered if requested)
         """
         headers = self._get_api_header()
         logger.debug('GET request sent to {}'.format(self.config.processes_ogc))
 
+        params = {
+            k: v
+            for k, v in (
+                ("deployer", deployer),
+                ("algorithmName", algorithm_name),
+                ("algorithmVersion", algorithm_version),
+            )
+            if v is not None
+        }
+
         response = requests.get(
             url=self.config.processes_ogc,
+            params=params,
             headers=headers
         )
         return response
