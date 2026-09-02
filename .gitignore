@@ -29,9 +29,5 @@ htmlcov/
 # OS cruft
 .DS_Store
 
-# Scratch scripts
-test_jobs.py
-test_algorithms.py
-
 # Environment / secrets
 .env
