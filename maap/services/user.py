@@ -3,6 +3,8 @@ from maap.types.user import QueueList, UserProfile
 
 
 class UserService(BaseService):
+    """The current user's profile and available job queues."""
+
     def get_profile(self) -> UserProfile:
         """Retrieve the profile of the authenticated user.
 

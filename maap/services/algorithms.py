@@ -17,6 +17,8 @@ from maap.types.algorithms import (
 
 
 class AlgorithmsService(BaseService):
+    """Deploy, inspect, and delete registered algorithms."""
+
     @overload
     def get(self, *, algorithm_id: str | int) -> Algorithm: ...
     @overload
@@ -31,7 +33,7 @@ class AlgorithmsService(BaseService):
         deployer: str | None = None,
     ) -> Algorithm:
         """Retrieve a single algorithm by its ID or by name, version, and deployer.
-        
+
         Every registered algorithm has a unique ID and may be retrieved through the ID
         alone. Alternatively, an algorithm's name, version, and deployer map to a single
         algorithm so an algorithm may be retrieved using these three fields if the ID
@@ -144,9 +146,7 @@ class AlgorithmsService(BaseService):
         }
         params = {key: value for key, value in params.items() if value is not None}
 
-        data = self._transport.get(
-            "/api/ogc/processes", params=params or None, authenticated=False
-        )
+        data = self._transport.get("/api/ogc/processes", params=params or None, authenticated=False)
         result = AlgorithmList.model_validate(data)
         return result.processes
 

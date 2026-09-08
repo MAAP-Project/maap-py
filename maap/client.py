@@ -1,4 +1,5 @@
 from maap.config import TokenProvider, host_from_environment, token_from_environment
+from maap.help import Help
 from maap.services.algorithms import AlgorithmsService
 from maap.services.jobs import JobsService
 from maap.services.secrets import SecretsService
@@ -13,6 +14,7 @@ class MAAP:
         self.algorithms = AlgorithmsService(self._transport)
         self.secrets = SecretsService(self._transport)
         self.user = UserService(self._transport)
+        self.help = Help(self)
 
     @classmethod
     def from_environment(cls) -> "MAAP":

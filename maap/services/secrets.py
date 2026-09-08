@@ -14,6 +14,8 @@ from maap.types.secrets import Secret, SecretSummary
 
 
 class SecretsService(BaseService):
+    """Store and retrieve the current user's secrets."""
+
     _NAME_KEY = "name"
     _VALUE_KEY = "value"
 

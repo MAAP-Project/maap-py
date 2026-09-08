@@ -17,6 +17,8 @@ from maap.types.jobs import (
 
 
 class JobsService(BaseService):
+    """Submit, monitor, and cancel DPS jobs."""
+
     @overload
     def submit(self, request: JobRequest) -> Job: ...
     @overload
