@@ -7,6 +7,7 @@ from maap.exceptions.base import (
     NotFoundError,
 )
 from maap.exceptions.jobs import JobNotFoundError, JobPermissionError
+from maap.exceptions.secrets import SecretAlreadyExistsError, SecretNotFoundError
 
 __all__ = [
     "APIError",
@@ -18,4 +19,6 @@ __all__ = [
     "JobPermissionError",
     "MAAPError",
     "NotFoundError",
+    "SecretAlreadyExistsError",
+    "SecretNotFoundError",
 ]

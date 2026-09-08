@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from requests import Response
 
 
@@ -15,6 +15,14 @@ class APIErrorResponse(BaseModel):
     )
 
     model_config = {"populate_by_name": True}
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_members_error(cls, data: Any) -> Any:
+        """Map the members API's {code, message} error shape onto the OGC error fields."""
+        if isinstance(data, dict) and "message" in data and "detail" not in data:
+            return {**data, "detail": data["message"], "status": data.get("code", 0)}
+        return data
 
 
 class MAAPError(Exception):
