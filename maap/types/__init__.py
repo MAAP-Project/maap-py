@@ -19,6 +19,7 @@ from maap.types.jobs import (
     JobSummary,
 )
 from maap.types.secrets import Secret, SecretSummary
+from maap.types.user import Organization, QueueList, UserProfile
 
 __all__ = [
     "Algorithm",
@@ -37,6 +38,9 @@ __all__ = [
     "JobResults",
     "JobStatus",
     "JobSummary",
+    "Organization",
+    "QueueList",
     "Secret",
     "SecretSummary",
+    "UserProfile",
 ]
