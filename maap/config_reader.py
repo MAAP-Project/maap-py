@@ -33,7 +33,8 @@ import os
 import requests
 from urllib.parse import urlparse, urljoin, urlunsplit, SplitResult
 from collections import namedtuple
-from functools import cache
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
@@ -115,10 +116,25 @@ def _get_api_root(config_url, config):
                        query='', fragment='').geturl()
 
 
-@cache
+_CONFIG_CACHE = {}
+_CONFIG_TIMEOUT = (5, 30)  # (connect, read) seconds
+_CONFIG_RETRY = Retry(
+    total=5,
+    connect=5,
+    read=3,
+    status=5,
+    backoff_factor=1,
+    status_forcelist=(502, 503, 504),
+    allowed_methods=frozenset(["GET"]),
+)
+
+
 def _get_client_config(maap_host):
     """
-    Fetch and cache client configuration from the API.
+    Fetch client configuration from the API, caching successful results.
+
+    Requests use a timeout and retry with exponential backoff on connection
+    errors and 502/503/504 responses. Failures are never cached.
 
     Parameters
     ----------
@@ -130,21 +146,28 @@ def _get_client_config(maap_host):
     dict
         Configuration dictionary containing service endpoints and settings.
 
-    Notes
-    -----
-    Results are cached using functools.cache to avoid repeated API calls
-    for the same host.
+    Raises
+    ------
+    RuntimeError
+        If the configuration cannot be fetched or parsed.
     """
+    if maap_host in _CONFIG_CACHE:
+        return _CONFIG_CACHE[maap_host]
     config_url = _get_config_url(maap_host)
     logger.debug(f"Requesting client config from api at: {config_url}")
-    response = requests.get(config_url)
     try:
-        response.raise_for_status()
-        config = response.json()
+        with requests.Session() as session:
+            session.mount("http://", HTTPAdapter(max_retries=_CONFIG_RETRY))
+            session.mount("https://", HTTPAdapter(max_retries=_CONFIG_RETRY))
+            response = session.get(config_url, timeout=_CONFIG_TIMEOUT)
+            response.raise_for_status()
+            config = response.json()
         config["service"]["maap_api_root"] = _get_api_root(config_url, config)
-        return config
     except Exception as ex:
         logger.error(f"Unable to read maap config from api: {ex}")
+        raise RuntimeError(f"Unable to read maap config from {config_url}: {ex}") from ex
+    _CONFIG_CACHE[maap_host] = config
+    return config
 
 
 class MaapConfig:

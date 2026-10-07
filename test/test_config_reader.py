@@ -77,3 +77,48 @@ class TestConfig(TestCase):
     def test_read_conf_uninitialized(self):
         with TestConfig().assertRaises(expected_exception=EnvironmentError, msg="Successfully raised exception") as err:
             MaapConfig()
+
+
+class TestClientConfigFetch(TestCase):
+    CONFIG = {"service": {"maap_api_root": "https://api.example.org/api"}}
+
+    def setUp(self):
+        config_reader._CONFIG_CACHE.clear()
+
+    def _resp(self, status=200):
+        from unittest import mock
+        resp = mock.Mock(status_code=status)
+        resp.json.return_value = {"service": dict(self.CONFIG["service"])}
+        if status >= 400:
+            import requests
+            resp.raise_for_status.side_effect = requests.HTTPError(str(status))
+        return resp
+
+    def test_transient_failure_then_success(self):
+        from unittest import mock
+        import requests
+        with mock.patch("requests.Session.get",
+                        side_effect=[requests.ConnectionError("boom"), self._resp()]) as get:
+            with self.assertRaises(RuntimeError):
+                config_reader._get_client_config("https://api.example.org")
+            config = config_reader._get_client_config("https://api.example.org")
+        self.assertEqual(2, get.call_count)
+        self.assertEqual("https://api.example.org/api/", config["service"]["maap_api_root"])
+
+    def test_permanent_failure_not_cached(self):
+        from unittest import mock
+        with mock.patch("requests.Session.get", return_value=self._resp(503)) as get:
+            for _ in range(2):
+                with self.assertRaises(RuntimeError):
+                    config_reader._get_client_config("https://api.example.org")
+        self.assertEqual(2, get.call_count)
+        self.assertNotIn("https://api.example.org", config_reader._CONFIG_CACHE)
+
+    def test_success_is_cached_and_timeout_used(self):
+        from unittest import mock
+        with mock.patch("requests.Session.get", return_value=self._resp()) as get:
+            first = config_reader._get_client_config("https://api.example.org")
+            second = config_reader._get_client_config("https://api.example.org")
+        self.assertIs(first, second)
+        self.assertEqual(1, get.call_count)
+        self.assertEqual(config_reader._CONFIG_TIMEOUT, get.call_args.kwargs["timeout"])
