@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 (post 4.2.0 release)
 ### Added
 - Support for new OGC endpoints
+- Shared retrying `requests.Session` client in `maap.utils.requests_utils` (retries on transient errors for idempotent methods, default timeouts, request-time auth, token redaction in logs) ([#137](https://github.com/MAAP-Project/maap-py/issues/137))
 ### Changed
+- `requests_utils.make_request`/`make_dps_request` now retry transient failures, apply a default timeout and support PUT/DELETE
 ### Deprecated
 ### Removed
 - Removed functions calling old WPST endpoints
